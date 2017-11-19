@@ -1,0 +1,4 @@
+curl -X GET http://localhost:8088/randomOrder
+
+
+curl -X POST -H "Content-Type: application/xml" --data '<order>      <id>randomId</id><timestamp>1488154717323</timestamp>      <deliveryPrice>11.151244656534509</deliveryPrice><items><item>      <id>0</id>      <quantity>79</quantity><unitPrice>31.787820959521483</unitPrice>        <percentageDiscount>0.10558164031712036</percentageDiscount>      </item>      <item><id>1</id><quantity>94</quantity>      <unitPrice>0.37387730640470185</unitPrice>      <percentageDiscount>0.09391514717571126</percentageDiscount>      </item><item><id>2</id><quantity>70</quantity>      <unitPrice>29.414102463994286</unitPrice>                       <percentageDiscount>0.5866072707110512</percentageDiscount>      </item><item><id>3</id><quantity>84</quantity>      <unitPrice>67.24909246700179</unitPrice></item></items><metadata>      <notes>random</notes></metadata></order>' http://localhost:8088/calculateGrandTotal
