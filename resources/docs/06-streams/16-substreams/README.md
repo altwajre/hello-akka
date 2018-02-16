@@ -1,1 +1,2 @@
-TODO
+# Nesting stages
+# Flattening stages

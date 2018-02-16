@@ -1,1 +1,2 @@
-TODO
+# Synchronous behaviour testing
+# Asynchronous testing

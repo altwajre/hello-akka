@@ -1,0 +1,10 @@
+# Throttling Messages
+# Balancing Workload Across Nodes
+# Work Pulling Pattern to throttle and distribute work, and prevent mailbox overflow
+# Ordered Termination
+# Akka AMQP Proxies
+# Shutdown Patterns in Akka 2
+# Distributed (in-memory) graph processing with Akka
+# Case Study: An Auto-Updating Cache Using Actors
+# Discovering message flows in actor systems with the Spider Pattern
+# Scheduling Periodic Messages

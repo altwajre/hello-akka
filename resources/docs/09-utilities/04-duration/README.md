@@ -1,1 +1,4 @@
-TODO
+# Finite vs. Infinite
+# Scala
+# Java
+# Deadline
