@@ -231,7 +231,7 @@ val supervisor = BackoffSupervisor.props(
     - Limits on how often a child is allowed to fail before terminating it. 
 - **One-For-One Strategy**: applies the obtained directive only to the failed child.
 - **All-For-One Strategy**: applies it to all siblings as well. 
-- Normally, you should use the `OneForOneStrategy`, which also is the default if none is specified explicitly.
+- Normally, you should use the `OneForOneStrategy`, which is the default if none is specified explicitly.
 - The `AllForOneStrategy` is applicable in cases where:
     - The ensemble of children has tight dependencies among them.
     - A failure of one child affects the function of the others.
@@ -242,15 +242,16 @@ val supervisor = BackoffSupervisor.props(
     - Otherwise you have to make sure that:
         - It is no problem for any of the actors to receive a message which was queued before the restart but processed afterwards.
 - Stopping a child normally (i.e. not in response to a failure):
-    - Will not automatically terminate the other children in an all-for-one strategy;.
-    - This can easily be done by watching their lifecycle.
+    - Will not automatically terminate the other children in an all-for-one strategy.
+    - This can be done by watching their lifecycle.
     - If the `Terminated` message is not handled by the supervisor, it will throw a `DeathPactException`.
     - Depending on its supervisor, this will restart it.
     - The default `preRestart` action will terminate all children. 
     - This can be handled explicitly as well.
-- Creating one-off actors from an all-for-one supervisor entails that failures escalated by the temporary actor will affect all the permanent ones. 
-- If this is not desired, install an intermediate supervisor.
-- This can be done by declaring a router of size 1 for the worker, see [Routing](TODO).
+- Creating one-off actors from an all-for-one supervisor:
+    - Entails that failures escalated by the temporary actor will affect all the permanent ones. 
+    - If this is not desired, install an intermediate supervisor.
+    - This can be done by declaring a router of size 1 for the worker, see [Routing](TODO).
 
 
 
