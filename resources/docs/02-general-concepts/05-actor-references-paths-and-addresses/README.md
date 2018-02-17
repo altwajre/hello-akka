@@ -4,7 +4,7 @@
     - [Actor Systems](../02-actor-system) form intrinsic supervision hierarchies. 
     - Communication between actors is transparent with respect to their placement across multiple network nodes.
     
-#### This image displays the relationship between the most important entities within an actor system
+### Relationship between the most important entities within an actor system
 ![](https://doc.akka.io/docs/akka/current/general/ActorPath.png)
 
 # What is an Actor Reference?
