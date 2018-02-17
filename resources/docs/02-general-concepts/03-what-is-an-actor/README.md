@@ -36,6 +36,17 @@
     - An actor’s state can be automatically recovered to the state before a restart by persisting received messages and replaying them after restart (see [Persistence](TODO)).
   
 # Behavior
+- Every time a message is processed, it is matched against the current behavior of the actor. 
+- Behavior means a function which defines the actions to be taken in reaction to the message at that point in time:
+    - E.g. forward a request if the client is authorized, deny it otherwise. 
+    - This behavior may change over time, e.g. because different clients obtain authorization over time.
+    - Or because the actor may go into an “out-of-service” mode and later come back. 
+- These changes are achieved by either:
+    - Encoding them in state variables which are read from the behavior logic.
+    - The function itself may be swapped out at runtime, see the `become` and `unbecome` operations. 
+- The initial behavior defined during construction of the actor object is special.
+    - A restart of the actor will reset its behavior to this initial one.
+
 # Mailbox
 # Child Actors
 # Supervisor Strategy
