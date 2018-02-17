@@ -81,6 +81,26 @@
     - And sets the actor system’s `isTerminated` status to `true` as soon as the root guardian is fully terminated.
 
 # What Restarting Means
+- Causes for the failure fall into three categories:
+    - Systematic (i.e. programming) error for the specific message received.
+    - Transient failure of some external resource used during processing the message.
+    - Corrupt internal state of the actor.
+- If the failure is not recognizable we must assume that the state is corrupt and must be cleared out.
+- If the supervisor decides that its other children or itself is not affected by the corruption it is best to restart the child. 
+- This is carried out by:
+    - Creating a new instance of the underlying Actor class.
+    - Replacing the failed instance with the fresh one inside the child’s ActorRef.
+    - The new actor then resumes processing its mailbox.
+- The restart is not visible outside of the actor itself.
+- The message during which the failure occurred is not re-processed.
+- The sequence of events during a restart is the following:
+    1. suspend the actor (which means that it will not process normal messages until resumed), and recursively suspend all children.
+    2. call the old instance’s preRestart hook (defaults to sending termination requests to all children and calling postStop).
+    3. wait for all children which were requested to terminate (using context.stop()) during preRestart to actually terminate; this—like all actor operations—is non-blocking, the termination notice from the last killed child will effect the progression to the next step.
+    4. create new actor instance by invoking the originally provided factory again.
+    5. invoke postRestart on the new instance (which by default also calls preStart).
+    6. send restart request to all children which were not killed in step 3; restarted children will follow the same process recursively, from step 2.
+    7. resume the actor.
 
 
 
