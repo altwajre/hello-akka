@@ -28,13 +28,13 @@
 - Non-blocking operations are preferred to blocking ones, as the overall progress of the system is not trivially guaranteed when it contains blocking operations.
 
 # Deadlock vs. Starvation vs. Live-lock
-- `Deadlock` arises when several participants are waiting on each other to reach a specific state to be able to progress. 
+- **Deadlock** arises when several participants are waiting on each other to reach a specific state to be able to progress. 
     - None of them can progress without some other participant to reach a certain state (a “Catch-22” problem) all affected subsystems stall. 
     - It is closely related to blocking, as it is necessary that a participant thread be able to delay the progression of other threads indefinitely.
-- `Starvation` happens, when there are participants that can make progress, but there might be one or more that cannot. 
+- **Starvation** happens, when there are participants that can make progress, but there might be one or more that cannot. 
     - A typical scenario is the case of a naive scheduling algorithm that always selects high-priority tasks over low-priority ones. 
     - If the number of incoming high-priority tasks is constantly high enough, no low-priority ones will be ever finished.
-- `Livelock` is similar to deadlock as none of the participants make progress. 
+- **Livelock** is similar to deadlock as none of the participants make progress. 
     - Instead of being frozen in a state of waiting for others to progress, the participants continuously change their state. 
     - E.g. two participants have two identical resources available. 
     - They each try to get the resource, but they also check if the other needs the resource, too. 
