@@ -45,8 +45,8 @@
 ## Actors should be like nice co-workers
 - They should do their job efficiently without bothering everyone else needlessly and avoid hogging resources. 
 - Translated to programming this means to process events and generate responses, or more requests, in an event-driven manner. 
-- Actors should not block (i.e. passively wait while occupying a Thread) on some external entity:
-    - Which might be a lock, a network socket, etc.
+- Actors should not block on some external entity:
+    - I.e. passively wait while occupying a Thread, which might be a lock, a network socket, etc.
     - If this is unavoidable, see below (TODO: Where???).
     
 ## Do not pass mutable objects between actors
