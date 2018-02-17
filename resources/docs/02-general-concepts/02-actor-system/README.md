@@ -54,10 +54,10 @@
 - If the encapsulation of actors is broken by exposing their mutable state to the outside, you are back in normal Java concurrency land with all the drawbacks.
 
 ## Actors are made to be containers for behavior and state
-- Embracing this means to not routinely send behavior within messages:
-    - This may be tempting using Scala closures. 
+- Embracing this means to not routinely send behavior within messages.
+- This may be tempting using Scala closures. 
 - One of the risks is to accidentally share mutable state between actors.
-    - This violation of the actor model unfortunately breaks all the properties which make programming in actors such a nice experience.
+- This violation of the actor model unfortunately breaks all the properties which make programming in actors such a nice experience.
     
 ## Top-level actors are the innermost part of your Error Kernel
 - Create them sparingly and prefer truly hierarchical systems. 
