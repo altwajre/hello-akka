@@ -142,8 +142,8 @@
     - One of the prime examples when this is useful is when a `PersistentActor` fails (by stopping) with a persistence failure.
         - This indicates that the database may be down or overloaded.
         - In such situations it makes most sense to give it a little bit of time to recover before the persistent actor is started.
-- The following Scala snippet shows how to create a backoff supervisor
-    - It will start the given echo actor after it has stopped because of a failure.
+- The following Scala snippet shows how to create a backoff supervisor.
+    - It will start the given `EchoActor` **after it has stopped** because of a failure.
     - In increasing intervals of 3, 6, 12, 24 and finally 30 seconds:
 ```scala
 val childProps = Props(classOf[EchoActor])
@@ -159,14 +159,75 @@ val supervisor = BackoffSupervisor.props(
 
 system.actorOf(supervisor, name = "echoSupervisor")
 ```
+- Using a `randomFactor` to add a little bit of additional variance to the backoff intervals is highly recommended. 
+    - In order to avoid multiple actors re-start at the exact same point in time.
+    - E.g. if they were stopped due to a shared resource such as a database going down and re-starting after the same configured interval. 
+    - By adding additional randomness to the re-start intervals the actors will start in slightly different points in time.
+    - This will avoiding large spikes of traffic hitting the recovering shared database or other resource that they all need to contact.
+- The `akka.pattern.BackoffSupervisor` actor can also be configured to restart the actor after a delay.
+    - When the actor crashes and the supervision strategy decides that it should restart.
+- The following Scala snippet shows how to create a backoff supervisor.
+    - It will start the given `EchoActor` **after it has crashed** because of some exception.
+    - In increasing intervals of 3, 6, 12, 24 and finally 30 seconds:
+```scala
+val childProps = Props(classOf[EchoActor])
 
+val supervisor = BackoffSupervisor.props(
+  Backoff.onFailure(
+    childProps,
+    childName = "myEcho",
+    minBackoff = 3.seconds,
+    maxBackoff = 30.seconds,
+    randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
+  ))
 
+system.actorOf(supervisor, name = "echoSupervisor")
+```
+- The `akka.pattern.BackoffOptions` can be used to customize the behavior of the back-off supervisor actor.
 
+#### Example 1:
+- Requires the child actor to send a `akka.pattern.BackoffSupervisor.Reset` message to its parent:
+    - When a message is successfully processed.
+    - This will reset the back-off. 
+- It uses a default stopping strategy, any exception will cause the child to stop.
+```scala
+val supervisor = BackoffSupervisor.props(
+  Backoff.onStop(
+    childProps,
+    childName = "myEcho",
+    minBackoff = 3.seconds,
+    maxBackoff = 30.seconds,
+    randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
+  ).withManualReset // the child must send BackoffSupervisor.Reset to its parent
+    .withDefaultStoppingStrategy // Stop at any Exception thrown
+)
+```
 
-
+#### Example 2:
+- Restarts the child after back-off if `MyException` is thrown.
+    - Any other exception will be escalated. 
+- The back-off is automatically reset if the child does not throw any errors within 10 seconds.
+```scala
+val supervisor = BackoffSupervisor.props(
+  Backoff.onFailure(
+    childProps,
+    childName = "myEcho",
+    minBackoff = 3.seconds,
+    maxBackoff = 30.seconds,
+    randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
+  ).withAutoReset(10.seconds) // reset if the child does not throw any errors within 10 seconds
+    .withSupervisorStrategy(
+      OneForOneStrategy() {
+        case _: MyException ⇒ SupervisorStrategy.Restart
+        case _              ⇒ SupervisorStrategy.Escalate
+      }))
+```
 
 # One-For-One Strategy vs. All-For-One Strategy
-
+- There are two classes of supervision strategies which come with Akka: OneForOneStrategy and AllForOneStrategy. Both are configured with a mapping from exception type to supervision directive (see above) and limits on how often a child is allowed to fail before terminating it. The difference between them is that the former applies the obtained directive only to the failed child, whereas the latter applies it to all siblings as well. Normally, you should use the OneForOneStrategy, which also is the default if none is specified explicitly.
+- The AllForOneStrategy is applicable in cases where the ensemble of children has such tight dependencies among them, that a failure of one child affects the function of the others, i.e. they are inextricably linked. Since a restart does not clear out the mailbox, it often is best to terminate the children upon failure and re-create them explicitly from the supervisor (by watching the children’s lifecycle); otherwise you have to make sure that it is no problem for any of the actors to receive a message which was queued before the restart but processed afterwards.
+- Normally stopping a child (i.e. not in response to a failure) will not automatically terminate the other children in an all-for-one strategy; this can easily be done by watching their lifecycle: if the Terminated message is not handled by the supervisor, it will throw a DeathPactException which (depending on its supervisor) will restart it, and the default preRestart action will terminate all children. Of course this can be handled explicitly as well.
+- Please note that creating one-off actors from an all-for-one supervisor entails that failures escalated by the temporary actor will affect all the permanent ones. If this is not desired, install an intermediate supervisor; this can very easily be done by declaring a router of size 1 for the worker, see Routing.
 
 
 
