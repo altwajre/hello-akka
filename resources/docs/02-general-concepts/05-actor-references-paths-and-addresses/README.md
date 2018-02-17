@@ -149,20 +149,31 @@ context.actorSelection("/user/serviceA") ! msg
 ```
 
 ## Querying the Logical Actor Hierarchy
-- Since the _Actor System_ forms a file-system like hierarchy, matching on paths is possible in the same way as supported by Unix shells: you may replace (parts of) path element names with wildcards (*«*»* and «?») to formulate a selection which may match zero or more actual actors. Because the result is not a single actor reference, it has a different type ActorSelection and does not support the full set of operations an ActorRef does. Selections may be formulated using the ActorSystem.actorSelection and ActorContext.actorSelection methods and do support sending messages:
-
-
+- Since the _Actor System_ forms a file-system like hierarchy, matching on paths is possible in the same way as supported by Unix shells: 
+    - You may replace parts of path element names with wildcards (`*` and `?`) to formulate a selection.
+    - This may match zero or more actual actors. 
+    - Because the result is not a single actor reference, it has a different type `ActorSelection`.
+    - It does not support the full set of operations an `ActorRef` does. 
+    - Selections may be formulated using the `ActorSystem.actorSelection` and `ActorContext.actorSelection` methods.
+    - They do support sending messages:
+```scala
+context.actorSelection("../*") ! msg
+```
+- This will send `msg` to all siblings including the current actor. 
+- As for references obtained using `actorSelection`:
+    - A traversal of the supervision hierarchy is done in order to perform the message send. 
+- As the exact set of actors which match a selection may change even while a message is making its way to the recipients:
+    - It is not possible to watch a selection for liveliness changes. 
+    - In order to do that, resolve the uncertainty by sending a request and gathering all answers.
+    - Extracting the sender references, and then watch all discovered concrete actors. 
+    - This scheme of resolving a selection may be improved upon in a future release.
 
 ## Summary: actorOf vs. actorSelection
-
-
-
-
-
-
-
-
-
+- **`actorOf`** only ever creates a new actor.
+    - It creates it as a direct child of the context on which this method is invoked.
+    - Which may be any actor or _Actor System_.
+- **`actorSelection`** only ever looks up existing actors when messages are delivered.
+    - It does not create actors, or verify existence of actors when the selection is created.
 
 # Actor Reference and Path Equality
 
