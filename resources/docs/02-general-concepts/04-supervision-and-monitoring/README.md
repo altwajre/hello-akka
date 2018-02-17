@@ -225,10 +225,32 @@ val supervisor = BackoffSupervisor.props(
 ```
 
 # One-For-One Strategy vs. All-For-One Strategy
-- There are two classes of supervision strategies which come with Akka: OneForOneStrategy and AllForOneStrategy. Both are configured with a mapping from exception type to supervision directive (see above) and limits on how often a child is allowed to fail before terminating it. The difference between them is that the former applies the obtained directive only to the failed child, whereas the latter applies it to all siblings as well. Normally, you should use the OneForOneStrategy, which also is the default if none is specified explicitly.
-- The AllForOneStrategy is applicable in cases where the ensemble of children has such tight dependencies among them, that a failure of one child affects the function of the others, i.e. they are inextricably linked. Since a restart does not clear out the mailbox, it often is best to terminate the children upon failure and re-create them explicitly from the supervisor (by watching the children’s lifecycle); otherwise you have to make sure that it is no problem for any of the actors to receive a message which was queued before the restart but processed afterwards.
-- Normally stopping a child (i.e. not in response to a failure) will not automatically terminate the other children in an all-for-one strategy; this can easily be done by watching their lifecycle: if the Terminated message is not handled by the supervisor, it will throw a DeathPactException which (depending on its supervisor) will restart it, and the default preRestart action will terminate all children. Of course this can be handled explicitly as well.
-- Please note that creating one-off actors from an all-for-one supervisor entails that failures escalated by the temporary actor will affect all the permanent ones. If this is not desired, install an intermediate supervisor; this can very easily be done by declaring a router of size 1 for the worker, see Routing.
+- There are two classes of supervision strategies which come with Akka: `OneForOneStrategy` and `AllForOneStrategy`. 
+- Both are configured with:
+    - A mapping from exception type to supervision directive.
+    - Limits on how often a child is allowed to fail before terminating it. 
+- **One-For-One Strategy**: applies the obtained directive only to the failed child.
+- **All-For-One Strategy**: applies it to all siblings as well. 
+- Normally, you should use the `OneForOneStrategy`, which also is the default if none is specified explicitly.
+- The `AllForOneStrategy` is applicable in cases where:
+    - The ensemble of children has tight dependencies among them.
+    - A failure of one child affects the function of the others.
+    - I.e. they are linked in a way that is impossible to disentangle or separate. 
+- Since a restart does not clear out the mailbox:
+    - It is best to terminate the children upon failure and re-create them explicitly from the supervisor.
+        - By watching the children’s lifecycle.
+    - Otherwise you have to make sure that:
+        - It is no problem for any of the actors to receive a message which was queued before the restart but processed afterwards.
+- Stopping a child normally (i.e. not in response to a failure):
+    - Will not automatically terminate the other children in an all-for-one strategy;.
+    - This can easily be done by watching their lifecycle.
+    - If the `Terminated` message is not handled by the supervisor, it will throw a `DeathPactException`.
+    - Depending on its supervisor, this will restart it.
+    - The default `preRestart` action will terminate all children. 
+    - This can be handled explicitly as well.
+- Creating one-off actors from an all-for-one supervisor entails that failures escalated by the temporary actor will affect all the permanent ones. 
+- If this is not desired, install an intermediate supervisor.
+- This can be done by declaring a router of size 1 for the worker, see [Routing](TODO).
 
 
 
