@@ -55,10 +55,10 @@
     - Sending multiple messages to the same target from the same actor, will enqueue them in the same order.
     - Messages sent from different actors may not have a defined order at runtime due to the apparent randomness of distributing actors across threads. 
 - There are different mailbox implementations to choose from:
-    - The default being a FIFO: 
+    - The default being a **FIFO mailbox**: 
         - The order of the messages processed by the actor matches the order in which they were enqueued. 
         - This is usually a good default, but applications may need to prioritize some messages over others. 
-    - A priority mailbox:
+    - A **priority mailbox**:
         - Will enqueue not always at the end but at a position as given by the message priority.
         - This might even be at the front. 
         - While using such a queue, the order of messages processed will naturally be defined by the queue’s algorithm and in general not be FIFO.
