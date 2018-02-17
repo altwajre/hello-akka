@@ -1,6 +1,6 @@
 # Hierarchical Structure
 - Like in an economic organization, actors naturally form hierarchies. 
-- One actor, which is to oversee a certain function in the program might want to split up its task into smaller, more manageable pieces. 
+- One actor, which is to oversee a certain function in the program, might want to split up its task into more manageable pieces. 
 - For this purpose it starts child actors which it supervises. 
 - The only prerequisite is to know that each actor has exactly one supervisor, which is the actor that created it.
 - The quintessential feature of actor systems is that tasks are split up and delegated until they become small enough to be handled in one piece. 
