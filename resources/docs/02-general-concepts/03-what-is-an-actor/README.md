@@ -48,6 +48,61 @@
     - A restart of the actor will reset its behavior to this initial one.
 
 # Mailbox
+- An actor’s purpose is the processing of messages, and these messages were sent to the actor from other actors (or from outside the actor system). 
+- The piece which connects sender and receiver is the actor’s mailbox.
+- Each actor has exactly one mailbox to which all senders enqueue their messages. 
+- Enqueuing happens in the time-order of send operations:
+    - Sending multiple messages to the same target from the same actor, will enqueue them in the same order.
+    - Messages sent from different actors may not have a defined order at runtime due to the apparent randomness of distributing actors across threads. 
+- There are different mailbox implementations to choose from:
+    - The default being a FIFO: 
+        - The order of the messages processed by the actor matches the order in which they were enqueued. 
+        - This is usually a good default, but applications may need to prioritize some messages over others. 
+    - A priority mailbox:
+        - Will enqueue not always at the end but at a position as given by the message priority.
+        - This might even be at the front. 
+        - While using such a queue, the order of messages processed will naturally be defined by the queue’s algorithm and in general not be FIFO.
+- Akka differs from some other actor model implementations:
+    - The current behavior must always handle the next dequeued message.
+    - There is no scanning the mailbox for the next matching one. 
+    - Failure to handle a message will typically be treated as a failure, unless this behavior is overridden.
+  
 # Child Actors
 # Supervisor Strategy
 # When an Actor Terminates
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
