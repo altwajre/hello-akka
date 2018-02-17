@@ -1,1 +1,1 @@
-See https://github.com/akka/akka-persistence-cassandra
+See [Cassandra Plugin for Akka documentation](https://github.com/akka/akka-persistence-cassandra)

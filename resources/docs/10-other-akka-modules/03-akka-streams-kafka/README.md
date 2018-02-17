@@ -1,1 +1,1 @@
-See https://doc.akka.io/docs/akka-stream-kafka/current/home.html
+See [Akka Streams Kafka documentation](https://doc.akka.io/docs/akka-stream-kafka/current/home.html)

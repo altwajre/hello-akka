@@ -45,7 +45,7 @@
 - An actor system will during its creation start at least three actors, shown in the image above. 
 - For more information about the consequences for actor paths see [Top-Level Scopes for Actor Paths](TODO).
 
-## /user: The Guardian Actor
+## `/user:` The Guardian Actor
 - The actor which is probably most interacted with is the parent of all user-created actors, the guardian named `/user`. 
 - Actors created using `system.actorOf()` are children of this actor. 
 - This means that:
@@ -58,7 +58,7 @@
     - The root guardian’s response will be to terminate the guardian.
     - This in effect will shut down the whole actor system.
 
-## /system: The System Guardian
+## `/system:` The System Guardian
 - This special guardian has been introduced in order to:
     - Achieve an orderly shut-down sequence where logging remains active while all normal actors terminate.
     - Even though logging itself is implemented using actors. 
@@ -70,7 +70,7 @@
     - **Restart** the child indefinitely upon all other types of `Exception`.
     - **Escalate** all other `Throwable`s, which will shut down the whole actor system.
 
-## /: The Root Guardian
+## `/:` The Root Guardian
 - The root guardian is the grand-parent of all so-called “top-level” actors.
 - It supervises all the special actors mentioned in [Top-Level Scopes for Actor Paths](TODO) using the `SupervisorStrategy.stoppingStrategy`.
 - This will **terminate** the child upon any type of `Exception`. 

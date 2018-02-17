@@ -1,1 +1,1 @@
-See https://akka.io/community/?_ga=2.180087204.1085572828.1518793598-542223074.1518507267
+See [Akka Community Projects](https://akka.io/community)
