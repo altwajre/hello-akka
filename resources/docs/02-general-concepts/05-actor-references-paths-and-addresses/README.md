@@ -5,7 +5,7 @@
     - Communication between actors is transparent with respect to their placement across multiple network nodes.
     
 ![](https://doc.akka.io/docs/akka/current/general/ActorPath.png)
-#### Relationship between the most important entities within an actor system:
+Relationship between the most important entities within an actor system
 
 # What is an Actor Reference?
 # What is an Actor Path?
