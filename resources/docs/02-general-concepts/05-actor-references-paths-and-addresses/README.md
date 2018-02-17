@@ -35,12 +35,12 @@ The above image displays the relationship between the most important entities wi
 
 ### Special types of actor references
 - Behave like local actor references for all practical purposes.
-- **PromiseActorRef**:
+- **`PromiseActorRef`**:
     - The special representation of a `Promise` for the purpose of being completed by the response from an actor. 
     - `akka.pattern.ask` creates this actor reference.
-- **DeadLetterActorRef**:
+- **`DeadLetterActorRef`**:
     - The default implementation of the dead letters service to which Akka routes all messages whose destinations are shut down or non-existent.
-- **EmptyLocalActorRef**:
+- **`EmptyLocalActorRef`**:
     - Is what Akka returns when looking up a non-existent local actor path.
     - It is equivalent to a `DeadLetterActorRef`.
     - It retains its path so that Akka can send it over the network and compare it to other existing actor references for that path.
