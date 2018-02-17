@@ -94,29 +94,22 @@ The above image displays the relationship between the most important entities wi
 
 ## Physical Actor Paths
 - Configuration-based remote deployment means that an actor may be created on a different network host than its parent.
-    - I.e. within a different _Actor System_. 
 - In this case, following the actor path from the root guardian up entails traversing the network, which is a costly operation. 
 - Therefore, each actor also has a **physical path**:
     - Starting at the _root guardian_ of the _Actor System_ where the actual actor object resides. 
 - Using this path as **sender reference** when querying other actors:
-    - Will let them reply directly to this actor.
-    - Minimizing delays incurred by routing.
+    - Will let them reply directly to this actor, minimizing delays incurred by routing.
 - A physical actor path never spans multiple _Actor Systems_ or JVMs. 
 - This means that the logical path (supervision hierarchy) and the physical path (actor deployment) of an actor may diverge if one of its ancestors is remotely supervised.
 
 ## Actor path alias or symbolic link?
-
-
-
-
-
-
-
-
-
-
-
-
+- As in some real file-systems you might think of a “path alias” or “symbolic link” for an actor:
+    - I.e. one actor may be reachable using more than one path. 
+- However, actor hierarchy is different from file system hierarchy. 
+- You cannot freely create actor paths like symbolic links to refer to arbitrary actors. 
+- An actor path must be either:
+    - A logical path which represents supervision hierarchy.
+    - A physical path which represents actor deployment.
 
 # How are Actor References obtained?
 
