@@ -78,71 +78,158 @@ Actor A1 sends messages M1, M2, M3 to A2
 Actor A3 sends messages M4, M5, M6 to A2
 ```
 - This means that:
-1. If M1 is delivered it must be delivered before M2 and M3
-2. If M2 is delivered it must be delivered before M3
-3. If M4 is delivered it must be delivered before M5 and M6
-4. If M5 is delivered it must be delivered before M6
-5. A2 can see messages from A1 interleaved with messages from A3
-6. Since there is no guaranteed delivery, any of the messages may be dropped, i.e. not arrive at A2
+1. If `M1` is delivered it must be delivered before `M2` and `M3`
+2. If `M2` is delivered it must be delivered before `M3`
+3. If `M4` is delivered it must be delivered before `M5` and `M6`
+4. If `M5` is delivered it must be delivered before `M6`
+5. `A2` can see messages from `A1` interleaved with messages from `A3`
+6. Since there is no guaranteed delivery, any of the messages may be dropped, i.e. not arrive at `A2`
+- Akka’s guarantee applies to the order in which messages are enqueued into the recipient’s mailbox. 
+- If the mailbox implementation does not respect FIFO order (e.g. a `PriorityMailbox`):
+    - Then the order of processing by the actor can deviate from the enqueueing order.
+- This rule is **not transitive**:
+```
+Actor A sends message M1 to actor C
+Actor A then sends message M2 to actor B
+Actor B forwards message M2 to actor C
+Actor C may receive M1 and M2 in any order
+```
+- Causal transitive ordering would imply that `M2` is never received before `M1` at actor `C` (though any of them might be lost). 
+- This ordering can be violated due to different message delivery latencies when `A`, `B` and `C` reside on different network hosts.
+- Actor creation is treated as a message sent from the parent to the child, with the same semantics as discussed above. 
+- Sending a message to an actor in a way which could be reordered with this initial creation message:
+    - Means that the message might not arrive because the actor does not exist yet. 
+- An example where the message might arrive too early would be:
+    - To create a remote-deployed actor `R1`.
+    - Send its reference to another remote actor `R2`.
+    - Have `R2` send a message to `R1`. 
+- An example of well-defined ordering is:
+    - A parent which creates an actor and immediately sends a message to it.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+### Communication of failure
+- Please note, that the ordering guarantees discussed above only hold for user messages between actors. 
+- Failure of a child of an actor is communicated by special system messages that are not ordered relative to ordinary user messages. 
+- In particular:
+```
+Child actor C sends message M to its parent P
+Child actor fails with failure F
+Parent actor P might receive the two events either in order M, F or F, M
+```
+- The reason for this is that internal system messages has their own mailboxes:
+    - Therefore the ordering of enqueue calls of a user and system message cannot guarantee the ordering of their dequeue times.
 
 # The Rules for In-JVM (Local) Message Sends
+- **Be careful what you do with this section!**
+- Relying on the stronger reliability in this section is not recommended since it will bind your application to local-only deployment: 
+    - An application may have to be designed differently in order to be fit for running on a cluster of machines. 
+    - As opposed to just employing some message exchange patterns local to some actors.
+- Our credo is “design once, deploy any way you wish”, and to achieve this you should only rely on The General Rules.
 
+## Reliability of Local Message Sends
+- The Akka test suite relies on not losing messages in the local context.
+    - And for non-error condition tests also for remote deployment.
+    - Meaning that we actually do apply the best effort to keep our tests stable. 
+- A local `tell` operation can however fail for the same reasons as a normal method call can on the JVM:
+    - `StackOverflowError`
+    - `OutOfMemoryError`
+    - `VirtualMachineError`
+- In addition, local sends can fail in Akka-specific ways:
+    - If the mailbox does not accept the message (e.g. full `BoundedMailbox`).
+    - If the receiving actor fails while processing the message or is already terminated.
+- While the first is clearly a matter of configuration the second deserves some thought: 
+    - The sender of a message does not get feedback if there was an exception while processing.
+    - That notification goes to the supervisor instead. 
+    - This is in general not distinguishable from a lost message for an outside observer.
 
+## Ordering of Local Message Sends
+- Assuming strict FIFO mailboxes the aforementioned caveat of non-transitivity of the message ordering guarantee is eliminated under certain conditions. 
+- As you will note, these are quite subtle as it stands, and it is even possible that future performance optimizations will invalidate this whole paragraph. 
+- The possibly non-exhaustive list of counter-indications is:
+    - Before receiving the first reply from a top-level actor, there is a lock which protects an internal interim queue.
+        - This lock is not fair.
+        - The implication is that enqueue requests from different senders which arrive during the actor’s construction may be reordered depending on low-level thread scheduling. 
+        - Since completely fair locks do not exist on the JVM this is unfixable.
+    - The same mechanism is used during the construction of a Router.
+        - More precisely the routed `ActorRef`.
+        - Hence the same problem exists for actors deployed with Routers.
+    - As mentioned above, the problem occurs anywhere a lock is involved during enqueueing.
+        - Which may also apply to custom mailboxes.
+- This list has been compiled carefully, but other problematic scenarios may have escaped our analysis.
 
-
+## How does Local Ordering relate to Network Ordering
+- The rule that _for a given pair of actors, messages sent directly from the first to the second will not be received out-of-order_:
+    - Holds for messages sent over the network with the TCP based Akka remote transport protocol.
+- As explained in the previous section local message sends obey transitive causal ordering under certain conditions. 
+    - This ordering can be violated due to different message delivery latencies:
+```
+Actor A on node-1 sends message M1 to actor C on node-3
+Actor A on node-1 then sends message M2 to actor B on node-2
+Actor B on node-2 forwards message M2 to actor C on node-3
+Actor C may receive M1 and M2 in any order
+```  
+- It might take longer time for `M1` to “travel” to `node-3` than it takes for `M2` to “travel” to `node-3` via `node-2`.
 
 # Higher-level abstractions
+- Based on a small and consistent tool set in Akka’s core, Akka also provides powerful, higher-level abstractions on top it.
 
+## Messaging Patterns
+- As discussed above a straight-forward answer to the requirement of **reliable delivery** is an explicit **ACK–RETRY** protocol. 
+- In its simplest form this requires
+    - A way to identify individual messages to correlate message with acknowledgement.
+    - A retry mechanism which will resend messages if not acknowledged in time.
+    - A way for the receiver to detect and discard duplicates.
+- The third becomes necessary by virtue of the acknowledgements not being guaranteed to arrive either. 
+- An _ACK-RETRY_ protocol with business-level acknowledgements is supported by [At-Least-Once Delivery](TODO) of the [Akka Persistence](TODO) module. 
+- Duplicates can be detected by tracking the identifiers of messages sent via _At-Least-Once Delivery_. 
+- Another way of implementing the third part would be to make processing the messages idempotent on the level of the business logic.
 
+## Event Sourcing
+- Event sourcing (and sharding) is what makes large websites scale to billions of users, and the idea is quite simple: 
+- When a component (think actor) processes a command it will generate a list of events representing the effect of the command. 
+- These events are stored in addition to being applied to the component’s state. 
+- The nice thing about this scheme is that events only ever are appended to the storage, nothing is ever mutated.
+- This enables perfect replication and scaling of consumers of this event stream.
+    - I.e. other components may consume the event stream as a means to replicate the component’s state on a different continent or to react to changes. 
+- If the component’s state is lost (due to a machine failure or by being pushed out of a cache):
+    - It can easily be reconstructed by replaying the event stream.
+    - Usually employing snapshots to speed up the process. 
+- See [Akka Persistence](../../03-actors/07-persistence#event-sourcing).
 
-
+## Mailbox with Explicit Acknowledgement
+- By implementing a custom mailbox type it is possible to retry message processing at the receiving actor’s end in order to handle temporary failures. 
+- This pattern is mostly useful in the local communication context where delivery guarantees are otherwise sufficient to fulfill the application’s requirements.
+- **Please note** that the caveats for [The Rules for In-JVM (Local) Message Sends](#the-rules-for-in-jvm-(local)-message-sends) do apply.
 
 # Dead Letters
+- Messages which cannot be delivered will be delivered to a synthetic actor called `/deadLetters`. 
+- This delivery happens on a best-effort basis.
+    - It may fail even within the local JVM (e.g. during actor termination). 
+    - Messages sent via unreliable network transports will be lost without turning up as dead letters.
 
+## What Should I Use Dead Letters For?
+- The main use of this facility is for debugging, especially if an actor send does not arrive consistently.
+    - Where usually inspecting the dead letters will tell you that the sender or recipient was set wrong somewhere along the way. 
+- In order to be useful for this purpose it is good practice to avoid sending to dead letters where possible.
+    - I.e. run your application with a suitable dead letter logger ([see below](#how-do-i-receive-dead-letters?)) from time to time and clean up the log output. 
+    - This exercise requires judicious application of common sense. 
+    - It may well be that avoiding to send to a terminated actor complicates the sender’s code more than is gained in debug output clarity.
+- The dead letter service follows the same rules with respect to delivery guarantees as all other message sends.
+    - It cannot be used to implement guaranteed delivery. 
 
+## How do I Receive Dead Letters?
+- An actor can subscribe to class `akka.actor.DeadLetter` on the **Event Stream**.
+    - See [Event Stream](../../09-utilities/01-event-bus#event-stream). 
+- The subscribed actor will then receive all dead letters published in the (local) system from that point onwards. 
+- Dead letters are not propagated over the network.
+    - If you want to collect them in one place you will have to subscribe one actor per network node and forward them manually. 
+    - Also consider that dead letters are generated at that node which can determine that a send operation is failed.
+    - For a remote send, this can be the local system (if no network connection can be established) or the remote one (if the actor you are sending to does not exist at that point in time).
 
-
-
-
-
-
-
-
+## Dead Letters Which are (Usually) not Worrisome
+- Every time an actor does not terminate by its own decision:
+    - There is a chance that some messages which it sends to itself are lost. 
+- There is one which happens quite easily in complex shutdown scenarios that is usually benign: 
+    - Seeing a `akka.dispatch.Terminate` message dropped means that two termination requests were given, but only one can succeed. 
+- In the same vein:
+    - You might see `akka.actor.Terminated` messages from children while stopping a hierarchy of actors.
+    - This will turn up in dead letters if the parent is still watching the child when the parent terminates.
