@@ -16,7 +16,7 @@
     - Defensive programming tries not to leak any failure out and keep everything “under the carpet”.
     - If the problem is communicated to the right person, a better solution can be found.
 - The difficulty in designing such a system is how to decide who should supervise what. 
-- There is no single best solution, but there are a few guidelines which might be helpful:
+- There is no single best solution, but there are a few guidelines which might be helpful.
 
 ### If one actor manages the work another actor is doing, (e.g. by passing on sub-tasks)
 - Then the manager should supervise the child. 
@@ -35,14 +35,46 @@
 - And it should be noted that a functional dependency alone is not a criterion for deciding where to place a certain child actor in the hierarchy.
 
 # Configuration Container
-
+- The actor system as a collaborating ensemble of actors is the natural unit for managing shared facilities like scheduling services, configuration, logging, etc. 
+- Several actor systems with different configuration may co-exist within the same JVM without problems.
+    - There is no global shared state within Akka itself. 
+    - Couple this with the transparent communication between actor systems.
+    - Then actor systems themselves can be used as building blocks in a functional hierarchy.
 
 # Actor Best Practices
+## Actors should be like nice co-workers
+- They should do their job efficiently without bothering everyone else needlessly and avoid hogging resources. 
+- Translated to programming this means to process events and generate responses, or more requests, in an event-driven manner. 
+- Actors should not block (i.e. passively wait while occupying a Thread) on some external entity:
+    - Which might be a lock, a network socket, etc.
+    - If this is unavoidable, see below (TODO: Where???).
+    
+## Do not pass mutable objects between actors
+- In order to ensure that, prefer immutable messages. 
+- If the encapsulation of actors is broken by exposing their mutable state to the outside, you are back in normal Java concurrency land with all the drawbacks.
 
+## Actors are made to be containers for behavior and state
+- Embracing this means to not routinely send behavior within messages:
+    - This may be tempting using Scala closures. 
+- One of the risks is to accidentally share mutable state between actors:
+    - This violation of the actor model unfortunately breaks all the properties which make programming in actors such a nice experience.
+    
+## Top-level actors are the innermost part of your Error Kernel
+- Create them sparingly and prefer truly hierarchical systems. 
+- This has benefits with respect to:
+    - Fault-handling (both considering the granularity of configuration and the performance)
+    - It also reduces the strain on the guardian actor, which is a single point of contention if over-used.
 
 # What you should not concern yourself with
-
+- An actor system manages the resources it is configured to use in order to run the actors which it contains. 
+- There may be millions of actors within one such system, after all the mantra is to view them as abundant:
+    - They weigh in at an overhead of roughly 300 bytes per instance. 
+- The exact order in which messages are processed in large systems is not controllable by the application author:
+    - This is also not intended. 
+    - Take a step back and relax while Akka does the heavy lifting under the hood.
 
 # Terminating ActorSystem
-
+- When you know everything is done for your application, you can call the `terminate` method of ActorSystem. 
+- That will stop the guardian actor, which in turn will recursively stop all its child actors, the system guardian.
+- If you want to execute some operations while terminating `ActorSystem`, look at [CoordinatedShutdown](TODO).
 
