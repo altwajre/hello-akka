@@ -98,18 +98,68 @@
 1. **Suspend the actor**
     - It will not process normal messages until resumed.
     - Recursively suspend all children.
-2. **Call the old instance’s preRestart hook** (defaults to sending termination requests to all children and calling postStop).
-3. **Wait for all children** which were requested to terminate (using context.stop()) during preRestart to actually terminate; this—like all actor operations—is non-blocking, the termination notice from the last killed child will effect the progression to the next step.
-4. **Create new actor instance** by invoking the originally provided factory again.
-5. **Invoke postRestart on the new instance** (which by default also calls preStart).
-6. **Send restart request to all children** which were not killed in step 3; restarted children will follow the same process recursively, from step 2.
+2. **Call the old instance’s `preRestart` hook**
+    - Defaults to sending termination requests to all children and calling `postStop`.
+3. **Wait for all children to terminate**
+    - This is non-blocking.
+    - The termination notice from the last killed child will effect the progression to the next step.
+4. **Create new actor instance** 
+    - By invoking the originally provided factory again.
+5. **Invoke `postRestart` on the new instance**
+    - Which by default also calls `preStart`.
+6. **Send restart request to all children**
+    - Which were not killed in step 3.
+    - Restarted children will follow the same process recursively, from step 2.
 7. **Resume the actor**.
 
-
-
-
-
 # What Lifecycle Monitoring Means
+- _Lifecycle Monitoring_ in Akka is usually referred to as **DeathWatch**.
+- In contrast to the special relationship between parent and child described above, each actor may monitor any other actor. 
+- Since actors emerge from creation fully alive, and restarts are not visible outside of the affected supervisors:
+    - The only state change available for monitoring is the transition from alive to dead. 
+- Monitoring is used to tie one actor to another:
+    - It may react to the other actor’s termination.
+    - In contrast to supervision which reacts to failure.
+- Lifecycle monitoring is implemented using a `Terminated` message to be received by the monitoring actor.
+    - The default behavior is to throw a special `DeathPactException` if not otherwise handled. 
+    - In order to start listening for `Terminated` messages, invoke `ActorContext.watch(targetActorRef)`. 
+    - To stop listening, invoke `ActorContext.unwatch(targetActorRef)`. 
+    - The message will be delivered irrespective of the order in which the monitoring request and target’s termination occur.
+        - You still get the message even if at the time of registration the target is already dead.
+- Monitoring is particularly useful if a supervisor cannot simply restart its children and has to terminate them.
+    - E.g. in case of errors during actor initialization. 
+    - In that case it should monitor those children and re-create them or schedule itself to retry this at a later time.
+- Another common use case is that an actor needs to fail in the absence of an external resource.
+    - Which may also be one of its own children. 
+    - If a third party terminates a child by way of the `system.stop(child)` method or sending a `PoisonPill`, the supervisor might well be affected.
+
+## Delayed restarts with the BackoffSupervisor pattern
+- Provided as a built-in pattern the `akka.pattern.BackoffSupervisor` implements the so-called **exponential backoff supervision strategy**.
+    - Starting a child actor again when it fails.
+    - Each time with a growing time delay between restarts.
+- This pattern is useful when the started actor fails because some external resource is not available.
+    - We need to give it some time to start-up again. 
+    - One of the prime examples when this is useful is when a `PersistentActor` fails (by stopping) with a persistence failure.
+        - This indicates that the database may be down or overloaded.
+        - In such situations it makes most sense to give it a little bit of time to recover before the persistent actor is started.
+- The following Scala snippet shows how to create a backoff supervisor
+    - It will start the given echo actor after it has stopped because of a failure.
+    - In increasing intervals of 3, 6, 12, 24 and finally 30 seconds:
+```scala
+val childProps = Props(classOf[EchoActor])
+
+val supervisor = BackoffSupervisor.props(
+  Backoff.onStop(
+    childProps,
+    childName = "myEcho",
+    minBackoff = 3.seconds,
+    maxBackoff = 30.seconds,
+    randomFactor = 0.2 // adds 20% "noise" to vary the intervals slightly
+  ))
+
+system.actorOf(supervisor, name = "echoSupervisor")
+```
+
 
 
 
