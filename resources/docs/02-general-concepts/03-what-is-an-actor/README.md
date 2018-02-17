@@ -68,41 +68,29 @@
     - Failure to handle a message will typically be treated as a failure, unless this behavior is overridden.
   
 # Child Actors
+- Each actor is potentially a supervisor: 
+    - If it creates children for delegating sub-tasks, it will automatically supervise them. 
+- The list of children is maintained within the actor’s context and the actor has access to it. 
+- Modifications to the list are done by creating (`context.actorOf(...)`) or stopping (`context.stop(child)`) children.
+- These actions are reflected immediately. 
+- The actual creation and termination actions happen behind the scenes in an asynchronous way, so they do not “block” their supervisor.
+
 # Supervisor Strategy
+- The final piece of an actor is its strategy for handling faults of its children. 
+- Fault handling is then done transparently by Akka:
+    - Applying one of the strategies described in [Supervision](TODO) and [Monitoring](TODO) for each incoming failure. 
+    - As this strategy is fundamental to how an actor system is structured, it cannot be changed once an actor has been created.
+- Considering that there is only one such strategy for each actor:
+    - The children should be grouped beneath intermediate supervisors with matching strategies.
+    - Structure the actor systems according to the splitting of tasks into sub-tasks.
+
 # When an Actor Terminates
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- It will free up its resources.
+- Drain all remaining messages from its mailbox into the system’s **dead letter mailbox** which will forward them to the `EventStream` as `DeadLetters`. 
+- The mailbox is then replaced within the actor reference with a system mailbox, redirecting all new messages to the `EventStream` as `DeadLetters`. 
+- This is done on a best effort basis, do not rely on it in order to construct “guaranteed delivery”.
+- The reason for not just silently dumping the messages was inspired by our tests: 
+    - We register the `TestEventListener` on the event bus to which the dead letters are forwarded.
+    - That will log a warning for every dead letter received.
+    - This has been very helpful for deciphering test failures more quickly. 
+    - It is conceivable that this feature may also be of use for other purposes.
