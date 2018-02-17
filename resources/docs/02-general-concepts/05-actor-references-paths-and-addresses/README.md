@@ -43,15 +43,14 @@ The above image displays the relationship between the most important entities wi
 - **`EmptyLocalActorRef`**:
     - Is what Akka returns when looking up a non-existent local actor path.
     - It is equivalent to a `DeadLetterActorRef`.
-    - It retains its path so that Akka can send it over the network and compare it to other existing actor references for that path.
-    - Some of which might have been obtained before the actor died.
+    - It retains its path so that Akka can send it over the network and compare it to other existing actor references for that path, some of which might have been obtained before the actor died.
 
-### And then there are some **one-off internal** implementations which you should never really see:
-- There is an actor reference which does not represent an actor but acts only as a pseudo-supervisor for the root guardian, we call it “the one who walks the bubbles of space-time”.
-- The first logging service started before actually firing up actor creation facilities is a fake actor reference which accepts log events and prints them directly to standard output; it is Logging.StandardOutLogger.
-
-
-
+### One-off internal implementations
+- There is an actor reference which does not represent an actor but acts only as a pseudo-supervisor for the root guardian.
+    - We call it “the one who walks the bubbles of space-time”.
+- The first logging service started before actually firing up actor creation facilities:
+    - A fake actor reference which accepts log events and prints them directly to standard output.
+    - It is `Logging.StandardOutLogger`.
 
 # What is an Actor Path?
 
