@@ -172,7 +172,7 @@ context.actorSelection("../*") ! msg
 - **`actorOf`** only ever creates a new actor.
     - It creates it as a direct child of the context on which this method is invoked.
     - Which may be any actor or _Actor System_.
-- **`actorSelection`** only ever looks up existing actors when messages are delivered.
+- **`actorSelection`** only ever looks up existing actors.
     - It does not create actors, or verify existence of actors when the selection is created.
 
 # Actor Reference and Path Equality
