@@ -82,16 +82,27 @@ The above image displays the relationship between the most important entities wi
 "akka://my-sys/user/service-a/worker1"                   // purely local
 "akka.tcp://my-sys@host.example.com:5678/user/service-b" // remote
 ```
+- Here, `akka.tcp` is the default remote transport.
+- Other transports are pluggable. 
+- The interpretation of the host and port part depends on the transport mechanism used.
+- It must abide by the URI structural rules.
 
 ## Logical Actor Paths
-
-
-
+- The unique path obtained by following the parental supervision links, towards the root guardian. 
+- This path matches exactly the creation ancestry of an actor.
+- It is completely deterministic as soon as the _Actor System_’s remoting configuration is set.
 
 ## Physical Actor Paths
-
-
-
+- Configuration-based remote deployment means that an actor may be created on a different network host than its parent.
+    - I.e. within a different _Actor System_. 
+- In this case, following the actor path from the root guardian up entails traversing the network, which is a costly operation. 
+- Therefore, each actor also has a **physical path**:
+    - Starting at the _root guardian_ of the _Actor System_ where the actual actor object resides. 
+- Using this path as **sender reference** when querying other actors:
+    - Will let them reply directly to this actor.
+    - Minimizing delays incurred by routing.
+- A physical actor path never spans multiple _Actor Systems_ or JVMs. 
+- This means that the logical path (supervision hierarchy) and the physical path (actor deployment) of an actor may diverge if one of its ancestors is remotely supervised.
 
 ## Actor path alias or symbolic link?
 
