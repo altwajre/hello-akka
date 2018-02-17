@@ -213,21 +213,31 @@ context.actorSelection("../*") ! msg
 - However, looking up the child’s name within the supervisor will find it on the remote node.
     - Preserving logical structure e.g. when sending to an unresolved actor reference.
 
-
 # What is the Address part used for?
-
-
-
-
+- When sending an actor reference across the network, it is represented by its path. 
+- The path must fully encode all information necessary to send messages to the underlying actor. 
+- This is achieved by encoding protocol, host and port in the address part of the path string. 
+- When an actor system receives an actor path from a remote node:
+    - It checks whether that path’s address matches the address of this actor system.
+    - In which case it will be resolved to the actor’s local reference. 
+    - Otherwise, it will be represented by a remote actor reference.
 
 # Top-Level Scopes for Actor Paths
-
-
-
-
-
-
-
-
-
-
+- At the root of the path hierarchy resides the root guardian above which all other actors are found, its name is `/`. 
+- The next level consists of the following:
+    - `/user` is the guardian actor for all user-created top-level actors.
+        - Actors created using `ActorSystem.actorOf` are found below this one.
+    - `/system` is the guardian actor for all system-created top-level actors.
+        - E.g. logging listeners or actors automatically deployed by configuration at the start of the actor system.
+    - `/deadLetters` is the dead letter actor.
+        - This is where all messages sent to stopped or non-existing actors are re-routed
+    - `/temp` is the guardian for all short-lived system-created actors.
+        - E.g. those which are used in the implementation of `ActorRef.ask`.
+    - `/remote` is an artificial path below which all actors reside whose supervisors are remote actor references
+- The need to structure the name space for actors like this arises from a central and very simple design goal: 
+    - Everything in the hierarchy is an actor.
+    - All actors function in the same way. 
+    - You can also look up the system guardian and send it a message (which it will discard in this case). 
+    - This powerful principle means that there are no quirks to remember.
+    - It makes the whole system more uniform and consistent.
+- See [The Top-Level Supervisors](../04-supervision-and-monitoring#the-top-level-supervisors).
