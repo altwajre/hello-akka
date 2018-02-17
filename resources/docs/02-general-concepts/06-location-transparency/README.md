@@ -42,10 +42,12 @@
 - The consequence of these decisions is that:
     - It is not possible to safely create pure client-server setups with predefined roles (violates assumption 2). 
     - For client-server setups it is better to use _HTTP_ or _Akka I/O_.
-- **Important:** Using setups involving **Network Address Translation**, **Load Balancers** or **Docker** containers violates assumption 1:
-    - Additional steps need to be taken in the network configuration to allow symmetric communication between involved systems. 
-    - In such situations Akka can be configured to bind to a different network address than the one used for establishing connections between Akka nodes. 
-    - See [Akka behind NAT or in a Docker container](TODO).
+
+## Important! 
+- Using setups involving **Network Address Translation**, **Load Balancers** or **Docker** containers violates assumption 1:
+- Additional steps need to be taken in the network configuration to allow symmetric communication between involved systems. 
+- In such situations Akka can be configured to bind to a different network address than the one used for establishing connections between Akka nodes. 
+- See [Akka behind NAT or in a Docker container](TODO).
 
 # Marking Points for Scaling Up with Routers
 - It is possible to scale up onto more cores by multiplying actor sub-trees which support parallelization.
