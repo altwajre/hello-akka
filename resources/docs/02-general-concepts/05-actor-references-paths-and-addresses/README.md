@@ -75,9 +75,13 @@ The above image displays the relationship between the most important entities wi
 - Messages sent to the old actor reference will not be delivered to the new incarnation even though they have the same path.
 
 ## Actor Path Anchors
-
-
-
+- Each actor path:
+    - Has an address component, describing the protocol and location by which the corresponding actor is reachable.
+    - Followed by the names of the actors in the hierarchy from the root up. 
+```
+"akka://my-sys/user/service-a/worker1"                   // purely local
+"akka.tcp://my-sys@host.example.com:5678/user/service-b" // remote
+```
 
 ## Logical Actor Paths
 
