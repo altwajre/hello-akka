@@ -1,11 +1,11 @@
 # Actor References, Paths and Addresses - Overview
-- This chapter describes how actors are identified and located within a possibly distributed actor system. 
+- This chapter describes how actors are identified and located within a possibly distributed _Actor System_. 
 - It ties into the central idea that:
     - [Actor Systems](../02-actor-system) form intrinsic supervision hierarchies. 
     - Communication between actors is transparent with respect to their placement across multiple network nodes.
     
 ![](https://doc.akka.io/docs/akka/current/general/ActorPath.png)
-The above image displays the relationship between the most important entities within an actor system
+The above image displays the relationship between the most important entities within an _Actor System_
 
 # What is an Actor Reference?
 - An actor reference is a subtype of `ActorRef`
@@ -17,11 +17,11 @@ The above image displays the relationship between the most important entities wi
 ## Different types of actor references
 
 ### Purely local actor references
-- Used by actor systems which are not configured to support networking functions. 
+- Used by _Actor Systems_ which are not configured to support networking functions. 
 - These actor references will not function if sent across a network connection to a remote JVM.
 
 ### Local actor references when remoting is enabled
-- Used by actor systems for references which represent actors within the same JVM.
+- Used by _Actor Systems_ for references which represent actors within the same JVM.
 - They include protocol and remote addressing information in order to be reachable when sent over the network.
 
 ### Local actor reference subtype for routers
@@ -55,10 +55,10 @@ The above image displays the relationship between the most important entities wi
 # What is an Actor Path?
 - Since actors are created in a strictly hierarchical fashion:
     - There exists a unique sequence of actor names.
-        - Given by recursively following the supervision links between child and parent down towards the root of the actor system. 
+        - Given by recursively following the supervision links between child and parent down towards the root of the _Actor System_. 
     - This sequence can be seen as enclosing folders in a file system, hence we adopted the name “path” to refer to it.
 - An actor path consists of:
-    - An anchor, which identifies the actor system.
+    - An anchor, which identifies the _Actor System_.
     - Followed by the concatenation of the path elements, from root guardian to the designated actor.
     - The path elements are the names of the traversed actors and are separated by slashes.
 
@@ -112,6 +112,53 @@ The above image displays the relationship between the most important entities wi
     - A physical path which represents actor deployment.
 
 # How are Actor References obtained?
+- There are two general categories to how actor references may be obtained: 
+    - By creating actors.
+    - By looking them up, with these two sub-categories:
+        - Creating actor references from concrete actor paths.
+        - Querying the logical actor hierarchy.
+
+## Creating Actors
+- An _Actor System_ is typically started:
+    - By creating actors beneath the guardian actor using the `ActorSystem.actorOf` method.
+    - Then using `ActorContext.actorOf` from within the created actors to spawn the actor tree. 
+- These methods return a reference to the newly created actor. 
+- Each actor has direct access (through its `ActorContext`) to references for its parent, itself and its children. 
+- These references may be sent within messages to other actors, enabling those to reply directly.
+
+## Looking up Actors by Concrete Path
+- In addition, actor references may be looked up using the `ActorSystem.actorSelection` method. 
+- The selection can be used for communicating with said actor.
+    - The actor corresponding to the selection is looked up when delivering each message.
+- To acquire an `ActorRef` that is bound to the life-cycle of a specific actor:
+    - You need to send the built-in `Identify` message to the actor.
+    - Use the `sender()` reference of a reply from the actor.
+
+### Absolute vs. Relative Paths
+- There is also `ActorContext.actorSelection`, which is available inside any actor as context.actorSelection. 
+- This yields an actor selection much like its twin on `ActorSystem`.
+    - Instead of looking up the path starting from the root of the actor tree, it starts out on the current actor. 
+- Path elements consisting of two dots ("..") may be used to access the parent actor. 
+- You can for example send a message to a specific sibling:
+```scala
+context.actorSelection("../brother") ! msg
+```
+- Absolute paths may of course also be looked up on context in the usual way:
+```scala
+context.actorSelection("/user/serviceA") ! msg
+```
+
+## Querying the Logical Actor Hierarchy
+- Since the _Actor System_ forms a file-system like hierarchy, matching on paths is possible in the same way as supported by Unix shells: you may replace (parts of) path element names with wildcards (*«*»* and «?») to formulate a selection which may match zero or more actual actors. Because the result is not a single actor reference, it has a different type ActorSelection and does not support the full set of operations an ActorRef does. Selections may be formulated using the ActorSystem.actorSelection and ActorContext.actorSelection methods and do support sending messages:
+
+
+
+## Summary: actorOf vs. actorSelection
+
+
+
+
+
 
 
 
