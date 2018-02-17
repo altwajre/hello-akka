@@ -1,3 +1,9 @@
+# Actor References, Paths and Addresses - Overview
+- This chapter describes how actors are identified and located within a possibly distributed actor system. 
+- It ties into the central idea that:
+    - [Actor Systems](../02-actor-system) form intrinsic supervision hierarchies. 
+    - Communication between actors is transparent with respect to their placement across multiple network nodes.
+
 # What is an Actor Reference?
 # What is an Actor Path?
 # How are Actor References obtained?
