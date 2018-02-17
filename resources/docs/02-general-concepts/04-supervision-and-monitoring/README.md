@@ -59,7 +59,17 @@
     - This in effect will shut down the whole actor system.
 
 ## /system: The System Guardian
-- This special guardian has been introduced in order to achieve an orderly shut-down sequence where logging remains active while all normal actors terminate, even though logging itself is implemented using actors. This is realized by having the system guardian watch the user guardian and initiate its own shut-down upon reception of the Terminated message. The top-level system actors are supervised using a strategy which will restart indefinitely upon all types of Exception except for ActorInitializationException and ActorKilledException, which will terminate the child in question. All other throwables are escalated, which will shut down the whole actor system.
+- This special guardian has been introduced in order to:
+    - Achieve an orderly shut-down sequence where logging remains active while all normal actors terminate.
+    - Even though logging itself is implemented using actors. 
+- This is realized by:
+    - Having the system guardian watch the user guardian.
+    - Initiate its own shut-down upon reception of the Terminated message. 
+- The top-level system actors are supervised using a strategy which will:
+    - Restart indefinitely upon all types of `Exception`.
+    - Except for `ActorInitializationException` and `ActorKilledException`.
+        - They will terminate the child in question. 
+    - All other `Throwable`s are escalated, which will shut down the whole actor system.
 
 ## /: The Root Guardian
 - The root guardian is the grand-parent of all so-called “top-level” actors and supervises all the special actors mentioned in Top-Level Scopes for Actor Paths using the SupervisorStrategy.stoppingStrategy, whose purpose is to terminate the child upon any type of Exception. All other throwables will be escalated … but to whom? Since every real actor has a supervisor, the supervisor of the root guardian cannot be a real actor. And because this means that it is “outside of the bubble”, it is called the “bubble-walker”. This is a synthetic ActorRef which in effect stops its child upon the first sign of trouble and sets the actor system’s isTerminated status to true as soon as the root guardian is fully terminated (all children recursively stopped).
