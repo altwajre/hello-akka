@@ -201,6 +201,9 @@ context.actorSelection("../*") ! msg
     - Enabling the latter to await proper deregistration of the name.
 
 # The Interplay with Remote Deployment
+
+![](https://doc.akka.io/docs/akka/current/general/RemoteDeployment.png)
+
 - When an actor creates a child, the _Actor System_’s deployer will decide whether the new actor resides in the same JVM or on another node. 
 - In the second case, creation of the actor will be triggered via a network connection to happen in a different JVM.
     - Consequently within a different actor system. 
@@ -210,7 +213,6 @@ context.actorSelection("../*") ! msg
 - However, looking up the child’s name within the supervisor will find it on the remote node.
     - Preserving logical structure e.g. when sending to an unresolved actor reference.
 
-![](https://doc.akka.io/docs/akka/current/general/RemoteDeployment.png)
 
 # What is the Address part used for?
 
