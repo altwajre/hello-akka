@@ -1,3 +1,16 @@
+# Actor Systems - Overview
+- Actors are:
+    - Objects which encapsulate state and behavior.
+    - They communicate exclusively by exchanging messages which are placed into the recipient’s mailbox. 
+    - The most stringent form of object-oriented programming.
+- It serves better to view them as persons: 
+    - While modeling a solution with actors, envision a group of people and assign sub-tasks to them.
+    - Arrange their functions into an organizational structure and think about how to escalate failure.
+        - All with the benefit of not actually dealing with people.
+        - Which means that we need not concern ourselves with their emotional state or moral issues. 
+    - The result can then serve as a mental scaffolding for building the software implementation.
+- An _Actor System_ is a heavyweight structure that will allocate 1...N Threads, so create one per logical application.
+
 # Hierarchical Structure
 - Like in an economic organization, actors naturally form hierarchies. 
 - One actor, which is to oversee a certain function in the program, might want to split up its task into more manageable pieces. 
