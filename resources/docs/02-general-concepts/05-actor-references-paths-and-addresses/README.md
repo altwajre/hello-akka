@@ -5,7 +5,7 @@
     - Communication between actors is transparent with respect to their placement across multiple network nodes.
     
 ![](https://doc.akka.io/docs/akka/current/general/ActorPath.png)
-The above image displays the relationship between the most important entities within an _Actor System_
+_The above image displays the relationship between the most important entities within an _Actor System__
 
 # What is an Actor Reference?
 - An actor reference is a subtype of `ActorRef`
