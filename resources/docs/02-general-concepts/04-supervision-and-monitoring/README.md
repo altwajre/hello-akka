@@ -95,13 +95,15 @@
 - The message during which the failure occurred is not re-processed.
 
 ## The sequence of events during a restart is the following:
-1. suspend the actor (which means that it will not process normal messages until resumed), and recursively suspend all children.
-2. call the old instance’s preRestart hook (defaults to sending termination requests to all children and calling postStop).
-3. wait for all children which were requested to terminate (using context.stop()) during preRestart to actually terminate; this—like all actor operations—is non-blocking, the termination notice from the last killed child will effect the progression to the next step.
-4. create new actor instance by invoking the originally provided factory again.
-5. invoke postRestart on the new instance (which by default also calls preStart).
-6. send restart request to all children which were not killed in step 3; restarted children will follow the same process recursively, from step 2.
-7. resume the actor.
+1. **Suspend the actor**
+    - It will not process normal messages until resumed.
+    - Recursively suspend all children.
+2. **Call the old instance’s preRestart hook** (defaults to sending termination requests to all children and calling postStop).
+3. **Wait for all children** which were requested to terminate (using context.stop()) during preRestart to actually terminate; this—like all actor operations—is non-blocking, the termination notice from the last killed child will effect the progression to the next step.
+4. **Create new actor instance** by invoking the originally provided factory again.
+5. **Invoke postRestart on the new instance** (which by default also calls preStart).
+6. **Send restart request to all children** which were not killed in step 3; restarted children will follow the same process recursively, from step 2.
+7. **Resume the actor**.
 
 
 
