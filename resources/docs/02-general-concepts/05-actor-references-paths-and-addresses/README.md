@@ -168,7 +168,7 @@ context.actorSelection("../*") ! msg
     - Extracting the sender references, and then watch all discovered concrete actors. 
     - This scheme of resolving a selection may be improved upon in a future release.
 
-## Summary: actorOf vs. actorSelection
+## Summary: `actorOf` vs. `actorSelection`
 - **`actorOf`** only ever creates a new actor.
     - It creates it as a direct child of the context on which this method is invoked.
     - Which may be any actor or _Actor System_.
