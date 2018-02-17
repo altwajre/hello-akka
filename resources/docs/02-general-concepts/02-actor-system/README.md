@@ -62,19 +62,19 @@
 ## Top-level actors are the innermost part of your Error Kernel
 - Create them sparingly and prefer truly hierarchical systems. 
 - This has benefits with respect to:
-    - Fault-handling (both considering the granularity of configuration and the performance)
+    - Fault-handling (both considering the granularity of configuration and the performance).
     - It also reduces the strain on the guardian actor, which is a single point of contention if over-used.
 
 # What you should not concern yourself with
 - An actor system manages the resources it is configured to use in order to run the actors which it contains. 
-- There may be millions of actors within one such system, after all the mantra is to view them as abundant:
+- There may be millions of actors within one such system, after all the mantra is to view them as abundant.
     - They weigh in at an overhead of roughly 300 bytes per instance. 
-- The exact order in which messages are processed in large systems is not controllable by the application author:
+- The exact order in which messages are processed in large systems is not controllable by the application author.
     - This is also not intended. 
     - Take a step back and relax while Akka does the heavy lifting under the hood.
 
 # Terminating ActorSystem
-- When you know everything is done for your application, you can call the `terminate` method of ActorSystem. 
+- When you know everything is done for your application, you can call the `terminate` method of `ActorSystem`. 
 - That will stop the guardian actor, which in turn will recursively stop all its child actors, the system guardian.
 - If you want to execute some operations while terminating `ActorSystem`, look at [CoordinatedShutdown](TODO).
 
