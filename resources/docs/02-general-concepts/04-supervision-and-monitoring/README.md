@@ -142,9 +142,15 @@
     - One of the prime examples when this is useful is when a `PersistentActor` fails (by stopping) with a persistence failure.
         - This indicates that the database may be down or overloaded.
         - In such situations it makes most sense to give it a little bit of time to recover before the persistent actor is started.
-- The following Scala snippet shows how to create a backoff supervisor.
-    - It will start the given `EchoActor` **after it has stopped** because of a failure.
-    - In increasing intervals of 3, 6, 12, 24 and finally 30 seconds:
+
+#### Example 1:
+- It will start the given `EchoActor` **after it has stopped** because of a failure.
+- Using a `randomFactor` to add a little bit of additional variance to the backoff intervals is highly recommended. 
+    - In order to avoid multiple actors re-start at the exact same point in time.
+    - E.g. if they were stopped due to a shared resource such as a database going down and re-starting after the same configured interval. 
+    - By adding additional randomness to the re-start intervals the actors will start in slightly different points in time.
+    - This will avoiding large spikes of traffic hitting the recovering shared database or other resource that they all need to contact.
+- Backoff intervals will exponentially increase: 3, 6, 12, 24 and finally 30 seconds.
 ```scala
 val childProps = Props(classOf[EchoActor])
 
@@ -159,16 +165,11 @@ val supervisor = BackoffSupervisor.props(
 
 system.actorOf(supervisor, name = "echoSupervisor")
 ```
-- Using a `randomFactor` to add a little bit of additional variance to the backoff intervals is highly recommended. 
-    - In order to avoid multiple actors re-start at the exact same point in time.
-    - E.g. if they were stopped due to a shared resource such as a database going down and re-starting after the same configured interval. 
-    - By adding additional randomness to the re-start intervals the actors will start in slightly different points in time.
-    - This will avoiding large spikes of traffic hitting the recovering shared database or other resource that they all need to contact.
+    
+#### Example 2:    
 - The `akka.pattern.BackoffSupervisor` actor can also be configured to restart the actor after a delay.
     - When the actor crashes and the supervision strategy decides that it should restart.
-- The following Scala snippet shows how to create a backoff supervisor.
-    - It will start the given `EchoActor` **after it has crashed** because of some exception.
-    - In increasing intervals of 3, 6, 12, 24 and finally 30 seconds:
+- It will start the given `EchoActor` **after it has crashed** because of some exception.
 ```scala
 val childProps = Props(classOf[EchoActor])
 
@@ -183,9 +184,9 @@ val supervisor = BackoffSupervisor.props(
 
 system.actorOf(supervisor, name = "echoSupervisor")
 ```
-- The `akka.pattern.BackoffOptions` can be used to customize the behavior of the back-off supervisor actor.
 
-#### Example 1:
+#### Example 3:
+- The `akka.pattern.BackoffOptions` can be used to customize the behavior of the back-off supervisor actor.
 - Requires the child actor to send a `akka.pattern.BackoffSupervisor.Reset` message to its parent:
     - When a message is successfully processed.
     - This will reset the back-off. 
@@ -203,7 +204,7 @@ val supervisor = BackoffSupervisor.props(
 )
 ```
 
-#### Example 2:
+#### Example 4:
 - Restarts the child after back-off if `MyException` is thrown.
     - Any other exception will be escalated. 
 - The back-off is automatically reset if the child does not throw any errors within 10 seconds.
