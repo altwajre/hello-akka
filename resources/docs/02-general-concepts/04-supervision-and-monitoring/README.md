@@ -71,9 +71,14 @@
     - **Escalate** all other `Throwable`s, which will shut down the whole actor system.
 
 ## /: The Root Guardian
-- The root guardian is the grand-parent of all so-called “top-level” actors and supervises all the special actors mentioned in Top-Level Scopes for Actor Paths using the SupervisorStrategy.stoppingStrategy, whose purpose is to terminate the child upon any type of Exception. All other throwables will be escalated … but to whom? Since every real actor has a supervisor, the supervisor of the root guardian cannot be a real actor. And because this means that it is “outside of the bubble”, it is called the “bubble-walker”. This is a synthetic ActorRef which in effect stops its child upon the first sign of trouble and sets the actor system’s isTerminated status to true as soon as the root guardian is fully terminated (all children recursively stopped).
-
-
+- The root guardian is the grand-parent of all so-called “top-level” actors.
+    - It supervises all the special actors mentioned in [Top-Level Scopes for Actor Paths](TODO) using the `SupervisorStrategy.stoppingStrategy`.
+        - This will terminate the child upon any type of `Exception`. 
+    - All other `Throwable`s will be escalated ... but to whom?
+        - Since every real actor has a supervisor, the supervisor of the root guardian cannot be a real actor. 
+        - This means that it is “outside of the bubble”, and is called the “bubble-walker”. 
+        - This is a synthetic `ActorRef` which in effect stops its child upon the first sign of trouble.
+        - And sets the actor system’s `isTerminated` status to `true` as soon as the root guardian is fully terminated.
 
 # What Restarting Means
 
