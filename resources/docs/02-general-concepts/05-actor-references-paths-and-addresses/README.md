@@ -53,6 +53,51 @@ The above image displays the relationship between the most important entities wi
     - It is `Logging.StandardOutLogger`.
 
 # What is an Actor Path?
+- Since actors are created in a strictly hierarchical fashion:
+    - There exists a unique sequence of actor names.
+        - Given by recursively following the supervision links between child and parent down towards the root of the actor system. 
+    - This sequence can be seen as enclosing folders in a file system, hence we adopted the name “path” to refer to it.
+- An actor path consists of:
+    - An anchor, which identifies the actor system.
+    - Followed by the concatenation of the path elements, from root guardian to the designated actor.
+    - The path elements are the names of the traversed actors and are separated by slashes.
+
+## What is the Difference Between Actor Reference and Path?
+- An **actor reference** designates a single actor and the life-cycle of the reference matches that actor’s life-cycle.
+- An **actor path** represents a name which may or may not be inhabited by an actor.
+    - The path itself does not have a life-cycle.
+    - It never becomes invalid. 
+- You can create an actor path without creating an actor.
+- You cannot create an actor reference without creating corresponding actor.
+- You can create an actor, terminate it, and then create a new actor with the same actor path. 
+- The newly created actor is a new incarnation of the actor, it is not the same actor. 
+- An actor reference to the old incarnation is not valid for the new incarnation. 
+- Messages sent to the old actor reference will not be delivered to the new incarnation even though they have the same path.
+
+## Actor Path Anchors
+
+
+
+
+## Logical Actor Paths
+
+
+
+
+## Physical Actor Paths
+
+
+
+
+## Actor path alias or symbolic link?
+
+
+
+
+
+
+
+
 
 
 
