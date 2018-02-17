@@ -176,22 +176,41 @@ context.actorSelection("../*") ! msg
     - It does not create actors, or verify existence of actors when the selection is created.
 
 # Actor Reference and Path Equality
-
-
-
-
+- Equality of `ActorRef` match the intention that an `ActorRef` corresponds to the target **actor incarnation**. 
+- Two actor references are compared equal when they have the same path and point to the same actor incarnation. 
+- A reference pointing to a terminated actor does not compare equal to a reference pointing to another (re-created) actor with the same path. 
+- A **restart** of an actor caused by a failure still means that it is the **same actor incarnation**.
+    - I.e. a restart is not visible for the consumer of the `ActorRef`.
+- If you need to keep track of actor references in a collection and do not care about the exact actor incarnation:
+    - You can use the `ActorPath` as key, because the identifier of the target actor is not taken into account when comparing actor paths.
 
 # Reusing Actor Paths
-
-
-
-
+- When an actor is terminated, its reference will point to the dead letter mailbox.
+- DeathWatch will publish its final transition.
+- It is not expected to come back to life again, since the actor life cycle does not allow this.
+- It is possible to create an actor at a later time with an identical path, but it is not good practice: 
+    - Messages sent with `actorSelection` to an actor which “died” suddenly start to work again.
+    - But without any guarantee of ordering between this transition and any other event.
+    - Hence the new inhabitant of the path may receive messages which were destined for the previous tenant.
+- It may be the right thing to do in very specific circumstances.
+    - But make sure to confine the handling of this precisely to the actor’s supervisor.
+    - That is the only actor which can reliably detect proper deregistration of the name.
+    - Before which creation of the new child will fail.
+- It may also be required during testing, when the test subject depends on being instantiated at a specific path. 
+    - In that case it is best to mock its supervisor so that it will forward the `Terminated` message to the appropriate point in the test procedure.
+    - Enabling the latter to await proper deregistration of the name.
 
 # The Interplay with Remote Deployment
+- When an actor creates a child, the _Actor System_’s deployer will decide whether the new actor resides in the same JVM or on another node. 
+- In the second case, creation of the actor will be triggered via a network connection to happen in a different JVM.
+    - Consequently within a different actor system. 
+- The remote system will place the new actor below a special path reserved for this purpose.
+- The supervisor of the new actor will be a remote actor reference (representing that actor which triggered its creation). 
+- In this case, `context.parent` (the supervisor reference) and `context.path.parent` (the parent node in the actor’s path) do not represent the same actor. 
+- However, looking up the child’s name within the supervisor will find it on the remote node.
+    - Preserving logical structure e.g. when sending to an unresolved actor reference.
 
-
-
-
+![](https://doc.akka.io/docs/akka/current/general/RemoteDeployment.png)
 
 # What is the Address part used for?
 
