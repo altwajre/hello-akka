@@ -253,7 +253,7 @@ i watch target
     - Set configuration item `akka.actor.debug.unhandled` to `on` to have them converted into actual Debug messages.
 - In addition, it offers:
     - `self` reference to the `ActorRef` of the actor.
-    - `sender` reference sender Actor of the last received message, typically used as described in [`Actor.Reply`](TODO).
+    - `sender` reference sender Actor of the last received message, typically used as described in [`Actor.Reply`](#reply-to-messages).
     - SupervisorStrategy user overridable definition the strategy to use for supervising child actors.
 
 This strategy is typically declared inside the actor in order to have access to the actor’s internal state within the decider function: since failure is communicated as a message sent to the supervisor and processed like other messages (albeit outside of the normal behavior), all values and variables within the actor are available, as is the sender reference (which will be the immediate child reporting the failure; if the original failure occurred within a distant descendant it is still reported one level up at a time).
