@@ -1204,45 +1204,28 @@ override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
 - See [What Restarting Means](../../02-general-concepts/04-supervision-and-monitoring#what-restarting-means).
 
 ## Initialization via message passing
+- There are cases when it is impossible to pass all the information needed for actor initialization in the constructor:
+    - For example in the presence of circular dependencies. 
+- In this case the actor should listen for an initialization message:
+    - And use `become()` or a finite state-machine state transition to encode the initialized and uninitialized states of the actor.
+```scala
+var initializeMe: Option[String] = None
 
+override def receive = {
+  case "init" ⇒
+    initializeMe = Some("Up and running")
+    context.become(initialized, discardOld = true)
 
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def initialized: Receive = {
+  case "U OK?" ⇒ initializeMe foreach { sender() ! _ }
+}
+```
+- If the actor may receive messages before it has been initialized:
+    - A useful tool can be the `Stash` to save messages until the initialization finishes.
+    - And replaying them after the actor became initialized.
+- **This pattern should be used with care**, and applied only when none of the patterns above are applicable. 
+- One of the potential issues is that messages might be lost when sent to remote actors. 
+- Also, publishing an `ActorRef` in an uninitialized state:
+    - Might lead to the condition that it receives a user message before the initialization has been done.
