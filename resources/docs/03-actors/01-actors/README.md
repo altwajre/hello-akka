@@ -252,21 +252,131 @@ i watch target
     - Which by default publishes an `akka.actor.UnhandledMessage(message, sender, recipient)` on the actor system’s event stream.
     - Set configuration item `akka.actor.debug.unhandled` to `on` to have them converted into actual Debug messages.
 - In addition, it offers:
-    - `self` reference to the `ActorRef` of the actor.
-    - `sender` reference sender Actor of the last received message, typically used as described in [`Actor.Reply`](#reply-to-messages).
-    - SupervisorStrategy user overridable definition the strategy to use for supervising child actors.
+    - `self` reference: To the `ActorRef` of the actor.
+    - `sender` reference: Sender Actor of the last received message, typically used as described in [`Reply to messages`](#reply-to-messages).
+    - `supervisorStrategy` user overridable definition: The strategy to use for supervising child actors.
+- This strategy is typically declared inside the actor:
+    - In order to have access to the actor’s internal state within the decider function. 
+    - Since failure is communicated as a message sent to the supervisor and processed like other messages.
+    - All values and variables within the actor are available.
+    - As is the sender reference.
+    - Which will be the immediate child reporting the failure.
+    - If the original failure occurred within a distant descendant it is still reported one level up at a time.
+- `context` exposes contextual information for the actor and the current message, such as:
+    - Factory methods to create child actors (actorOf).
+    - System that the actor belongs to.
+    - Parent supervisor.
+    - Supervised children.
+    - Lifecycle monitoring.
+    - Hotswap behavior stack as described in [Become/Unbecome](#become/unbecome).
+- You can import the members in the `context` to avoid prefixing access with `context`:
+```scala
+class FirstActor extends Actor {
+  import context._
+  val myActor = actorOf(Props[MyActor], name = "myactor")
+  def receive = {
+    case x ⇒ myActor ! x
+  }
+}
+```
+- The remaining visible methods are user-overridable life-cycle hooks which are described in the following:
+```scala
+def preStart(): Unit = ()
 
-This strategy is typically declared inside the actor in order to have access to the actor’s internal state within the decider function: since failure is communicated as a message sent to the supervisor and processed like other messages (albeit outside of the normal behavior), all values and variables within the actor are available, as is the sender reference (which will be the immediate child reporting the failure; if the original failure occurred within a distant descendant it is still reported one level up at a time).
+def postStop(): Unit = ()
 
-    context exposes contextual information for the actor and the current message, such as:
-        factory methods to create child actors (actorOf)
-        system that the actor belongs to
-        parent supervisor
-        supervised children
-        lifecycle monitoring
-        hotswap behavior stack as described in Actor.HotSwap
+def preRestart(reason: Throwable, message: Option[Any]): Unit = {
+  context.children foreach { child ⇒
+    context.unwatch(child)
+    context.stop(child)
+  }
+  postStop()
+}
 
-You can import the members in the context to avoid prefixing access with context.
+def postRestart(reason: Throwable): Unit = {
+  preStart()
+}
+```
+- The implementations shown above are the defaults provided by the `Actor` trait. 
+
+## Actor Lifecycle
+![Actor Lifecycle](https://doc.akka.io/docs/akka/current/images/actor_lifecycle.png)
+- A path in an actor system represents a “place” which might be occupied by a living actor. 
+- Initially (apart from system initialized actors) a path is empty. 
+- When `actorOf()` is called it assigns an incarnation of the actor described by the passed `Props` to the given path. 
+- An actor incarnation is identified by the **path and a UID**.
+- It is worth noting about the difference between **restart** and **stop, followed by re-creation of actor**.
+- **Restart**:
+    - Only swaps the `Actor` instance defined by the `Props`.
+    - The incarnation and hence the UID remains the same. 
+        - As long as the incarnation is the same, you can keep using the same `ActorRef`. 
+    - Restart is handled by the [Supervision Strategy](TODO) of the actor’s parent actor.
+    - See [What Restart Means](TODO).
+- **Stop and re-create**:
+    - Ends the lifecycle of an incarnation.
+    - At that point the appropriate lifecycle events are called and watching actors are notified of the termination. 
+    - After the incarnation is stopped, the path can be reused again by creating an actor with `actorOf()`. 
+    - In this case the name of the new incarnation will be the same as the previous one but the UIDs will differ. 
+    - An actor can be stopped by the actor itself, another actor or the `ActorSystem`.
+    - See [Stopping actors](TODO).
+- **It is important to note** that Actors do not stop automatically when no longer referenced.
+- Every Actor that is created must also explicitly be destroyed. 
+- The only simplification is that stopping a parent Actor will also recursively stop all the child Actors that this parent has created.
+- An `ActorRef` always represents an incarnation (path and UID) not just a given path. 
+- Therefore if an actor is stopped and a new one with the same name is created:
+    - An `ActorRef` of the old incarnation will not point to the new one.
+- `ActorSelection` on the other hand points to the path (or multiple paths if wildcards are used).
+    - It is completely oblivious to which incarnation is currently occupying it. 
+    - `ActorSelection` cannot be watched for this reason. 
+    - It is possible to resolve the current incarnation’s `ActorRef` living under the path.
+        - By sending an `Identify` message to the `ActorSelection`.
+        - Which will be replied to with an `ActorIdentity` containing the correct reference.
+        - See [ActorSelection](TODO). 
+    - This can also be done with the `resolveOne` method of the `ActorSelection`:
+        - Which returns a `Future` of the matching `ActorRef`.
+
+## Lifecycle Monitoring aka DeathWatch
+
+
+
+
+
+## Start Hook
+
+
+
+
+
+## Restart Hooks
+
+
+
+
+
+## Stop Hook
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
