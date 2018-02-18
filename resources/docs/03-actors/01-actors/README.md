@@ -954,27 +954,203 @@ akka.cluster.run-coordinated-shutdown-when-down = off
 
 # Become/Unbecome
 
+## Upgrade
+- Akka supports hotswapping the Actor’s message loop (e.g. its implementation) at runtime: 
+    - Invoke the `context.become` method from within the Actor. 
+- `become` takes a `PartialFunction[Any, Unit]` that implements the new message handler. 
+- The hotswapped code is kept in a Stack which can be pushed and popped.
+- **Please note** that the actor will revert to its original behavior when restarted by its Supervisor.
+- To hotswap the Actor behavior using `become`:
+```scala
+class HotSwapActor extends Actor {
+  import context._
+  def angry: Receive = {
+    case "foo" ⇒ sender() ! "I am already angry?"
+    case "bar" ⇒ become(happy)
+  }
 
+  def happy: Receive = {
+    case "bar" ⇒ sender() ! "I am already happy :-)"
+    case "foo" ⇒ become(angry)
+  }
 
+  def receive = {
+    case "foo" ⇒ become(angry)
+    case "bar" ⇒ become(happy)
+  }
+}
+```
+- This variant of the `become` method is useful for many different things:
+    - Such as to implement a **Finite State Machine** (FSM, for an example see [Dining Hakkers](http://www.dalnefre.com/wp/2010/08/dining-philosophers-in-humus/)). 
+- It will replace the current behavior (i.e. the top of the behavior stack).
+    - Which means that you do not use `unbecome`, instead the next behavior is explicitly installed.
+- The other way of using `become` does not replace but add to the top of the behavior stack. 
+- In this case care must be taken to ensure that:
+    - The number of “pop” operations (i.e. `unbecome`) matches the number of “push” ones in the long run.
+    - Otherwise this amounts to a memory leak (which is why this behavior is not the default).
+```scala
+case object Swap
+class Swapper extends Actor {
+  import context._
+  val log = Logging(system, this)
 
+  def receive = {
+    case Swap ⇒
+      log.info("Hi")
+      become({
+        case Swap ⇒
+          log.info("Ho")
+          unbecome() // resets the latest 'become' (just for fun)
+      }, discardOld = false) // push on top instead of replace
+  }
+}
+
+object SwapperApp extends App {
+  val system = ActorSystem("SwapperSystem")
+  val swap = system.actorOf(Props[Swapper], name = "swapper")
+  swap ! Swap // logs Hi
+  swap ! Swap // logs Ho
+  swap ! Swap // logs Hi
+  swap ! Swap // logs Ho
+  swap ! Swap // logs Hi
+  swap ! Swap // logs Ho
+}
+```
+
+## Encoding Scala Actors nested receives without accidentally leaking memory
+- See [Unnested receive example](https://github.com/akka/akka/blob/v2.5.9/akka-docs/src/test/scala/docs/actor/UnnestedReceives.scala).
 
 # Stash
-
-
-
-
+- The `Stash` trait enables an actor to temporarily stash away messages that can not or should not be handled using the actor’s current behavior. 
+- Upon changing the actor’s message handler:
+    - All stashed messages can be “unstashed”, thereby prepending them to the actor’s mailbox. 
+- This way, the stashed messages can be processed in the same order as they have been received originally. 
+- The trait `Stash` extends the marker trait `RequiresMessageQueue[DequeBasedMessageQueueSemantics]`:
+    - Which requests the system to automatically choose a **deque based mailbox** implementation for the actor. 
+- If you want more control over the mailbox, see the [Mailboxes documentation](../04-mailboxes).
+- Here is an example of the `Stash` in action:
+```scala
+class ActorWithProtocol extends Actor with Stash {
+  def receive = {
+    case "open" ⇒
+      unstashAll()
+      context.become({
+        case "write" ⇒ // do writing...
+        case "close" ⇒
+          unstashAll()
+          context.unbecome()
+        case msg ⇒ stash()
+      }, discardOld = false) // stack on top instead of replacing
+    case msg ⇒ stash()
+  }
+}
+```
+- Invoking `stash()` adds the current message (the message that the actor received last) to the actor’s stash. 
+- It is typically invoked when handling the default case in the actor’s message handler:
+    - To stash messages that aren’t handled by the other cases. 
+- It is illegal to stash the same message twice; to do so results in an `IllegalStateException` being thrown. 
+- The stash may also be bounded in which case invoking `stash()` may lead to a capacity violation.
+    - Which results in a `StashOverflowException`. 
+- The capacity of the stash can be configured using the `stash-capacity` setting of the mailbox’s configuration.
+- Invoking `unstashAll()` enqueues messages from the stash to the actor’s mailbox.
+    - Until the capacity of the mailbox (if any) has been reached.
+    - Messages from the stash are prepended to the mailbox. 
+- In case a bounded mailbox overflows, a `MessageQueueAppendFailedException` is thrown. 
+- The stash is guaranteed to be empty after calling `unstashAll()`.
+- The stash is backed by a `scala.collection.immutable.Vector`. 
+- As a result, even a very large number of messages may be stashed without a major impact on performance.
+- The `Stash` trait must be mixed into (a subclass of) the `Actor` trait before any trait/class that overrides the `preRestart` callback. 
+- This means it’s not possible to write `Actor with MyActor with Stash` if `MyActor` overrides `preRestart`.
+- The stash is part of the ephemeral actor state, unlike the mailbox. 
+- Therefore, it should be managed like other parts of the actor’s state which have the same property. 
+- The `Stash` trait’s implementation of `preRestart` will call `unstashAll()`, which is usually the desired behavior.
+- If you want to enforce that your actor can only work with an unbounded stash:
+    - Then you should use the `UnboundedStash` trait instead.
 
 # Actors and exceptions
+- It can happen that while a message is being processed by an actor, that some kind of exception is thrown, e.g. a database exception.
 
+## What happens to the Message
+- If an exception is thrown while a message is being processed:
+    - I.e. taken out of its mailbox and handed over to the current behavior.
+    - Then this message will be lost. 
+- It is important to understand that it is not put back on the mailbox. 
+- So if you want to retry processing of a message:
+    - You need to deal with it yourself.
+    - By catching the exception and retry your flow. 
+- Make sure that you put a bound on the number of retries since you don’t want a system to livelock:
+    - Consuming a lot of CPU cycles without making progress.
 
+## What happens to the mailbox
+- If an exception is thrown while a message is being processed, nothing happens to the mailbox. 
+- If the actor is restarted, the same mailbox will be there. 
+- So all messages on that mailbox will be there as well.
 
-
+## What happens to the actor
+- If code within an actor throws an exception, that actor is suspended and the supervision process is started.
+    - See [Supervision](../../02-general-concepts/04-supervision-and-monitoring). 
+- Depending on the supervisor’s decision:
+    - The actor is resumed (as if nothing happened).
+    - Restarted (wiping out its internal state and starting from scratch)
+    - Or terminated.
 
 # Extending Actors using PartialFunction chaining
+- Sometimes it can be useful to:
+    - Share common behavior among a few actors.
+    - Or compose one actor’s behavior from multiple smaller functions. 
+- This is possible because an actor’s `receive` method returns an `Actor.Receive`:
+    - Which is a type alias for `PartialFunction[Any,Unit]`.
+- Partial functions can be chained together using the `PartialFunction#orElse` method. 
+- You can chain as many functions as you need:
+    - However you should keep in mind that “first match” wins.
+    - This may be important when combining functions that both can handle the same type of message.
+- For example, imagine you have a set of actors which are either `Producers` or `Consumers`:
+    - Yet sometimes it makes sense to have an actor share both behaviors. 
+- This can be achieved without having to duplicate code by:
+    - Extracting the behaviors to traits.
+    - And implementing the actor’s `receive` as combination of these partial functions.
+```scala
+trait ProducerBehavior {
+  this: Actor ⇒
 
+  val producerBehavior: Receive = {
+    case GiveMeThings ⇒
+      sender() ! Give("thing")
+  }
+}
 
+trait ConsumerBehavior {
+  this: Actor with ActorLogging ⇒
 
+  val consumerBehavior: Receive = {
+    case ref: ActorRef ⇒
+      ref ! GiveMeThings
 
+    case Give(thing) ⇒
+      log.info("Got a thing! It's {}", thing)
+  }
+}
+
+class Producer extends Actor with ProducerBehavior {
+  def receive = producerBehavior
+}
+
+class Consumer extends Actor with ActorLogging with ConsumerBehavior {
+  def receive = consumerBehavior
+}
+
+class ProducerConsumer extends Actor with ActorLogging
+  with ProducerBehavior with ConsumerBehavior {
+
+  def receive = producerBehavior.orElse[Any, Unit](consumerBehavior)
+}
+
+// protocol
+case object GiveMeThings
+final case class Give(thing: Any)
+```
+- Instead of inheritance the same pattern can be applied via composition.
+- Simply compose the receive method using partial functions from delegates.
 
 # Initialization patterns
 
