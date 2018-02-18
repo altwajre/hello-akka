@@ -36,7 +36,7 @@ class MyActor extends Actor {
 - The result of the `receive` method is a `PartialFunction` object.
     - It is stored within the actor as its “initial behavior”.
     - See [Become/Unbecome(TODO).
-- See `actors.example1`
+- See [Example 1](./actors-examples/src/main/scala/actors/example1)
 
 ## Props
 - `Props` is a configuration class to specify options for the creation of actors.
