@@ -52,35 +52,132 @@ val props3 = Props(classOf[ActorWithArgs], "arg") // no support for value class 
 - The last line shows a possibility to pass constructor arguments regardless of the context it is being used in. 
     - The presence of a matching constructor is verified during construction of the `Props` object.
     - This will result in an `IllegalArgumentException` if no or multiple matching constructors are found.
-- The recommended approach to create the actor `Props` is not supported for cases when the actor constructor takes [value classes](https://docs.scala-lang.org/overviews/core/value-classes.html) as arguments.
 - See [Example 1](./actors-examples/src/main/scala/actors/example1)
 
 ### Dangerous Variants
-
-
-
-
+```scala
+// NOT RECOMMENDED within another actor:
+// encourages to close over enclosing class
+val props7 = Props(new MyActor)
+```
+- This method is not recommended to be used within another actor because it encourages to close over the enclosing scope.
+    - Which will result in non-serializable `Props` and possibly race conditions (breaking the actor encapsulation). 
+- On the other hand using this variant in a `Props` factory in the actor’s companion object is completely fine.
+- Declaring one actor within another is very dangerous and breaks actor encapsulation.
+    - Never pass an actor’s `this` reference into `Props`!
 
 ### Edge cases
+- There are two edge cases in actor creation with `Props`:
 
+#### An actor with `AnyVal` arguments
+```scala
+case class MyValueClass(v: Int) extends AnyVal
+```
+```scala
+class ValueActor(value: MyValueClass) extends Actor {
+  def receive = {
+    case multiplier: Long ⇒ sender() ! (value.v * multiplier)
+  }
+}
+val valueClassProp = Props(classOf[ValueActor], MyValueClass(5)) // Unsupported
+```
 
+#### An actor with default constructor values
+```scala
+class DefaultValueActor(a: Int, b: Int = 5) extends Actor {
+  def receive = {
+    case x: Int ⇒ sender() ! ((a + x) * b)
+  }
+}
 
+val defaultValueProp1 = Props(classOf[DefaultValueActor], 2.0) // Unsupported
 
+class DefaultValueActor2(b: Int = 5) extends Actor {
+  def receive = {
+    case x: Int ⇒ sender() ! (x * b)
+  }
+}
+val defaultValueProp2 = Props[DefaultValueActor2] // Unsupported
+val defaultValueProp3 = Props(classOf[DefaultValueActor2]) // Unsupported
+```
+- In both cases an `IllegalArgumentException` will be thrown stating no matching constructor could be found.
+- The next section explains the recommended ways to create `Actor` props, which safe-guards against these edge cases.
 
 ### Recommended Practices
+- It is a good idea to provide factory methods on the companion object of each `Actor`.
+    - Which help keeping the creation of suitable `Props` as close to the actor definition as possible. 
+- This also avoids the pitfalls associated with using the `Props.apply(...)` method which takes a _by-name argument_.
+- Within a companion object, the given code block will not retain a reference to its enclosing scope:
+```scala
+object DemoActor {
+  /**
+   * Create Props for an actor of this type.
+   *
+   * @param magicNumber The magic number to be passed to this actor’s constructor.
+   * @return a Props for creating this actor, which can then be further configured
+   *         (e.g. calling `.withDispatcher()` on it)
+   */
+  def props(magicNumber: Int): Props = Props(new DemoActor(magicNumber))
+}
 
+class DemoActor(magicNumber: Int) extends Actor {
+  def receive = {
+    case x: Int ⇒ sender() ! (x + magicNumber)
+  }
+}
 
-
-
-
-
-
-
-
-
-
+class SomeOtherActor extends Actor {
+  // Props(new DemoActor(42)) would not be safe
+  context.actorOf(DemoActor.props(42), "demo")
+  // ...
+}
+```
+- Another good practice is to declare what messages an `Actor` can receive in the companion object of the `Actor`.
+- This makes it easier to know what it can receive:
+```scala
+object MyActor {
+  case class Greeting(from: String)
+  case object Goodbye
+}
+class MyActor extends Actor with ActorLogging {
+  import MyActor._
+  def receive = {
+    case Greeting(greeter) ⇒ log.info(s"I was greeted by $greeter.")
+    case Goodbye           ⇒ log.info("Someone said goodbye to me.")
+  }
+}
+```
 
 ## Creating Actors with Props
+- Actors are created by passing a `Props` instance into the `actorOf` factory method which is available on `ActorSystem` and `ActorContext`.
+```scala
+// ActorSystem is a heavy object: create only one per application
+val system = ActorSystem("mySystem")
+val myActor = system.actorOf(Props[MyActor], "myactor2")
+```
+- Using the `ActorSystem` will create top-level actors, supervised by the actor system’s provided guardian actor.
+- Using an actor’s context will create a child actor.
+```scala
+class FirstActor extends Actor {
+  val child = context.actorOf(Props[MyActor], name = "myChild")
+  def receive = {
+    case x ⇒ sender() ! x
+  }
+}
+```
+- It is recommended to create a hierarchy of children, grand-children and so on.
+    - Such that it fits the logical failure-handling structure of the application.
+    - See [Actor Systems](../../02-general-concepts/02-actor-system).
+- The call to actorOf returns an instance of ActorRef. This is a handle to the actor instance and the only way to interact with it. The ActorRef is immutable and has a one to one relationship with the Actor it represents. The ActorRef is also serializable and network-aware. This means that you can serialize it, send it over the wire and use it on a remote host and it will still be representing the same Actor on the original node, across the network.
+- The name parameter is optional, but you should preferably name your actors, since that is used in log messages and for identifying actors. The name must not be empty or start with $, but it may contain URL encoded characters (eg. %20 for a blank space). If the given name is already in use by another child to the same parent an InvalidActorNameException is thrown.
+- Actors are automatically started asynchronously when created.
+
+
+
+
+
+
+
 
 
 
