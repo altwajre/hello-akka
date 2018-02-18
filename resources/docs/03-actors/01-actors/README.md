@@ -168,27 +168,62 @@ class FirstActor extends Actor {
 - It is recommended to create a hierarchy of children, grand-children and so on.
     - Such that it fits the logical failure-handling structure of the application.
     - See [Actor Systems](../../02-general-concepts/02-actor-system).
-- The call to actorOf returns an instance of ActorRef. This is a handle to the actor instance and the only way to interact with it. The ActorRef is immutable and has a one to one relationship with the Actor it represents. The ActorRef is also serializable and network-aware. This means that you can serialize it, send it over the wire and use it on a remote host and it will still be representing the same Actor on the original node, across the network.
-- The name parameter is optional, but you should preferably name your actors, since that is used in log messages and for identifying actors. The name must not be empty or start with $, but it may contain URL encoded characters (eg. %20 for a blank space). If the given name is already in use by another child to the same parent an InvalidActorNameException is thrown.
+- The call to `actorOf` returns an instance of `ActorRef`. 
+- This is a handle to the actor instance and the only way to interact with it. 
+- The `ActorRef` is :
+    - Immutable and has a one to one relationship with the `Actor` it represents. 
+    - Serializable and network-aware. 
+- This means that you can serialize it, send it over the wire and use it on a remote host.
+    - It will still be representing the same `Actor` on the original node, across the network.
+- The `name` parameter is optional, but you should preferably name your actors.
+    - That is used in log messages and for identifying actors. 
+    - It must not be empty or start with `$`.
+    - It may contain URL encoded characters (eg. `%20` for a blank space). 
+    - If the given name is already in use by another child to the same parent an `InvalidActorNameException` is thrown.
 - Actors are automatically started asynchronously when created.
 
+### Value classes as constructor arguments
+- The recommended way to instantiate actor props uses reflection at runtime to determine the correct actor constructor to be invoked.
+- Due to technical limitations it is not supported when said constructor takes arguments that are value classes. 
+- In these cases you should either unpack the arguments or create the props by calling the constructor manually:
+```scala
+class Argument(val value: String) extends AnyVal
+class ValueClassActor(arg: Argument) extends Actor {
+  def receive = { case _ ⇒ () }
+}
 
-
-
-
-
-
-
-
-
-
+object ValueClassActor {
+  def props1(arg: Argument) = Props(classOf[ValueClassActor], arg) // fails at runtime
+  def props2(arg: Argument) = Props(classOf[ValueClassActor], arg.value) // ok
+  def props3(arg: Argument) = Props(new ValueClassActor(arg)) // ok
+}
+```
 
 ## Dependency Injection
+- If your `Actor` has a constructor that takes parameters then those need to be part of the `Props` as well.
+- There are cases when a factory method must be used.
+- For example when the actual constructor arguments are determined by a dependency injection framework:
+```scala
+class DependencyInjector(applicationContext: AnyRef, beanName: String)
+  extends IndirectActorProducer {
 
+  override def actorClass = classOf[Actor]
+  override def produce =
+    new Echo(beanName)
 
+  def this(beanName: String) = this("", beanName)
+}
 
+val actorRef = system.actorOf(
+  Props(classOf[DependencyInjector], applicationContext, "hello"),
+  "helloBean")
+```
+- You might be tempted at times to offer an `IndirectActorProducer` which always returns the same instance.
+    - E.g. by using a `lazy val`. 
+    - This is not supported, as it goes against the meaning of an actor restart, see [What Restarting Means](../../02-general-concepts/04-supervision-and-monitoring#what-restarting-means).
+- When using a dependency injection framework, actor beans **MUST NOT** have singleton scope.
+- See [Using Akka with Dependency Injection](http://letitcrash.com/post/55958814293/akka-dependency-injection).
 
-Dangerous Variants
 ## The Inbox
 
 
