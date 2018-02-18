@@ -225,27 +225,48 @@ val actorRef = system.actorOf(
 - See [Using Akka with Dependency Injection](http://letitcrash.com/post/55958814293/akka-dependency-injection).
 
 ## The Inbox
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- When writing code outside of actors which shall communicate with actors:
+    - The `ask` pattern can be a solution (see below).
+    - There are two things it cannot do: 
+        - Receiving multiple replies (e.g. by subscribing an `ActorRef` to a notification service).
+        - Watching other actors’ lifecycle. 
+- For these purposes there is the Inbox class:
+```scala
+implicit val i = inbox()
+echo ! "hello"
+i.receive() should ===("hello")
+```
+- There is an _implicit conversion_ from inbox to actor reference.
+- In this example the sender reference will be that of the actor hidden away within the inbox. 
+- This allows the reply to be received on the last line. 
+- Watching an actor is quite simple as well:
+```scala
+val target = // some actor
+val i = inbox()
+i watch target
+```
 
 # Actor API
+- The `Actor` trait defines only one abstract method, the above mentioned `receive`, which implements the behavior of the actor.
+- If the current actor behavior does not match a received message, `unhandled` is called.
+    - Which by default publishes an `akka.actor.UnhandledMessage(message, sender, recipient)` on the actor system’s event stream.
+    - Set configuration item `akka.actor.debug.unhandled` to `on` to have them converted into actual Debug messages.
+- In addition, it offers:
+    - `self` reference to the `ActorRef` of the actor.
+    - `sender` reference sender Actor of the last received message, typically used as described in [`Actor.Reply`](TODO).
+    - SupervisorStrategy user overridable definition the strategy to use for supervising child actors.
 
+This strategy is typically declared inside the actor in order to have access to the actor’s internal state within the decider function: since failure is communicated as a message sent to the supervisor and processed like other messages (albeit outside of the normal behavior), all values and variables within the actor are available, as is the sender reference (which will be the immediate child reporting the failure; if the original failure occurred within a distant descendant it is still reported one level up at a time).
+
+    context exposes contextual information for the actor and the current message, such as:
+        factory methods to create child actors (actorOf)
+        system that the actor belongs to
+        parent supervisor
+        supervised children
+        lifecycle monitoring
+        hotswap behavior stack as described in Actor.HotSwap
+
+You can import the members in the context to avoid prefixing access with context.
 
 
 
