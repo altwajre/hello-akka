@@ -400,7 +400,7 @@ override def preStart() {
 - Any message sent to an actor while it is being restarted will be queued to its mailbox as usual.
 - **Be aware that** the ordering of failure notifications relative to user messages is not deterministic. 
 - In particular, a parent might restart its child before it has processed the last messages sent by the child before the failure. 
-- See [Message Ordering](../../02-general-concepts/08-message-delivery-reliability#discussion:-message-ordering).
+- See [Message Ordering](../../02-general-concepts/08-message-delivery-reliability#discussion-message-ordering).
 
 
 
