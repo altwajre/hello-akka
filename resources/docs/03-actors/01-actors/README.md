@@ -1,15 +1,173 @@
+# Actors - Overview
+- The _Actor Model_ provides a higher level of abstraction for writing concurrent and distributed systems. 
+- It alleviates the developer from having to deal with explicit locking and thread management:
+    - Making it easier to write correct concurrent and parallel systems. 
+- Actors were defined in the 1973 paper by Carl Hewitt but have been popularized by the Erlang language.
+    - And used for example at Ericsson with great success to build highly concurrent and reliable telecom systems.
+- The API of Akka’s Actors is similar to Scala Actors which has borrowed some of its syntax from Erlang.
+
 # Creating Actors
+- Actors are implemented by extending the `Actor` base trait and implementing the `receive` method. 
+- The `receive` method:
+    - Has the type `PartialFunction[Any, Unit]`.
+    - Should define a series of case statements.
+    - Defines which messages your Actor can handle.
+    - Using standard Scala pattern matching.
+    - Implementation of how the messages should be processed.
+- Here is an example:
+```scala
+class MyActor extends Actor {
+  val log = Logging(context.system, this)
+
+  def receive = {
+    case "test" ⇒ log.info("received test")
+    case _      ⇒ log.info("received unknown message")
+  }
+}
+```
+- The Akka Actor `receive` message loop is exhaustive. 
+- This means that you need to provide a pattern match for all messages that it can accept.
+    - If you want to be able to handle unknown messages then you need to have a default case as in the example above. 
+    - Otherwise an `akka.actor.UnhandledMessage(message, sender, recipient)` will be published to the `ActorSystem`’s `EventStream`.
+- The return type of the behavior defined above is `Unit`.
+- If the actor shall reply to the received message then this must be done explicitly as explained below.
+- The result of the `receive` method is a `PartialFunction` object.
+    - It is stored within the actor as its “initial behavior”.
+    - See [Become/Unbecome(TODO).
+- Here is another example:
+```scala
+import akka.actor.{ ActorSystem, Actor, ActorRef, Props, PoisonPill }
+import language.postfixOps
+import scala.concurrent.duration._
+
+case object Ping
+case object Pong
+
+class Pinger extends Actor {
+  var countDown = 100
+
+  def receive = {
+    case Pong ⇒
+      println(s"${self.path} received pong, count down $countDown")
+
+      if (countDown > 0) {
+        countDown -= 1
+        sender() ! Ping
+      } else {
+        sender() ! PoisonPill
+        self ! PoisonPill
+      }
+  }
+}
+
+class Ponger(pinger: ActorRef) extends Actor {
+  def receive = {
+    case Ping ⇒
+      println(s"${self.path} received ping")
+      pinger ! Pong
+  }
+}
+
+    val system = ActorSystem("pingpong")
+
+    val pinger = system.actorOf(Props[Pinger], "pinger")
+
+    val ponger = system.actorOf(Props(classOf[Ponger], pinger), "ponger")
+
+    import system.dispatcher
+    system.scheduler.scheduleOnce(500 millis) {
+      ponger ! Ping
+    }
+
+    // $FiddleDependency org.akka-js %%% akkajsactor % 1.2.5.1
+```
+
 # Actor API
+
+
+
+
+
 # Identifying Actors via Actor Selection
+
+
+
+
+
 # Messages and immutability
+
+
+
+
+
 # Send messages
+
+
+
+
+
 # Receive messages
+
+
+
+
+
 # Reply to messages
+
+
+
+
+
 # Receive timeout
+
+
+
+
+
 # Timers, scheduled messages
+
+
+
+
+
 # Stopping actors
+
+
+
+
+
 # Become/Unbecome
+
+
+
+
+
 # Stash
+
+
+
+
+
 # Actors and exceptions
+
+
+
+
+
 # Extending Actors using PartialFunction chaining
+
+
+
+
+
 # Initialization patterns
+
+
+
+
+
+
+
+
+
+

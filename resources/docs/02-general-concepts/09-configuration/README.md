@@ -152,7 +152,7 @@ System.out.println(system.settings());
 - The configuration can also be used for application specific settings. 
 - A good practice is to place those settings in an [Extension](../../09-utilities/07-akka-extensions).
 
-# Configuring multiple `ActorSystem`s
+# Configuring multiple `ActorSystems`
 - If you have more than one `ActorSystem`:
     - You may want to separate the configuration for each system.
 - Given that `ConfigFactory.load()` merges all resources with matching name from the whole class path:
