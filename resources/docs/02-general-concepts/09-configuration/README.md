@@ -92,7 +92,7 @@ akka {
     - Which includes the `application.conf`.
 - See [HOCON specification](https://github.com/lightbend/config/blob/master/HOCON.md). 
 
-## `dev.conf`
+#### `dev.conf`
 ```hocon
 include "application"
 
