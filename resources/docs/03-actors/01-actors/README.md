@@ -329,25 +329,77 @@ def postRestart(reason: Throwable): Unit = {
     - It is completely oblivious to which incarnation is currently occupying it. 
     - `ActorSelection` cannot be watched for this reason. 
     - It is possible to resolve the current incarnation’s `ActorRef` living under the path.
-        - By sending an `Identify` message to the `ActorSelection`.
-        - Which will be replied to with an `ActorIdentity` containing the correct reference.
-        - See [ActorSelection](TODO). 
     - This can also be done with the `resolveOne` method of the `ActorSelection`:
-        - Which returns a `Future` of the matching `ActorRef`.
+    - See [Identifying Actors via Actor Selection](#identifying-actors-via-actor-selection). 
 
 ## Lifecycle Monitoring aka DeathWatch
+- In order to be notified when another actor terminates:
+    - An actor may register itself for reception of the `Terminated` message dispatched by the other actor upon termination.
+    - This service is provided by the `DeathWatch` component of the actor system.
 
+- Registering a monitor is easy:
+```scala
+class WatchActor extends Actor {
+  val child = context.actorOf(Props.empty, "child")
+  context.watch(child) // <-- this is the only call needed for registration
+  var lastSender = context.system.deadLetters
 
-
-
+  def receive = {
+    case "kill" ⇒
+      context.stop(child); lastSender = sender()
+    case Terminated(`child`) ⇒ lastSender ! "finished"
+  }
+}
+```
+- The `Terminated` message is generated independent of the order in which registration and termination occur. 
+- In particular, the watching actor will receive a `Terminated` message even if the watched actor has already been terminated at the time of registration.
+- Registering multiple times does not necessarily lead to multiple messages being generated:
+    - There is no guarantee that only exactly one such message is received:
+        - If termination of the watched actor has generated and queued the message.
+        - And another registration is done before this message has been processed.
+        - Then a second message will be queued.
+    - Because registering for monitoring of an already terminated actor leads to the immediate generation of the `Terminated` message.
+- It is also possible to deregister from watching another actor’s liveliness using `context.unwatch(target)`. 
+    - This works even if the `Terminated` message has already been enqueued in the mailbox.
+    - After calling unwatch no `Terminated` message for that actor will be processed anymore.
 
 ## Start Hook
-
-
-
-
+- Right after starting the actor, its `preStart` method is invoked.
+```scala
+override def preStart() {
+  child = context.actorOf(Props[MyActor], "child")
+}
+```
+- This method is called when the actor is first created. 
+- During restarts it is called by the default implementation of `postRestart`.
+- This means that by overriding that method, you can choose whether the initialization code in this method:
+    - Is called only exactly once for this actor, or for every restart. 
+- Initialization code which is part of the actor’s constructor:
+    - Will always be called when an instance of the actor class is created.
+    - This happens at every restart.
 
 ## Restart Hooks
+- All actors are supervised, i.e. linked to another actor with a fault handling strategy. 
+- Actors may be restarted in case an exception is thrown while processing a message. 
+- This restart involves the hooks mentioned above:
+1. The old actor is informed by calling `preRestart`:
+    - With the exception which caused the restart and the message which triggered that exception.
+    - The latter may be `None` if the restart was not caused by processing a message:
+        - E.g. when a supervisor does not trap the exception and is restarted in turn by its supervisor.
+        - Or if an actor is restarted due to a sibling’s failure. 
+    - If the message is available, then that message’s sender is also accessible in the usual way (i.e. by calling sender). 
+    - This method is the best place for cleaning up, preparing hand-over to the fresh actor instance, etc. 
+    - By default it stops all children and calls `postStop`. 
+2. The initial factory from the actorOf call is used to produce the fresh instance. 
+3. The new actor’s postRestart method is invoked with the exception which caused the restart. By default the preStart is called, just as in the normal start-up case.
+  
+  An actor restart replaces only the actual actor object; the contents of the mailbox is unaffected by the restart, so processing of messages will resume after the postRestart hook returns. The message that triggered the exception will not be received again. Any message sent to an actor while it is being restarted will be queued to its mailbox as usual.
+  Warning
+  
+  Be aware that the ordering of failure notifications relative to user messages is not deterministic. In particular, a parent might restart its child before it has processed the last messages sent by the child before the failure. See Discussion: Message Ordering for details.
+
+
+
 
 
 
