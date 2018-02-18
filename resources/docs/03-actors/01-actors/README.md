@@ -604,44 +604,204 @@ val future = myActor ? "hello"
 - See [Actors and shared mutable state](../../02-general-concepts/07-akka-and-the-java-memory-model#actors-and-shared-mutable-state)
 
 ## Forward message
-
-
-
-
-
-
-
-
-
-
-
-
+- You can forward a message from one actor to another. 
+- This means that the original sender address/reference is maintained even though the message is going through a ‘mediator’. 
+- This can be useful when writing actors that work as routers, load-balancers, replicators etc.
+```scala
+target forward message
+```
 
 # Receive messages
+- An Actor has to implement the `receive` method to receive messages: 
+```scala
+type Receive = PartialFunction[Any, Unit]
 
+def receive: Actor.Receive
+```
+- This method returns a `PartialFunction`.
+- E.g. a ‘match/case’ clause in which the message can be matched against the different case clauses using Scala pattern matching. 
+- Here is an example:
+```scala
+class MyActor extends Actor {
+  val log = Logging(context.system, this)
 
-
-
+  def receive = {
+    case "test" ⇒ log.info("received test")
+    case _      ⇒ log.info("received unknown message")
+  }
+}
+```
 
 # Reply to messages
-
-
-
-
+- If you want to have a handle for replying to a message, you can use `sender()`, which gives you an `ActorRef`. 
+- You can reply by sending to that `ActorRef` with `sender() ! replyMsg`. 
+- You can also store the `ActorRef` for replying later, or passing on to other actors. 
+- If there is no sender (a message was sent without an actor or future context):
+    - Then the sender defaults to a ‘dead-letter’ actor ref.
+```scala
+sender() ! x // replies will go to this actor
+```
 
 # Receive timeout
-
-
-
-
+- The `ActorContext` `setReceiveTimeout` defines the inactivity timeout after which the sending of a `ReceiveTimeout` message is triggered. 
+- When specified, the `receive` function should be able to handle an `akka.actor.ReceiveTimeout` message. 
+- 1 millisecond is the minimum supported timeout.
+- The receive timeout might fire and enqueue the `ReceiveTimeout` message right after another message was enqueued.
+- Hence it is **not guaranteed** that upon reception of the receive timeout:
+    - There must have been an idle period beforehand as configured via this method.
+- Once set, the receive timeout stays in effect.
+    - I.e. continues firing repeatedly after inactivity periods. 
+- Pass in `Duration.Undefined` to switch off this feature.
+```scala
+class MyActor extends Actor {
+  // To set an initial delay
+  context.setReceiveTimeout(30 milliseconds)
+  def receive = {
+    case "Hello" ⇒
+      // To set in a response to a message
+      context.setReceiveTimeout(100 milliseconds)
+    case ReceiveTimeout ⇒
+      // To turn it off
+      context.setReceiveTimeout(Duration.Undefined)
+      throw new RuntimeException("Receive timed out")
+  }
+}
+```
+- Messages marked with `NotInfluenceReceiveTimeout` will not reset the timer. 
+- This can be useful when:
+    - `ReceiveTimeout` should be fired by external inactivity.
+    - But not influenced by internal activity, e.g. scheduled tick messages.
 
 # Timers, scheduled messages
+- Messages can be scheduled to be sent at a later point by using the [`Scheduler`](../../09-utilities/03-scheduler) directly.
+- But when scheduling periodic or single messages in an actor to itself it’s more convenient and safe to use the support for named timers. 
+- The lifecycle of scheduled messages can be difficult to manage when the actor is restarted and that is taken care of by the timers.
+```scala
+object MyActor {
+  private case object TickKey
+  private case object FirstTick
+  private case object Tick
+}
 
+class MyActor extends Actor with Timers {
+  import MyActor._
+  timers.startSingleTimer(TickKey, FirstTick, 500.millis)
 
-
-
+  def receive = {
+    case FirstTick ⇒
+      // do something useful here
+      timers.startPeriodicTimer(TickKey, Tick, 1.second)
+    case Tick ⇒
+    // do something useful here
+  }
+}
+```
+- Each timer has a key and can be replaced or cancelled. 
+- It’s guaranteed that a message from the previous incarnation of the timer with the same key is not received.
+- Even though it might already be enqueued in the mailbox when it was cancelled or the new timer was started.
+- The timers are bound to the lifecycle of the actor that owns it.
+- And thus are cancelled automatically when it is restarted or stopped. 
+- Note that the TimerScheduler is not thread-safe, i.e. it must only be used within the actor that owns it.
 
 # Stopping actors
+- Actors are stopped by invoking the `stop` method of a `ActorRefFactory`, i.e. `ActorContext` or `ActorSystem`. 
+- Typically the **context** is used for stopping the actor itself or child actors.
+- And the **system** for stopping top level actors. 
+- The actual termination of the actor is performed asynchronously, i.e. `stop` may return before the actor is stopped.
+```scala
+class MyActor extends Actor {
+
+  val child: ActorRef = ???
+
+  def receive = {
+    case "interrupt-child" ⇒
+      context stop child
+
+    case "done" ⇒
+      context stop self
+  }
+
+}
+```
+- Processing of the current message, if any, will continue before the actor is stopped.
+- But additional messages in the mailbox will not be processed. 
+- By default these messages are sent to the `deadLetters` of the `ActorSystem`, depending on the mailbox implementation.
+- Termination of an actor proceeds in two steps: 
+    - **Step 1:** The actor suspends its mailbox processing and sends a stop command to all its children.
+      - Then it keeps processing the internal termination notifications from its children until the last one is gone.
+    - **Step 2:** Terminates itself (invoking `postStop`, dumping mailbox, publishing `Terminated` on the `DeathWatch`, telling its supervisor). 
+- This procedure ensures that actor system sub-trees terminate in an orderly fashion.
+- Propagating the stop command to the leaves and collecting their confirmation back to the stopped supervisor. 
+- If one of the actors does not respond (i.e. processing a message for extended periods of time and therefore not receiving the stop command):
+    - This whole process will be stuck.
+- Upon `ActorSystem.terminate()`, the system guardian actors will be stopped.
+- And the aforementioned process will ensure proper termination of the whole system.
+- The `postStop()` hook is invoked after an actor is fully stopped. 
+- This enables cleaning up of resources:
+```scala
+override def postStop() {
+  ()
+}
+```
+- Since stopping an actor is asynchronous, you cannot immediately reuse the name of the child you just stopped.
+    - This will result in an `InvalidActorNameException`. 
+- Instead, `watch()` the terminating actor and create its replacement in response to the `Terminated` message which will eventually arrive.
+
+## PoisonPill
+- You can also send an actor the `akka.actor.PoisonPill` message.
+- Which will stop the actor when the message is processed. 
+- `PoisonPill` is enqueued as ordinary messages and will be handled after messages that were already queued in the mailbox.
+```scala
+watch(victim)
+victim ! PoisonPill
+```
+
+## Killing an Actor
+- You can also “kill” an actor by sending a `Kill` message. 
+- Unlike `PoisonPill` this will cause the actor to throw a `ActorKilledException`, triggering a failure. 
+- The actor will suspend operation and its supervisor will be asked how to handle the failure.
+    - Which may mean resuming the actor, restarting it or terminating it completely. 
+- See [What Supervision Means](../../02-general-concepts/04-supervision-and-monitoring#what-supervision-means).
+- Use `Kill` like this:
+```scala
+context.watch(victim) // watch the Actor to receive Terminated message once it dies
+
+victim ! Kill
+
+expectMsgPF(hint = "expecting victim to terminate") {
+  case Terminated(v) if v == victim ⇒ v // the Actor has indeed terminated
+}
+```
+- In general though it is **not recommended** to overly rely on either `PoisonPill` or `Kill` in designing your actor interactions.
+- Often times a protocol-level message like `PleaseCleanupAndStop` which the actor knows how to handle is encouraged. 
+- The messages are there for being able to stop actors over which design you do not have control over.
+
+## Graceful Stop
+
+
+
+
+
+## Coordinated Shutdown
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
