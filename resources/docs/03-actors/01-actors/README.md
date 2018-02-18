@@ -36,7 +36,6 @@ class MyActor extends Actor {
 - The result of the `receive` method is a `PartialFunction` object.
     - It is stored within the actor as its “initial behavior”.
     - See [Become/Unbecome(TODO).
-- See [Example 1](./actors-examples/src/main/scala/actors/example1)
 
 ## Props
 - `Props` is a configuration class to specify options for the creation of actors.
@@ -54,6 +53,7 @@ val props3 = Props(classOf[ActorWithArgs], "arg") // no support for value class 
     - The presence of a matching constructor is verified during construction of the `Props` object.
     - This will result in an `IllegalArgumentException` if no or multiple matching constructors are found.
 - The recommended approach to create the actor `Props` is not supported for cases when the actor constructor takes [value classes](https://docs.scala-lang.org/overviews/core/value-classes.html) as arguments.
+- See [Example 1](./actors-examples/src/main/scala/actors/example1)
 
 ### Dangerous Variants
 
