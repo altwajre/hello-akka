@@ -81,16 +81,25 @@ akka {
     netty.tcp.port = 4711
   }
 }
-
 ```
 
-
-
 # Including files
+- Sometimes it can be useful to include another configuration file:
+    - For example if you have one `application.conf` with all environment independent settings.
+    - Then override some settings for specific environments.
+- Specifying system property with `-Dconfig.resource=/dev.conf`:
+    - Will load the `dev.conf` file.
+    - Which includes the `application.conf`.
+- See [HOCON specification](https://github.com/lightbend/config/blob/master/HOCON.md). 
 
+## `dev.conf`
+```hocon
+include "application"
 
-
-
+akka {
+  loglevel = "DEBUG"
+}
+```
 
 # Logging of Configuration
 
