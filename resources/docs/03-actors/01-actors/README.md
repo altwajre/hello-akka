@@ -777,35 +777,180 @@ expectMsgPF(hint = "expecting victim to terminate") {
 - The messages are there for being able to stop actors over which design you do not have control over.
 
 ## Graceful Stop
-
-
-
-
+- `gracefulStop` is useful if you need to wait for termination or compose ordered termination of several actors:
+```scala
+try {
+  val stopped: Future[Boolean] = gracefulStop(actorRef, 5 seconds, Manager.Shutdown)
+  Await.result(stopped, 6 seconds)
+  // the actor has been stopped
+} catch {
+  // the actor wasn't stopped within 5 seconds
+  case e: akka.pattern.AskTimeoutException ⇒
+}
+```
+- When `gracefulStop()` returns successfully, the actor’s `postStop()` hook will have been executed: 
+    - There exists a _happens-before_ edge between the end of `postStop()` and the return of `gracefulStop()`.
+- In the above example a custom `Manager.Shutdown` message is sent to the target actor to initiate the process of stopping the actor. 
+- You can use `PoisonPill` for this:
+    - But then you have limited possibilities to perform interactions with other actors before stopping the target actor. 
+- Simple cleanup tasks can be handled in `postStop`.
+- **Note that** an actor stopping and its name being deregistered are separate events which happen asynchronously from each other. 
+- Therefore it may be that you will find the name still in use after `gracefulStop()` returned. 
+- In order to guarantee proper deregistration:
+    - Only reuse names from within a supervisor you control.
+    - And only in response to a `Terminated` message, i.e. not for top-level actors.
 
 ## Coordinated Shutdown
+- There is an extension named `CoordinatedShutdown` that will:
+    - Stop certain actors and services in a specific order.
+    - And perform registered tasks during the shutdown process.
+- The order of the shutdown phases is defined in configuration `akka.coordinated-shutdown.phases`. 
+- The default phases are defined as:
+```hocon
+# CoordinatedShutdown will run the tasks that are added to these
+# phases. The phases can be ordered as a DAG by defining the
+# dependencies between the phases.
+# Each phase is defined as a named config section with the
+# following optional properties:
+# - timeout=15s: Override the default-phase-timeout for this phase.
+# - recover=off: If the phase fails the shutdown is aborted
+#                and depending phases will not be executed.
+# depends-on=[]: Run the phase after the given phases
+phases {
 
+  # The first pre-defined phase that applications can add tasks to.
+  # Note that more phases can be added in the application's
+  # configuration by overriding this phase with an additional
+  # depends-on.
+  before-service-unbind {
+  }
 
+  # Stop accepting new incoming requests in for example HTTP.
+  service-unbind {
+    depends-on = [before-service-unbind]
+  }
 
+  # Wait for requests that are in progress to be completed.
+  service-requests-done {
+    depends-on = [service-unbind]
+  }
 
+  # Final shutdown of service endpoints.
+  service-stop {
+    depends-on = [service-requests-done]
+  }
 
+  # Phase for custom application tasks that are to be run
+  # after service shutdown and before cluster shutdown.
+  before-cluster-shutdown {
+    depends-on = [service-stop]
+  }
 
+  # Graceful shutdown of the Cluster Sharding regions.
+  cluster-sharding-shutdown-region {
+    timeout = 10 s
+    depends-on = [before-cluster-shutdown]
+  }
 
+  # Emit the leave command for the node that is shutting down.
+  cluster-leave {
+    depends-on = [cluster-sharding-shutdown-region]
+  }
 
+  # Shutdown cluster singletons
+  cluster-exiting {
+    timeout = 10 s
+    depends-on = [cluster-leave]
+  }
 
+  # Wait until exiting has been completed
+  cluster-exiting-done {
+    depends-on = [cluster-exiting]
+  }
 
+  # Shutdown the cluster extension
+  cluster-shutdown {
+    depends-on = [cluster-exiting-done]
+  }
 
+  # Phase for custom application tasks that are to be run
+  # after cluster shutdown and before ActorSystem termination.
+  before-actor-system-terminate {
+    depends-on = [cluster-shutdown]
+  }
 
-
-
-
-
-
-
-
-
-
-
-
+  # Last phase. See terminate-actor-system and exit-jvm above.
+  # Don't add phases that depends on this phase because the
+  # dispatcher and scheduler of the ActorSystem have been shutdown.
+  actor-system-terminate {
+    timeout = 10 s
+    depends-on = [before-actor-system-terminate]
+  }
+}
+```
+- More phases can be added in the application’s configuration if needed by overriding a phase with an additional `depends-on`. 
+- The phases `before-service-unbind`, `before-cluster-shutdown` and `before-actor-system-terminate`:
+    - Are intended for application specific phases or tasks.
+- The default phases are defined in a single linear order.
+    - But the phases can be ordered as a directed acyclic graph (DAG) by defining the dependencies between the phases. 
+    - The phases are ordered with [topological](https://en.wikipedia.org/wiki/Topological_sorting) sort of the DAG.
+- Tasks can be added to a phase with:
+```scala
+CoordinatedShutdown(system).addTask(
+  CoordinatedShutdown.PhaseBeforeServiceUnbind, "someTaskName") { () ⇒
+    import akka.pattern.ask
+    import system.dispatcher
+    implicit val timeout = Timeout(5.seconds)
+    (someActor ? "stop").map(_ ⇒ Done)
+  }
+```
+- The returned `Future[Done]` should be completed when the task is completed. 
+- The task name parameter is only used for debugging/logging.
+- Tasks added to the same phase are executed in parallel without any ordering assumptions. 
+- The next phase will not start until all tasks of previous the phase have been completed.
+- If tasks are not completed within a [configured timeout](https://doc.akka.io/docs/akka/current/general/configuration.html#config-akka-actor) the next phase will be started anyway. 
+- It is possible to configure `recover=off` for a phase to abort the rest of the shutdown process if a task fails or is not completed within the timeout.
+- Tasks should typically be registered as early as possible after system startup. 
+- When running the coordinated shutdown tasks that have been registered will be performed but tasks that are added too late will not be run.
+- To start the coordinated shutdown process you can invoke `run` on the `CoordinatedShutdown` extension:
+```scala
+val done: Future[Done] = CoordinatedShutdown(system).run(CoordinatedShutdown.UnknownReason)
+```
+- It’s safe to call the `run` method multiple times. It will only run once.
+- That also means that the `ActorSystem` will be terminated in the last phase. 
+- By default, the JVM is not forcefully stopped (it will be stopped if all non-daemon threads have been terminated). 
+- To enable a hard `System.exit` as a final action you can configure:
+```hocon
+akka.coordinated-shutdown.exit-jvm = on
+```
+- When using [Akka Cluster](../../05-clustering/02-cluster-usage) the `CoordinatedShutdown` will automatically run when the cluster node sees itself as `Exiting`.
+    - I.e. leaving from another node will trigger the shutdown process on the leaving node. 
+- Tasks for graceful leaving of cluster are added automatically when _Akka Cluster_ is used.
+    - I.e. running the shutdown process will also trigger the graceful leaving if it’s not already in progress.
+    - This includes graceful shutdown of _Cluster Singletons_ and _Cluster Sharding_.
+- By default, the `CoordinatedShutdown` will be run when the JVM process exits.
+    - E.g. via `kill SIGTERM` signal (`SIGINT` ctrl-c doesn’t work). 
+- This behavior can be disabled with:
+```hocon
+akka.coordinated-shutdown.run-by-jvm-shutdown-hook=off
+```
+- If you have application specific JVM shutdown hooks:
+    - It’s recommended that you register them via the `CoordinatedShutdown`.
+    - So that they are running before Akka internal shutdown hooks.
+    - E.g. those shutting down Akka Remoting (Artery).
+```scala
+CoordinatedShutdown(system).addJvmShutdownHook {
+  println("custom JVM shutdown hook...")
+}
+```
+- For some tests it might be undesired to terminate the `ActorSystem` via `CoordinatedShutdown`. 
+- You can disable that by adding the following to the configuration of the `ActorSystem` that is used in the test:
+```hocon
+# Don't terminate ActorSystem via CoordinatedShutdown in tests
+akka.coordinated-shutdown.terminate-actor-system = off
+akka.coordinated-shutdown.run-by-jvm-shutdown-hook = off
+akka.cluster.run-coordinated-shutdown-when-down = off
+```
 
 # Become/Unbecome
 
