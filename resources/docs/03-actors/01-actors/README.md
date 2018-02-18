@@ -1153,6 +1153,89 @@ final case class Give(thing: Any)
 - Simply compose the receive method using partial functions from delegates.
 
 # Initialization patterns
+- The rich lifecycle hooks of Actors provide a useful toolkit to implement various initialization patterns. 
+- During the lifetime of an `ActorRef`, an actor can potentially go through several restarts:
+    - Where the old instance is replaced by a fresh one.
+    - Invisibly to the outside observer who only sees the `ActorRef`.
+- Initialization might be necessary every time an actor is instantiated.
+- But sometimes one needs initialization to happen only at the birth of the first instance.
+- The following sections provide patterns for different initialization needs.
+
+## Initialization via constructor
+- Using the constructor for initialization has various benefits. 
+- First of all, it makes it possible to use `val` fields to store any state that does not change during the life of the actor instance.
+    - Making the implementation of the actor more robust. 
+- The constructor is invoked when an actor instance is created calling `actorOf` and also on restart:
+    - Therefore the internals of the actor can always assume that proper initialization happened. 
+- This is also the drawback of this approach.
+- There are cases when one would like to avoid reinitializing internals on restart. 
+- For example, it is often useful to preserve child actors across restarts. 
+- The following section provides a pattern for this case.
+
+## Initialization via `preStart`
+- The method `preStart()` of an actor is only called once directly during the initialization of the first instance.
+    - That is, at creation of its `ActorRef`. 
+- In the case of restarts, `preStart()` is called from `postRestart()`.
+    - Therefore if not overridden, `preStart()` is called on every restart. 
+- However, by overriding `postRestart()` one can disable this behavior, and ensure that there is only one call to `preStart()`.
+- One useful usage of this pattern is to disable creation of new `ActorRefs` for children during restarts. 
+- This can be achieved by overriding `preRestart()`. 
+- Below is the default implementation of these lifecycle hooks:
+```scala
+override def preStart(): Unit = {
+  // Initialize children here
+}
+
+// Overriding postRestart to disable the call to preStart()
+// after restarts
+override def postRestart(reason: Throwable): Unit = ()
+
+// The default implementation of preRestart() stops all the children
+// of the actor. To opt-out from stopping the children, we
+// have to override preRestart()
+override def preRestart(reason: Throwable, message: Option[Any]): Unit = {
+  // Keep the call to postStop(), but no stopping of children
+  postStop()
+}
+```
+- The child actors are still restarted, but no new `ActorRef` is created. 
+- One can recursively apply the same principles for the children:
+    - Ensuring that their `preStart()` method is called only at the creation of their refs.
+- See [What Restarting Means](../../02-general-concepts/04-supervision-and-monitoring#what-restarting-means).
+
+## Initialization via message passing
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
