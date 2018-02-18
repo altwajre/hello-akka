@@ -485,16 +485,133 @@ class Follower extends Actor {
 ```scala
 context.actorSelection("akka.tcp://app@otherhost:1234/user/serviceB")
 ```
-- An example demonstrating actor look-up is given in [Remoting Sample](../../07-networking/01-remoting#remoting-sample).
-
+- See [Remoting Sample](../../07-networking/01-remoting#remoting-sample).
 
 # Messages and immutability
+- Messages can be any kind of object but have to be immutable. 
+- Scala can’t enforce immutability (yet) so this has to be by convention. 
+- Primitives like `String`, `Int`, `Boolean` are always immutable. 
+- Apart from these the recommended approach is to use **Scala case classes** which are immutable.
+- And works great with pattern matching at the receiver side.
+- Here is an example: 
+```scala
+// define the case class
+case class User(name: String)
+case class Register(user: User)
 
-
-
-
+val user = User("Mike")
+// create a new case class message
+val message = Register(user)
+```
 
 # Send messages
+- Messages are sent to an Actor through one of the following methods:
+    - `!` means “fire-and-forget”, e.g. send a message asynchronously and return immediately. Also known as `tell`.
+    - `?` sends a message asynchronously and returns a Future representing a possible reply. Also known as `ask`.
+- Message ordering is guaranteed on a per-sender basis.
+- There are performance implications of using `ask`:
+    - Something needs to keep track of when it times out.
+    - There needs to be something that bridges a `Promise` into an `ActorRef`.
+    - It also needs to be reachable through remoting. 
+- So always prefer `tell` for performance, and only `ask` if you must.
+
+## Tell: Fire-forget
+- This is the preferred way of sending messages. 
+- No blocking waiting for a message. 
+- This gives the best concurrency and scalability characteristics.
+```scala
+actorRef ! message
+```
+- If invoked from **within an Actor**:
+    - Then the sending actor reference will be implicitly passed along with the message.
+    - This will be available to the receiving Actor in its `sender(): ActorRef` member method. 
+    - The target actor can use this to reply to the original sender, by using `sender() ! replyMsg`.
+- If invoked from an instance that is **not an Actor**:
+    - The sender will be `deadLetters` actor reference by default.
+
+## Ask: Send-And-Receive-Future
+- The `ask` pattern involves `Actor`s as well as `Future`s.
+- Hence it is offered as a use pattern rather than a method on `ActorRef`:
+```scala
+import akka.pattern.{ ask, pipe }
+import system.dispatcher // The ExecutionContext that will be used
+
+final case class Result(x: Int, s: String, d: Double)
+case object Request
+
+implicit val timeout = Timeout(5 seconds) // needed for `?` below
+
+val f: Future[Result] =
+  for {
+    x ← ask(actorA, Request).mapTo[Int] // call pattern directly
+    s ← (actorB ask Request).mapTo[String] // call by implicit conversion
+    d ← (actorC ? Request).mapTo[Double] // call by symbolic name
+  } yield Result(x, s, d)
+
+f pipeTo actorD // .. or ..
+pipe(f) to actorD
+```
+- This example demonstrates `ask` together with the `pipeTo` pattern on futures.
+- This is likely to be a common combination. 
+- All of the above is completely non-blocking and asynchronous: 
+    - `ask` produces a `Future`.
+    - three of which are composed into a new future using the for-comprehension.
+    - and then `pipeTo` installs an `onComplete`-handler on the future to affect the submission of the aggregated `Result` to another actor.
+- Using `ask` will send a message to the receiving Actor as with `tell`.
+- And the receiving actor must reply with `sender() ! reply` in order to complete the returned `Future` with a value. 
+- The `ask` operation involves creating an internal actor for handling this reply:
+    - Which needs to have a timeout after which it is destroyed in order not to leak resources.
+- To complete the future with an **exception** you need to send an `akka.actor.Status.Failure` message to the sender. 
+- This is not done automatically when an actor throws an exception while processing a message.
+- Scala’s `Try` subtypes `scala.util.Failure` and `scala.util.Success` are not treated specially.
+    - And would complete the ask `Future` with the given value.
+- Only the `akka.actor.Status` messages are treated specially by the ask pattern. 
+```scala
+try {
+  val result = operation()
+  sender() ! result
+} catch {
+  case e: Exception ⇒
+    sender() ! akka.actor.Status.Failure(e)
+    throw e
+}
+```
+- If the actor does not complete the future, it will expire after the timeout period, completing it with an `AskTimeoutException`. 
+- The timeout is taken from one of the following locations in order of precedence: 
+1. Explicitly given timeout as in:
+```scala
+import scala.concurrent.duration._
+import akka.pattern.ask
+val future = myActor.ask("hello")(5 seconds)
+```
+2. Implicit argument of `type akka.util.Timeout`:
+```scala
+import scala.concurrent.duration._
+import akka.util.Timeout
+import akka.pattern.ask
+implicit val timeout = Timeout(5 seconds)
+val future = myActor ? "hello"
+```
+- The `onComplete`, `onSuccess`, or `onFailure` methods of the `Future` can be used to register a callback to get a notification when the `Future` completes.
+    - Giving you a way to avoid blocking.
+- When using future callbacks, such as `onComplete`, `onSuccess`, and `onFailure`, inside actors:
+    - You need to carefully avoid closing over the containing actor’s reference.
+    - I.e. do not call methods or access mutable state on the enclosing actor from within the callback. 
+    - This would break the actor encapsulation and may introduce synchronization bugs and race conditions.
+    - Because the callback will be scheduled concurrently to the enclosing actor. 
+    - Unfortunately there is not yet a way to detect these illegal accesses at compile time.     
+- See [Futures](../../08-futures-and-agents/01-futures) on how to await or query a future.
+- See [Actors and shared mutable state](../../02-general-concepts/07-akka-and-the-java-memory-model#actors-and-shared-mutable-state)
+
+## Forward message
+
+
+
+
+
+
+
+
 
 
 
