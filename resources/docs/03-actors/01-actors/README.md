@@ -402,45 +402,90 @@ override def preStart() {
 - In particular, a parent might restart its child before it has processed the last messages sent by the child before the failure. 
 - See [Message Ordering](../../02-general-concepts/08-message-delivery-reliability#discussion-message-ordering).
 
-
-
-
-
-
-
-
 ## Stop Hook
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- After stopping an actor, its `postStop` hook is called.
+- This may be used e.g. for deregistering this actor from other services. 
+- This hook is guaranteed to run after message queuing has been disabled for this actor.
+    - I.e. messages sent to a stopped actor will be redirected to the `deadLetters` of the `ActorSystem`.
 
 # Identifying Actors via Actor Selection
+- Each actor has:
+    - A unique logical path.
+        - Which is obtained by following the chain of actors from child to parent until reaching the root of the actor system.
+    - A physical path.
+        - Which may differ if the supervision chain includes any remote supervisors. 
+- See [Actor References, Paths and Addresses](../../02-general-concepts/05-actor-references-paths-and-addresses)
+- These paths are used by the system to look up actors.
+    - E.g. when a remote message is received and the recipient is searched.
+- But they are also useful more directly.
+    - Actors may look up other actors by specifying absolute or relative paths (logical or physical).
+    - And receive back an `ActorSelection` with the result:
+```scala
+// will look up this absolute path
+context.actorSelection("/user/serviceA/aggregator")
+// will look up sibling beneath same supervisor
+context.actorSelection("../joe")
+```
+- It is always preferable to communicate with other Actors using their `ActorRef` instead of relying upon `ActorSelection`.
+- Exceptions are:
+    - Sending messages using the [At-Least-Once Delivery](../07-persistence#at-least-once-delivery) facility.
+    - Initiating first contact with a remote system.
+- In all other cases `ActorRef`s can be provided during Actor creation or initialization.
+    - Passing them from parent to child or introducing Actors by sending their `ActorRef`s to other Actors within messages.
+- The supplied path is parsed as a `java.net.URI`, which basically means that it is split on `/` into path elements. 
+- If the path starts with `/`:
+    - It is absolute and the look-up starts at the root guardian (which is the parent of `/user`).
+- Otherwise it starts at the current actor. 
+- If a path element equals `..`:
+    - The look-up will take a step “up” towards the supervisor of the currently traversed actor.
+- Otherwise it will step “down” to the named child. 
+- It should be noted that the `..` in actor paths here always means the logical structure, i.e. the supervisor.
+- The path elements of an actor selection may contain wildcard patterns allowing for broadcasting of messages to that section:
+```scala
+// will look all children to serviceB with names starting with worker
+context.actorSelection("/user/serviceB/worker*")
+// will look up all siblings beneath same supervisor
+context.actorSelection("../*")
+```
+- Messages can be sent via the `ActorSelection` and the path of the `ActorSelection` is looked up when delivering each message. 
+- If the selection does not match any actors the message will be dropped.
+- To acquire an `ActorRef` for an `ActorSelection`:
+    - You need to send a message to the selection.
+    - And use the `sender()` reference of the reply from the actor. 
+- There is a built-in `Identify` message that all Actors will understand.
+- And automatically reply to with a `ActorIdentity` message containing the `ActorRef`. 
+- This message is handled specially by the actors which are traversed in the sense that:
+    - If a concrete name lookup fails (i.e. a non-wildcard path element does not correspond to a live actor).
+    - Then a negative result is generated. 
+- Please note that this does not mean that delivery of that reply is guaranteed, it still is a normal message.
+```scala
+class Follower extends Actor {
+  val identifyId = 1
+  context.actorSelection("/user/another") ! Identify(identifyId)
 
+  def receive = {
+    case ActorIdentity(`identifyId`, Some(ref)) ⇒
+      context.watch(ref)
+      context.become(active(ref))
+    case ActorIdentity(`identifyId`, None) ⇒ context.stop(self)
 
+  }
 
+  def active(another: ActorRef): Actor.Receive = {
+    case Terminated(`another`) ⇒ context.stop(self)
+  }
+}
+```
+- You can also acquire an `ActorRef` for an `ActorSelection` with the `resolveOne` method of the `ActorSelection`. 
+- It returns a `Future` of the matching `ActorRef` if such an actor exists. 
+- It is completed with failure `akka.actor.ActorNotFound` if:
+    - No such actor exists.
+    - Or the identification didn’t complete within the supplied timeout.
+- Remote actor addresses may also be looked up, if [remoting](TODO) is enabled:
+```scala
+context.actorSelection("akka.tcp://app@otherhost:1234/user/serviceB")
+```
+- An example demonstrating actor look-up is given in [Remoting Sample](../../07-networking/01-remoting#remoting-sample).
 
 
 # Messages and immutability
