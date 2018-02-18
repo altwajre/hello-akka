@@ -7,6 +7,8 @@
 - The API of Akka’s Actors is similar to Scala Actors which has borrowed some of its syntax from Erlang.
 
 # Creating Actors
+
+## Defining an Actor class
 - Actors are implemented by extending the `Actor` base trait and implementing the `receive` method. 
 - The `receive` method:
     - Has the type `PartialFunction[Any, Unit]`.
@@ -35,6 +37,80 @@ class MyActor extends Actor {
     - It is stored within the actor as its “initial behavior”.
     - See [Become/Unbecome(TODO).
 - See `actors.example1`
+
+## Props
+- `Props` is a configuration class to specify options for the creation of actors.
+- Think of it as an immutable and thus freely shareable recipe for creating an actor.
+- Including associated deployment information (e.g. which dispatcher to use, see more below). 
+- Here are some examples of how to create a `Props` instance:
+```scala
+val props1 = Props[MyActor]
+val props2 = Props(new ActorWithArgs("arg")) // careful, see below
+val props3 = Props(classOf[ActorWithArgs], "arg") // no support for value class arguments
+```
+- The second variant shows how to pass constructor arguments to the `Actor` being created.
+    - It should only be used outside of actors as explained below.
+- The last line shows a possibility to pass constructor arguments regardless of the context it is being used in. 
+    - The presence of a matching constructor is verified during construction of the `Props` object.
+    - This will result in an `IllegalArgumentException` if no or multiple matching constructors are found.
+- The recommended approach to create the actor `Props` is not supported for cases when the actor constructor takes [value classes](https://docs.scala-lang.org/overviews/core/value-classes.html) as arguments.
+
+### Dangerous Variants
+
+
+
+
+
+### Edge cases
+
+
+
+
+
+### Recommended Practices
+
+
+
+
+
+
+
+
+
+
+
+
+## Creating Actors with Props
+
+
+
+
+
+## Dependency Injection
+
+
+
+
+Dangerous Variants
+## The Inbox
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Actor API
 
