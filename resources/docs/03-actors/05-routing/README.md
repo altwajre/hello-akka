@@ -225,7 +225,7 @@ system.actorOf(Props[Parent], "parent")
 ## RoundRobinPool and RoundRobinGroup
 - Routes in a [round-robin](http://en.wikipedia.org/wiki/Round-robin) fashion to its routees.
 
-- `RoundRobinPool` defined in configuration:
+### `RoundRobinPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router1 {
