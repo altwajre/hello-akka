@@ -50,8 +50,8 @@ class Master extends Actor {
 #### Note
 - In general, any message sent to a router will be sent onwards to its routees.
 - But there is one exception: 
-    - The special [Broadcast Messages](#broadcast-messages) will send to all of a router’s routees. 
-    - However, do not use _Broadcast Messages_ when you use `BalancingPool` for routees as described in [Specially Handled Messages](#specially-handled-messages).
+- The special [Broadcast Messages](#broadcast-messages) will send to all of a router’s routees. 
+- However, do not use _Broadcast Messages_ when you use `BalancingPool` for routees as described in [Specially Handled Messages](#specially-handled-messages).
 
 # A Router Actor
 
