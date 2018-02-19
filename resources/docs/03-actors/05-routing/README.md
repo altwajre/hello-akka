@@ -714,33 +714,113 @@ val router28: ActorRef =
 ```
 
 # Specially Handled Messages
-
+- Most messages sent to router actors will be forwarded according to the routers’ routing logic. 
+- However there are a few types of messages that have special behavior.
+- Note that these special messages:
+    - Except for the Broadcast message.
+    - Are only handled by self contained router actors.
+    - Not by the `akka.routing.Router` component described in [A Simple Router](#a-simple-router).
 
 ## Broadcast Messages
+- A `Broadcast` message can be used to send a message to all of a router’s routees. 
+- When a router receives a `Broadcast` message:
+    - It will broadcast that message’s payload to all routees.
+    - No matter how that router would normally route its messages.
+- The example below shows how you would use a `Broadcast` message:
+```scala
+router ! Broadcast("Watch out for Davy Jones' locker")
+```
+- In this example:
+    - The router receives the `Broadcast` message.
+    - Extracts its payload.
+    - And then sends the payload on to all of the router’s routees. 
+- It is up to each routee actor to handle the received payload message.
 
-
-
-
+#### Warning
+- Do not use _Broadcast Messages_ when you use `BalancingPool` for routers. 
+- Routees on `BalancingPool` shares the same mailbox instance.
+- Thus some routees can possibly get the broadcast message multiple times.
+- While other routees get no broadcast message.
 
 ## PoisonPill Messages
-
-
-
-
-
+- A `PoisonPill` message has special handling for all actors, including for routers. 
+- When any actor receives a `PoisonPill` message:
+    - That actor will be stopped. 
+- See the [PoisonPill documentation](../01-actors#poisonpill).
+```scala
+router ! PoisonPill
+```
+- `PoisonPill` messages are processed by the router only. 
+- `PoisonPill` messages sent to a router will not be sent on to routees.
+- However, a `PoisonPill` message sent to a router may still affect its routees.
+- It will stop the router and when the router stops it also stops its children. 
+- Stopping children is normal actor behavior. 
+- The router will stop routees that it has created as children. 
+- Each child will process its current message and then stop. 
+- This may lead to some messages being unprocessed. 
+- See the documentation on [Stopping actors](../01-actors#stopping-actors).
+- If you wish to stop a router and its routees:
+    - But you would like the routees to first process all the messages currently in their mailboxes.
+    - Then you should not send a `PoisonPill` message to the router. 
+    - Instead you should wrap a `PoisonPill` message inside a `Broadcast` message.
+    - So that each routee will receive the `PoisonPill` message. 
+- Note that this will stop all routees:
+    - Even if the routees aren’t children of the router.
+    - I.e. even routees programmatically provided to the router.
+```scala
+router ! Broadcast(PoisonPill)
+```
+- Each routee will receive a `PoisonPill` message. 
+- Each routee will continue to process its messages as normal.
+- Eventually processing the PoisonPill. 
+- This will cause the routee to stop. 
+- After all routees have stopped:
+    - The router will itself be stopped automatically.
+    - Unless it is a dynamic router, e.g. using a resizer.
+    
+#### Note
+- See [Distributing Akka Workloads - And Shutting Down Afterwards](http://bytes.codes/2013/01/17/Distributing_Akka_Workloads_And_Shutting_Down_After/). 
+    
 ## Kill Messages
-
-
-
-
+- See [Killing an Actor](../01-actors#killing-an-actor).
+- When a `Kill` message is sent to a router:
+    - The router processes the message internally.
+    - And does not send it on to its routees. 
+    - The router will throw an `ActorKilledException` and fail. 
+    - It will then be either resumed, restarted or terminated, depending how it is supervised.
+- Routees that are children of the router:
+    - Will also be suspended.
+    - And will be affected by the supervision directive that is applied to the router. 
+- Routees that are not the routers children:
+    - I.e. those that were created externally to the router.
+    - Will not be affected.
+```scala
+router ! Kill
+```
+- There is a distinction between:
+    - Killing a router, which indirectly kills its children (who happen to be routees).
+    - And killing routees directly (some of whom may not be children.) 
+- To kill routees directly:
+    - The router should be sent a `Kill` message wrapped in a `Broadcast` message.
+```scala
+router ! Broadcast(Kill)
+```
 
 ## Management Messages
+- **Sending `akka.routing.GetRoutees`**: to a router actor:
+    - Will make it send back its currently used routees in a `akka.routing.Routees` message.
+- **Sending `akka.routing.AddRoutee`**: to a router actor:
+    - Will add that routee to its collection of routees.
+- **Sending `akka.routing.RemoveRoutee`**: to a router actor:
+    - Will remove that routee to its collection of routees.
+- **Sending `akka.routing.AdjustPoolSize`**: to a pool router actor:
+    - Will add or remove that number of routees to its collection of routees.
 
-
-
-
-
-
+- These management messages may be handled after other messages.
+- So if you send `AddRoutee` immediately followed by an ordinary message:
+    - You are not guaranteed that the routees have been changed when the ordinary message is routed. 
+- If you need to know when the change has been applied you can send `AddRoutee` followed by `GetRoutees`.
+- And when you receive the `Routees` reply you know that the preceding change has been applied.
 
 # Dynamically Resizable Pool
 
