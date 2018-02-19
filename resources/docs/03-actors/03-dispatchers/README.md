@@ -259,9 +259,23 @@ for (i ← 1 to 100) {
   actor2 ! i
 }
 ```
-- Here the app is sending 100 messages to BlockingFutureActor and PrintActor and large numbers of akka.actor.default-dispatcher threads are handling requests. When you run the above code, you will likely to see the entire application gets stuck somewhere like this:
-
-
+- Here the app is:
+    - Sending 100 messages to `BlockingFutureActor` and `PrintActor`.
+    - Large numbers of `akka.actor.default-dispatcher` threads are handling requests. 
+- When you run the above code, you will likely to see the entire application gets stuck somewhere like this:
+```
+>　PrintActor: 44
+>　PrintActor: 45
+```
+- `PrintActor` is considered non-blocking, however it is not able to proceed with handling the remaining messages.
+- All the threads are occupied and blocked by the other blocking actor - thus leading to thread starvation.
+- In the thread state diagrams below the colours have the following meaning:
+- **Turquoise**: Sleeping state.
+- **Orange**: Waiting state.
+- **Green**: Runnable state.
+- The thread information was recorded using the YourKit profiler, however any good JVM profiler has this feature (including the free and bundled with the Oracle JDK VisualVM, as well as Oracle Flight Recorder).
+- The orange portion of the thread shows that it is idle. Idle threads are fine - they’re ready to accept new work. However, large amount of turquoise (blocked, or sleeping as in our example) threads is very bad and leads to thread starvation.
+![Thread State Diagram](https://doc.akka.io/docs/akka/current/images/dispatcher-behaviour-on-bad-code.png)
 
 
 
