@@ -178,6 +178,7 @@ akka.actor.default-mailbox {
 # Mailbox configuration examples
 
 ## `PriorityMailbox`
+- See [Example code](./mailboxes-examples/src/main/scala/mailboxes/prioritymailbox)
 ```scala
 // We inherit, in this case, from UnboundedStablePriorityMailbox
 // and seed it with the priority generator
@@ -260,6 +261,7 @@ val myActor = context.actorOf(Props[MyActor].withMailbox("prio-mailbox"))
 ```
 
 ## `ControlAwareMailbox`
+- See [Example code](./mailboxes-examples/src/main/scala/mailboxes/prioritymailbox)
 - A `ControlAwareMailbox` can be very useful if an actor needs to be able to receive control messages immediately.
 - No matter how many other messages are already in its mailbox.
 - It can be configured like this:
@@ -299,6 +301,7 @@ val a = system.actorOf(Props(classOf[Logger]).withDispatcher("control-aware-mail
 ```
 
 # Creating your own Mailbox type
+- See [Example code](./mailboxes-examples/src/main/scala/mailboxes/myownmailbox)
 ```scala
 // Marker trait used for mailbox requirements mapping
 trait MyUnboundedMessageQueueSemantics
