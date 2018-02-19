@@ -415,8 +415,12 @@ akka.actor.deployment {
 - There is no Group variant of the BalancingPool.
 
 ## SmallestMailboxPool
-
-
+- A Router that tries to send to the non-suspended child routee with fewest messages in mailbox. 
+- The selection is done in this order:
+    - Pick any idle routee (not processing message) with empty mailbox.
+    - Pick any routee with empty mailbox.
+    - Pick routee with fewest pending messages in mailbox.
+    - Pick any remote routee, remote actors are consider lowest priority, since their mailbox size is unknown.
 
 ### SmallestMailboxPool defined in configuration
 ```hocon
@@ -432,22 +436,14 @@ val router11: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router11")
 ```
 
-
 ### SmallestMailboxPool defined in code
 ```scala
 val router12: ActorRef =
   context.actorOf(SmallestMailboxPool(5).props(Props[Worker]), "router12")
 ```
 
-
-
-
-
-
-
 ## BroadcastPool and BroadcastGroup
-
-
+- A broadcast router forwards the message it receives to all its routees.
 
 ### BroadcastPool defined in configuration
 ```hocon
@@ -463,16 +459,11 @@ val router13: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router13")
 ```
 
-
-
 ### BroadcastPool defined in code
 ```scala
 val router14: ActorRef =
   context.actorOf(BroadcastPool(5).props(Props[Worker]), "router14")
 ```
-
-
-
 
 ### BroadcastGroup defined in configuration
 ```hocon
@@ -488,8 +479,6 @@ val router15: ActorRef =
   context.actorOf(FromConfig.props(), "router15")
 ```
 
-
-
 ### BroadcastGroup defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
@@ -497,11 +486,10 @@ val router16: ActorRef =
   context.actorOf(BroadcastGroup(paths).props(), "router16")
 ```
 
-
-
-
-
-
+#### Note
+- Broadcast routers always broadcast every message to their routees. 
+- If you do not want to broadcast every message:
+- Then you can use a non-broadcasting router and use [Broadcast Messages](#broadcast-messages) as needed.
 
 ## ScatterGatherFirstCompletedPool and ScatterGatherFirstCompletedGroup
 
