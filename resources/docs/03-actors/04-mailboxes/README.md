@@ -260,11 +260,43 @@ val myActor = context.actorOf(Props[MyActor].withMailbox("prio-mailbox"))
 ```
 
 ## `ControlAwareMailbox`
+- A `ControlAwareMailbox` can be very useful if an actor needs to be able to receive control messages immediately.
+- No matter how many other messages are already in its mailbox.
+- It can be configured like this:
+```hocon
+control-aware-mailbox {
+  mailbox-type = "akka.dispatch.UnboundedControlAwareMailbox"
+  //Other dispatcher configuration goes here
+}
+```
+- Control messages need to extend the `ControlMessage` trait:
+```scala
+case object MyControlMessage extends ControlMessage
+```
+- And then an example on how you would use it:
+```scala
+// We create a new Actor that just prints out what it processes
+class Logger extends Actor {
+  val log: LoggingAdapter = Logging(context.system, this)
 
+  self ! 'foo
+  self ! 'bar
+  self ! MyControlMessage
+  self ! PoisonPill
 
+  def receive = {
+    case x ⇒ log.info(x.toString)
+  }
+}
+val a = system.actorOf(Props(classOf[Logger]).withDispatcher("control-aware-mailbox"))
 
-
-
+/*
+ * Logs:
+ * MyControlMessage
+ * 'foo
+ * 'bar
+ */
+```
 
 
 
