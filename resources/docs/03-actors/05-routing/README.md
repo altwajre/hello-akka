@@ -222,7 +222,7 @@ akka.actor.deployment {
 system.actorOf(Props[Parent], "parent")
 ```
 
-## RoundRobinPool and RoundRobinGroup
+## `RoundRobinPool` and `RoundRobinGroup`
 - Routes in a [round-robin](http://en.wikipedia.org/wiki/Round-robin) fashion to its routees.
 
 ### `RoundRobinPool` defined in configuration
