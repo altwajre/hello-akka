@@ -823,10 +823,106 @@ router ! Broadcast(Kill)
 - And when you receive the `Routees` reply you know that the preceding change has been applied.
 
 # Dynamically Resizable Pool
+- Most pools can be used with a fixed number of routees.
+- Or with a resize strategy to adjust the number of routees dynamically.
+- There are two types of resizers:
+    - The default `Resizer`.
+    - The `OptimalSizeExploringResizer`.
 
-## Default Resizer
-## Optimal Size Exploring Resizer
+## Default `Resizer`
+- The default resizer ramps up and down pool size based on pressure.
+- Measured by the percentage of busy routees in the pool. 
+- It ramps up pool size if the pressure is higher than a certain threshold.
+- And backs off if the pressure is lower than certain threshold. 
+- Both thresholds are configurable.
 
+### Pool with default resizer defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router29 {
+    router = round-robin-pool
+    resizer {
+      lower-bound = 2
+      upper-bound = 15
+      messages-per-resize = 100
+    }
+  }
+}
+```
+```scala
+val router29: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router29")
+```
+- See `akka.actor.deployment.default.resizer` section of the reference [configuration](https://doc.akka.io/docs/akka/current/general/configuration.html#akka-actor).
+
+### Pool with resizer defined in code
+```scala
+val resizer = DefaultResizer(lowerBound = 2, upperBound = 15)
+val router30: ActorRef =
+  context.actorOf(
+    RoundRobinPool(5, Some(resizer)).props(Props[Worker]),
+    "router30")
+```
+
+#### Note
+- If you define the router in the configuration file:
+- Then this value will be used instead of any programmatically sent parameters.
+
+## `OptimalSizeExploringResizer`
+- The `OptimalSizeExploringResizer` resizes the pool to an optimal size that provides the most message throughput.
+- This resizer works best when you expect the pool size to performance function to be a convex function. 
+- For example, when you have a CPU bound tasks:
+    - The optimal size is bound to the number of CPU cores. 
+- When your task is IO bound:
+    - The optimal size is bound to optimal number of concurrent connections to that IO service.
+    - E.g. a 4 node _ElasticSearch_ cluster may handle 4-8 concurrent requests at optimal speed.
+- It achieves this by:
+    - Keeping track of message throughput at each pool size.
+    - And performing the following three resizing operations (one at a time) periodically:
+        - Downsize if it hasn’t seen all routees ever fully utilized for a period of time.
+        - Explore to a random nearby pool size to try and collect throughput metrics.
+        - Optimize to a nearby pool size with a better (than any other nearby sizes) throughput metrics.
+- When the pool is fully-utilized:
+    - I.e. all routees are busy.
+    - It randomly choose between exploring and optimizing. 
+- When the pool has not been fully-utilized for a period of time:
+    - It will downsize the pool to the last seen max utilization multiplied by a configurable ratio.
+- By constantly exploring and optimizing:
+    - The resizer will eventually walk to the optimal size and remain nearby. 
+- When the optimal size changes:
+    - It will start walking towards the new one.
+- It keeps a performance log so it’s stateful.
+- It has a larger memory footprint than the default `Resizer`. 
+- The memory usage is _O(n)_ where _n_ is the number of sizes you allow:
+    - I.e. upperBound - lowerBound.
+
+### Pool with `OptimalSizeExploringResizer` defined in configuration:
+```hocon
+akka.actor.deployment {
+  /parent/router31 {
+    router = round-robin-pool
+    optimal-size-exploring-resizer {
+      enabled = on
+      action-interval = 5s
+      downsize-after-underutilized-for = 72h
+    }
+  }
+}
+```
+```scala
+val router31: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router31")
+```
+- See `akka.actor.deployment.default.optimal-size-exploring-resizer` section of the reference [configuration](https://doc.akka.io/docs/akka/current/general/configuration.html#akka-actor).
+
+#### Note
+- Resizing is triggered by sending messages to the actor pool.
+- But it is not completed synchronously.
+- Instead a message is sent to the “head” `RouterActor` to perform the size change. 
+- Thus you cannot rely on resizing to instantaneously create new workers when all others are busy.
+- Because the message just sent will be queued to the mailbox of a busy actor. 
+- To remedy this, configure the pool to use a balancing dispatcher.
+- See [Configuring Dispatchers](#configuring-dispatchers).
 
 # How Routing is Designed within Akka
 
