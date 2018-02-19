@@ -807,13 +807,13 @@ router ! Broadcast(Kill)
 ```
 
 ## Management Messages
-- **Sending `akka.routing.GetRoutees`**: to a router actor:
+- **Sending `akka.routing.GetRoutees` to a router actor**:
     - Will make it send back its currently used routees in a `akka.routing.Routees` message.
-- **Sending `akka.routing.AddRoutee`**: to a router actor:
+- **Sending `akka.routing.AddRoutee` to a router actor**:
     - Will add that routee to its collection of routees.
-- **Sending `akka.routing.RemoveRoutee`**: to a router actor:
+- **Sending `akka.routing.RemoveRoutee` to a router actor**:
     - Will remove that routee to its collection of routees.
-- **Sending `akka.routing.AdjustPoolSize`**: to a pool router actor:
+- **Sending `akka.routing.AdjustPoolSize` to a pool router actor**:
     - Will add or remove that number of routees to its collection of routees.
 
 - These management messages may be handled after other messages.
