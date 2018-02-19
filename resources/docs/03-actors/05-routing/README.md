@@ -54,7 +54,16 @@ class Master extends Actor {
 - However, do not use _Broadcast Messages_ when you use `BalancingPool` for routees as described in [Specially Handled Messages](#specially-handled-messages).
 
 # A Router Actor
-
+- A router can also be created as:
+    - A self contained actor that manages the routees itself.
+    - And loads routing logic and other settings from configuration.
+- This type of router actor comes in two distinct flavors:
+#### Pool: 
+    - The router creates routees as child actors and removes them from the router if they terminate.
+#### Group: 
+    - The routee actors are created externally to the router and the router sends messages to the specified path using actor selection, without watching for termination.
+- The settings for a router actor can be defined in configuration or programmatically. In order to make an actor to make use of an externally configurable router the FromConfig props wrapper must be used to denote that the actor accepts routing settings from configuration. This is in contrast with Remote Deployment where such marker props is not necessary. If the props of an actor is NOT wrapped in FromConfig it will ignore the router section of the deployment configuration.
+- You send messages to the routees via the router actor in the same way as for ordinary actors, i.e. via its ActorRef. The router actor forwards messages onto its routees without changing the original sender. When a routee replies to a routed message, the reply will be sent to the original sender, not to the router actor.
 
 
 
