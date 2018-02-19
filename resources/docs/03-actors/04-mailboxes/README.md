@@ -99,8 +99,8 @@ akka.actor.default-mailbox {
 # Builtin Mailbox Implementations
 
 - Bounded mailbox implementations which will:
-      - Block the sender if the capacity is reached.
-      - And configured with non-zero `mailbox-push-timeout-time`.
+    - Block the sender if the capacity is reached.
+    - And configured with non-zero `mailbox-push-timeout-time`.
 
 ## `UnboundedMailbox`:
 - The default mailbox.
