@@ -319,11 +319,6 @@ val router8: ActorRef =
 - They have different names, but talking to them will not end up at the right actor in most cases. 
 - Therefore you cannot use it for workflows that require state to be kept within the routee.
 - You would in this case have to include the whole state in the messages.
-- See [SmallestMailboxPool](#smallestmailboxpool) for an alternative:
-    - You can have a vertically scaling service.
-    - That can interact in a stateful fashion with other services in the back-end.
-    - Before replying to the original client.
-    - Without placing a restriction on the message queue implementation.
 
 #### Warning
 - Do not use [Broadcast Messages](#broadcast-messages) when you use BalancingPool for routers.
@@ -896,7 +891,7 @@ val router30: ActorRef =
 - The memory usage is _O(n)_ where _n_ is the number of sizes you allow:
     - I.e. upperBound - lowerBound.
 
-### Pool with `OptimalSizeExploringResizer` defined in configuration:
+### Pool with `OptimalSizeExploringResizer` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router31 {
@@ -925,25 +920,160 @@ val router31: ActorRef =
 - See [Configuring Dispatchers](#configuring-dispatchers).
 
 # How Routing is Designed within Akka
-
-
-
-
+- On the surface routers look like normal actors.
+- But they are actually implemented differently. 
+- Routers are designed to be extremely efficient at receiving messages and passing them quickly on to routees.
+- A normal actor can be used for routing messages.
+- But an actor’s single-threaded processing can become a bottleneck. 
+- Routers can achieve much higher throughput:
+    - With an optimization to the usual message-processing pipeline.
+    - That allows concurrent routing. 
+- This is achieved by:
+    - Embedding routers’ routing logic directly in their `ActorRef`.
+    - Rather than in the router actor. 
+- Messages sent to a router’s `ActorRef` can be immediately routed to the routee:
+    - Bypassing the single-threaded router actor entirely.
+- The cost to this is:
+    - That the internals of routing code are more complicated than if routers were implemented with normal actors. 
+    - Fortunately all of this complexity is invisible to consumers of the routing API. 
+    - However, it is something to be aware of when implementing your own routers.
 
 # Custom Router
+- You can create your own router should you not find any of the ones provided by Akka sufficient for your needs. 
+- In order to roll your own router you have to fulfill certain criteria which are explained in this section.
+- Before creating your own router:
+    - You should consider whether a normal actor with router-like behavior:
+    - Might do the job just as well as a full-blown router. 
+- As explained above, the primary benefit of routers over normal actors is their higher performance. 
+- But they are somewhat more complicated to write than normal actors. 
+- Therefore if lower maximum throughput is acceptable in your application you may wish to stick with traditional actors. 
+- This section, however, assumes that you wish to get maximum performance and so demonstrates how you can create your own router.
+- The router created in this example is replicating each message to a few destinations.
+- Start with the routing logic:
+```scala
+class RedundancyRoutingLogic(nbrCopies: Int) extends RoutingLogic {
+  val roundRobin = RoundRobinRoutingLogic()
+  def select(message: Any, routees: immutable.IndexedSeq[Routee]): Routee = {
+    val targets = (1 to nbrCopies).map(_ ⇒ roundRobin.select(message, routees))
+    SeveralRoutees(targets)
+  }
+}
+```
+- `select` will be called for each message and in this example pick a few destinations by round-robin:
+- By reusing the existing `RoundRobinRoutingLogic` and wrap the result in a `SeveralRoutees` instance. 
+- `SeveralRoutees` will send the message to all of the supplied routes.
+- The implementation of the routing logic must be thread safe, since it might be used outside of actors.
+- A unit test of the routing logic: 
+```scala
+final case class TestRoutee(n: Int) extends Routee {
+  override def send(message: Any, sender: ActorRef): Unit = ()
+}
 
+val logic = new RedundancyRoutingLogic(nbrCopies = 3)
 
+val routees = for (n ← 1 to 7) yield TestRoutee(n)
 
+val r1 = logic.select("msg", routees)
+r1.asInstanceOf[SeveralRoutees].routees should be(
+  Vector(TestRoutee(1), TestRoutee(2), TestRoutee(3)))
 
+val r2 = logic.select("msg", routees)
+r2.asInstanceOf[SeveralRoutees].routees should be(
+  Vector(TestRoutee(4), TestRoutee(5), TestRoutee(6)))
+
+val r3 = logic.select("msg", routees)
+r3.asInstanceOf[SeveralRoutees].routees should be(
+  Vector(TestRoutee(7), TestRoutee(1), TestRoutee(2)))
+```
+- You could stop here and use the `RedundancyRoutingLogic` with a `akka.routing.Router`.
+    - See [A Simple Router](#a-simple-router).
+- Let us continue and make this into a self contained, configurable, router actor.
+- Create a class that extends `Pool`, `Group` or `CustomRouterConfig`. 
+- That class is a factory for the routing logic and holds the configuration for the router. 
+- Here we make it a `Group`:
+```scala
+
+final case class RedundancyGroup(routeePaths: immutable.Iterable[String], nbrCopies: Int) extends Group {
+
+  def this(config: Config) = this(
+    routeePaths = immutableSeq(config.getStringList("routees.paths")),
+    nbrCopies = config.getInt("nbr-copies"))
+
+  override def paths(system: ActorSystem): immutable.Iterable[String] = routeePaths
+
+  override def createRouter(system: ActorSystem): Router =
+    new Router(new RedundancyRoutingLogic(nbrCopies))
+
+  override val routerDispatcher: String = Dispatchers.DefaultDispatcherId
+}
+```
+- This can be used exactly as the router actors provided by Akka:
+```scala
+for (n ← 1 to 10) system.actorOf(Props[Storage], "s" + n)
+
+val paths = for (n ← 1 to 10) yield ("/user/s" + n)
+val redundancy1: ActorRef =
+  system.actorOf(
+    RedundancyGroup(paths, nbrCopies = 3).props(),
+    name = "redundancy1")
+redundancy1 ! "important"
+```
+- Note that we added a constructor in `RedundancyGroup` that takes a `Config` parameter. 
+- That makes it possible to define it in configuration:
+```hocon
+akka.actor.deployment {
+  /redundancy2 {
+    router = "jdocs.routing.RedundancyGroup"
+    routees.paths = ["/user/s1", "/user/s2", "/user/s3"]
+    nbr-copies = 5
+  }
+}
+```
+- Note the fully qualified class name in the router property. 
+- The router class must extend `akka.routing.RouterConfig` (`Pool`, `Group` or `CustomRouterConfig`).
+- And have a constructor with one `com.typesafe.config.Config` parameter. 
+- The deployment section of the configuration is passed to the constructor:
+```scala
+val redundancy2: ActorRef = system.actorOf(
+  FromConfig.props(),
+  name = "redundancy2")
+redundancy2 ! "very important"
+```
 
 # Configuring Dispatchers
-
-
-
-
-
-
-
-
-
-
+- The dispatcher for created children of the pool will be taken from `Props` as described in [Dispatchers](../03-dispatchers).
+- To make it easy to define the dispatcher of the routees of the pool:
+- You can define the dispatcher inline in the deployment section of the config:
+```hocon
+akka.actor.deployment {
+  /poolWithDispatcher {
+    router = random-pool
+    nr-of-instances = 5
+    pool-dispatcher {
+      fork-join-executor.parallelism-min = 5
+      fork-join-executor.parallelism-max = 5
+    }
+  }
+}
+```
+- That is the only thing you need to do enable a dedicated dispatcher for a pool.
+- If you use a group of actors and route to their paths:
+    - Then they will still use the same dispatcher that was configured for them in their `Props`.
+    - It is not possible to change an actors dispatcher after it has been created.
+- The “head” router cannot always run on the same dispatcher.
+- Because it does not process the same type of messages.
+- Hence this special actor does not use the dispatcher configured in `Props`.
+- But takes the `routerDispatcher` from the `RouterConfig` instead.
+- Which defaults to the actor system’s default dispatcher. 
+- All standard routers allow setting this property in their constructor or factory method.
+- Custom routers have to implement the method in a suitable way.
+```scala
+val router: ActorRef = system.actorOf(
+  // “head” router actor will run on "router-dispatcher" dispatcher
+  // Worker routees will run on "pool-dispatcher" dispatcher
+  RandomPool(5, routerDispatcher = "router-dispatcher").props(Props[Worker]),
+  name = "poolWithDispatcher")
+```
+#### Note
+- It is not allowed to configure the `routerDispatcher` to be a `akka.dispatch.BalancingDispatcherConfigurator`.
+- Since the messages meant for the special router actor cannot be processed by any other actor.
