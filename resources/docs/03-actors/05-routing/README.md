@@ -245,7 +245,7 @@ val router2: ActorRef =
   context.actorOf(RoundRobinPool(5).props(Props[Worker]), "router2")
 ```
 
-### RoundRobinGroup defined in configuration
+### `RoundRobinGroup` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router3 {
@@ -259,17 +259,17 @@ val router3: ActorRef =
   context.actorOf(FromConfig.props(), "router3")
 ```
 
-### RoundRobinGroup defined in code
+### `RoundRobinGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
 val router4: ActorRef =
   context.actorOf(RoundRobinGroup(paths).props(), "router4")
 ```
 
-## RandomPool and RandomGroup
+## `RandomPool` and `RandomGroup`
 - This router type selects one of its routees randomly for each message.
 
-### RandomPool defined in configuration
+### `RandomPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router5 {
@@ -283,13 +283,13 @@ val router5: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router5")
 ```
 
-### RandomPool defined in code
+### `RandomPool` defined in code
 ```scala
 val router6: ActorRef =
   context.actorOf(RandomPool(5).props(Props[Worker]), "router6")
 ```
 
-### RandomGroup defined in configuration
+### `RandomGroup` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router7 {
@@ -303,14 +303,14 @@ val router7: ActorRef =
   context.actorOf(FromConfig.props(), "router7")
 ```
 
-### RandomGroup defined in code
+### `RandomGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
 val router8: ActorRef =
   context.actorOf(RandomGroup(paths).props(), "router8")
 ```
 
-## BalancingPool
+## `BalancingPool`
 - A Router that will try to redistribute work from busy routees to idle routees. 
 - All routees share the same mailbox.
   
@@ -329,7 +329,7 @@ val router8: ActorRef =
 - Do not use [Broadcast Messages](#broadcast-messages) when you use BalancingPool for routers.
 - See [Specially Handled Messages](#specially-handled-messages).
 
-### BalancingPool defined in configuration
+### `BalancingPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router9 {
@@ -343,7 +343,7 @@ val router9: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router9")
 ```
 
-### BalancingPool defined in code
+### `BalancingPool` defined in code
 ```scala
 val router10: ActorRef =
   context.actorOf(BalancingPool(5).props(Props[Worker]), "router10")
@@ -414,7 +414,7 @@ akka.actor.deployment {
 #### Note
 - There is no Group variant of the BalancingPool.
 
-## SmallestMailboxPool
+## `SmallestMailboxPool`
 - A Router that tries to send to the non-suspended child routee with fewest messages in mailbox. 
 - The selection is done in this order:
     - Pick any idle routee (not processing message) with empty mailbox.
@@ -422,7 +422,7 @@ akka.actor.deployment {
     - Pick routee with fewest pending messages in mailbox.
     - Pick any remote routee, remote actors are consider lowest priority, since their mailbox size is unknown.
 
-### SmallestMailboxPool defined in configuration
+### `SmallestMailboxPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router11 {
@@ -436,16 +436,16 @@ val router11: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router11")
 ```
 
-### SmallestMailboxPool defined in code
+### `SmallestMailboxPool` defined in code
 ```scala
 val router12: ActorRef =
   context.actorOf(SmallestMailboxPool(5).props(Props[Worker]), "router12")
 ```
 
-## BroadcastPool and BroadcastGroup
+## `BroadcastPool` and `BroadcastGroup`
 - A broadcast router forwards the message it receives to all its routees.
 
-### BroadcastPool defined in configuration
+### `BroadcastPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router13 {
@@ -459,13 +459,13 @@ val router13: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router13")
 ```
 
-### BroadcastPool defined in code
+### `BroadcastPool` defined in code
 ```scala
 val router14: ActorRef =
   context.actorOf(BroadcastPool(5).props(Props[Worker]), "router14")
 ```
 
-### BroadcastGroup defined in configuration
+### `BroadcastGroup` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router15 {
@@ -479,7 +479,7 @@ val router15: ActorRef =
   context.actorOf(FromConfig.props(), "router15")
 ```
 
-### BroadcastGroup defined in code
+### `BroadcastGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
 val router16: ActorRef =
@@ -491,9 +491,9 @@ val router16: ActorRef =
 - If you do not want to broadcast every message:
 - Then you can use a non-broadcasting router and use [Broadcast Messages](#broadcast-messages) as needed.
 
-## ScatterGatherFirstCompletedPool and ScatterGatherFirstCompletedGroup
+## `ScatterGatherFirstCompletedPool` and `ScatterGatherFirstCompletedGroup`
 
-### ScatterGatherFirstCompletedPool defined in configuration
+### `ScatterGatherFirstCompletedPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router17 {
@@ -510,7 +510,7 @@ val router17: ActorRef =
 
 
 
-### ScatterGatherFirstCompletedPool defined in code
+### `ScatterGatherFirstCompletedPool` defined in code
 ```scala
 val router18: ActorRef =
   context.actorOf(ScatterGatherFirstCompletedPool(5, within = 10.seconds).
@@ -519,7 +519,7 @@ val router18: ActorRef =
 
 
 
-### ScatterGatherFirstCompletedGroup defined in configuration
+### `ScatterGatherFirstCompletedGroup` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router19 {
@@ -535,7 +535,7 @@ val router19: ActorRef =
 ```
 
 
-### ScatterGatherFirstCompletedGroup defined in code
+### `ScatterGatherFirstCompletedGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
 val router20: ActorRef =
@@ -549,11 +549,11 @@ val router20: ActorRef =
 
 
 
-## TailChoppingPool and TailChoppingGroup
+## `TailChoppingPool` and `TailChoppingGroup`
 
 
 
-### TailChoppingPool defined in configuration
+### `TailChoppingPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router21 {
@@ -571,7 +571,7 @@ val router21: ActorRef =
 
 
 
-### TailChoppingPool defined in code
+### `TailChoppingPool` defined in code
 ```scala
 val router22: ActorRef =
   context.actorOf(TailChoppingPool(5, within = 10.seconds, interval = 20.millis).
@@ -581,7 +581,7 @@ val router22: ActorRef =
 
 
 
-### TailChoppingGroup defined in configuration
+### `TailChoppingGroup` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router23 {
@@ -599,7 +599,7 @@ val router23: ActorRef =
 
 
 
-### TailChoppingGroup defined in code
+### `TailChoppingGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
 val router24: ActorRef =
@@ -615,11 +615,11 @@ val router24: ActorRef =
 
 
 
-## ConsistentHashingPool and ConsistentHashingGroup
+## `ConsistentHashingPool` and `ConsistentHashingGroup`
 
 
 
-### ConsistentHashingPool defined in configuration
+### `ConsistentHashingPool` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router25 {
@@ -636,7 +636,7 @@ val router25: ActorRef =
 
 
 
-### ConsistentHashingPool defined in code
+### `ConsistentHashingPool` defined in code
 ```scala
 val router26: ActorRef =
   context.actorOf(
@@ -647,7 +647,7 @@ val router26: ActorRef =
 
 
 
-### ConsistentHashingGroup defined in configuration
+### `ConsistentHashingGroup` defined in configuration
 ```hocon
 akka.actor.deployment {
   /parent/router27 {
@@ -664,7 +664,7 @@ val router27: ActorRef =
 
 
 
-### ConsistentHashingGroup defined in code
+### `ConsistentHashingGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
 val router28: ActorRef =
