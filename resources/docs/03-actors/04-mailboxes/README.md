@@ -261,7 +261,7 @@ val myActor = context.actorOf(Props[MyActor].withMailbox("prio-mailbox"))
 ```
 
 ## `ControlAwareMailbox`
-- See [Example code](./mailboxes-examples/src/main/scala/mailboxes/prioritymailbox)
+- See [Example code](./mailboxes-examples/src/main/scala/mailboxes/controlawaremailbox)
 - A `ControlAwareMailbox` can be very useful if an actor needs to be able to receive control messages immediately.
 - No matter how many other messages are already in its mailbox.
 - It can be configured like this:
