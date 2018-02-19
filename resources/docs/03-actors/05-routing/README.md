@@ -492,7 +492,13 @@ val router16: ActorRef =
 - Then you can use a non-broadcasting router and use [Broadcast Messages](#broadcast-messages) as needed.
 
 ## `ScatterGatherFirstCompletedPool` and `ScatterGatherFirstCompletedGroup`
-
+- The `ScatterGatherFirstCompletedRouter` will send the message on to all its routees. 
+- It then waits for first reply it gets back. 
+- This result will be sent back to original sender. 
+- Other replies are discarded.
+- It is expecting at least one reply within a configured duration.
+- Otherwise it will reply with `akka.pattern.AskTimeoutException` in a `akka.actor.Status.Failure`.
+  
 ### `ScatterGatherFirstCompletedPool` defined in configuration
 ```hocon
 akka.actor.deployment {
@@ -508,16 +514,12 @@ val router17: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router17")
 ```
 
-
-
 ### `ScatterGatherFirstCompletedPool` defined in code
 ```scala
 val router18: ActorRef =
   context.actorOf(ScatterGatherFirstCompletedPool(5, within = 10.seconds).
     props(Props[Worker]), "router18")
 ```
-
-
 
 ### `ScatterGatherFirstCompletedGroup` defined in configuration
 ```hocon
@@ -534,7 +536,6 @@ val router19: ActorRef =
   context.actorOf(FromConfig.props(), "router19")
 ```
 
-
 ### `ScatterGatherFirstCompletedGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
@@ -544,14 +545,15 @@ val router20: ActorRef =
     within = 10.seconds).props(), "router20")
 ```
 
-
-
-
-
-
 ## `TailChoppingPool` and `TailChoppingGroup`
-
-
+- The `TailChoppingRouter` will first send the message to one, randomly picked, routee.
+- Then after a small delay to a second routee (picked randomly from the remaining routees) and so on. 
+- It waits for first reply it gets back and forwards it back to original sender. 
+- Other replies are discarded.
+- The goal of this router is to decrease latency:
+    - By performing redundant queries to multiple routees.
+    - Assuming that one of the other actors may still be faster to respond than the initial one.
+- See [Doing redundant work to speed up distributed queries](http://www.bailis.org/blog/doing-redundant-work-to-speed-up-distributed-queries/).
 
 ### `TailChoppingPool` defined in configuration
 ```hocon
@@ -569,17 +571,12 @@ val router21: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router21")
 ```
 
-
-
 ### `TailChoppingPool` defined in code
 ```scala
 val router22: ActorRef =
   context.actorOf(TailChoppingPool(5, within = 10.seconds, interval = 20.millis).
     props(Props[Worker]), "router22")
 ```
-
-
-
 
 ### `TailChoppingGroup` defined in configuration
 ```hocon
@@ -597,8 +594,6 @@ val router23: ActorRef =
   context.actorOf(FromConfig.props(), "router23")
 ```
 
-
-
 ### `TailChoppingGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
@@ -608,18 +603,72 @@ val router24: ActorRef =
     within = 10.seconds, interval = 20.millis).props(), "router24")
 ```
 
-
-
-
-
-
-
-
 ## `ConsistentHashingPool` and `ConsistentHashingGroup`
+- The `ConsistentHashingPool` uses [consistent hashing](http://en.wikipedia.org/wiki/Consistent_hashing) to select a routee based on the sent message. 
+- [This article](http://www.tom-e-white.com/2007/11/consistent-hashing.html) gives good insight into how consistent hashing is implemented.
+- There is 3 ways to define what data to use for the consistent hash key:
+    - You can define `hashMapping` of the router:
+        - To map incoming messages to their consistent hash key. 
+        - This makes the decision transparent for the sender.
+    - The messages may implement `akka.routing.ConsistentHashingRouter.ConsistentHashable`:
+        - The key is part of the message.
+        - It is convenient to define it together with the message definition.
+    - The messages can be wrapped in a `akka.routing.ConsistentHashingRouter.ConsistentHashableEnvelope`:
+        - To define what data to use for the consistent hash key. 
+        - The sender knows the key to use.
+- These ways to define the consistent hash key can be used together and at the same time for one router. 
+- The `hashMapping` is tried first.
+- Code example:
+```scala
+class Cache extends Actor {
+  var cache = Map.empty[String, String]
 
+  def receive = {
+    case Entry(key, value) ⇒ cache += (key -> value)
+    case Get(key)          ⇒ sender() ! cache.get(key)
+    case Evict(key)        ⇒ cache -= key
+  }
+}
 
+final case class Evict(key: String)
+
+final case class Get(key: String) extends ConsistentHashable {
+  override def consistentHashKey: Any = key
+}
+
+final case class Entry(key: String, value: String)
+```
+```scala
+def hashMapping: ConsistentHashMapping = {
+  case Evict(key) ⇒ key
+}
+
+val cache: ActorRef =
+  context.actorOf(ConsistentHashingPool(10, hashMapping = hashMapping).
+    props(Props[Cache]), name = "cache")
+
+cache ! ConsistentHashableEnvelope(
+  message = Entry("hello", "HELLO"), hashKey = "hello")
+cache ! ConsistentHashableEnvelope(
+  message = Entry("hi", "HI"), hashKey = "hi")
+
+cache ! Get("hello")
+expectMsg(Some("HELLO"))
+
+cache ! Get("hi")
+expectMsg(Some("HI"))
+
+cache ! Evict("hi")
+cache ! Get("hi")
+expectMsg(None)
+```
+- The `Get` message implements `ConsistentHashable` itself.
+- The `Entry` message is wrapped in a `ConsistentHashableEnvelope`. 
+- The `Evict` message is handled by the `hashMapping` partial function.
 
 ### `ConsistentHashingPool` defined in configuration
+- `virtual-nodes-factor` is the number of virtual nodes per routee.
+- That is used in the consistent hash node ring to make the distribution more uniform:
 ```hocon
 akka.actor.deployment {
   /parent/router25 {
@@ -634,8 +683,6 @@ val router25: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router25")
 ```
 
-
-
 ### `ConsistentHashingPool` defined in code
 ```scala
 val router26: ActorRef =
@@ -643,9 +690,6 @@ val router26: ActorRef =
     ConsistentHashingPool(5).props(Props[Worker]),
     "router26")
 ```
-
-
-
 
 ### `ConsistentHashingGroup` defined in configuration
 ```hocon
@@ -662,18 +706,12 @@ val router27: ActorRef =
   context.actorOf(FromConfig.props(), "router27")
 ```
 
-
-
 ### `ConsistentHashingGroup` defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
 val router28: ActorRef =
   context.actorOf(ConsistentHashingGroup(paths).props(), "router28")
 ```
-
-
-
-
 
 # Specially Handled Messages
 
