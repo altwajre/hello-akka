@@ -245,8 +245,6 @@ val router2: ActorRef =
   context.actorOf(RoundRobinPool(5).props(Props[Worker]), "router2")
 ```
 
-
-
 ### RoundRobinGroup defined in configuration
 ```hocon
 akka.actor.deployment {
@@ -261,7 +259,6 @@ val router3: ActorRef =
   context.actorOf(FromConfig.props(), "router3")
 ```
 
-
 ### RoundRobinGroup defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
@@ -270,8 +267,7 @@ val router4: ActorRef =
 ```
 
 ## RandomPool and RandomGroup
-
-
+- This router type selects one of its routees randomly for each message.
 
 ### RandomPool defined in configuration
 ```hocon
@@ -287,16 +283,11 @@ val router5: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router5")
 ```
 
-
-
 ### RandomPool defined in code
 ```scala
 val router6: ActorRef =
   context.actorOf(RandomPool(5).props(Props[Worker]), "router6")
 ```
-
-
-
 
 ### RandomGroup defined in configuration
 ```hocon
@@ -312,8 +303,6 @@ val router7: ActorRef =
   context.actorOf(FromConfig.props(), "router7")
 ```
 
-
-
 ### RandomGroup defined in code
 ```scala
 val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
@@ -321,23 +310,24 @@ val router8: ActorRef =
   context.actorOf(RandomGroup(paths).props(), "router8")
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## BalancingPool
+- A Router that will try to redistribute work from busy routees to idle routees. 
+- All routees share the same mailbox.
+  
+#### Warning
+- The BalancingPool has the property that its routees do not have truly distinct identity.
+- They have different names, but talking to them will not end up at the right actor in most cases. 
+- Therefore you cannot use it for workflows that require state to be kept within the routee.
+- You would in this case have to include the whole state in the messages.
+- See [SmallestMailboxPool](#smallestmailboxpool) for an alternative:
+    - You can have a vertically scaling service.
+    - That can interact in a stateful fashion with other services in the back-end.
+    - Before replying to the original client.
+    - Without placing a restriction on the message queue implementation.
 
-
+#### Warning
+- Do not use [Broadcast Messages](#broadcast-messages) when you use BalancingPool for routers.
+- See [Specially Handled Messages](#specially-handled-messages).
 
 ### BalancingPool defined in configuration
 ```hocon
@@ -353,22 +343,11 @@ val router9: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router9")
 ```
 
-
 ### BalancingPool defined in code
 ```scala
 val router10: ActorRef =
   context.actorOf(BalancingPool(5).props(Props[Worker]), "router10")
 ```
-
-
-
-
-
-
-
-
-
-
 
 ## SmallestMailboxPool
 
