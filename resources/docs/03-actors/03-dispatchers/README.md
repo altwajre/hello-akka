@@ -105,13 +105,82 @@ val myActor =
 - **Sharability**: Unlimited.
 - **Mailboxes**: Any, creates one per Actor per Thread (on demand).
 - **Use cases**: Testing.
-- **Driven by**: The calling thread (duh).
+- **Driven by**: The calling thread.
+
+## More dispatcher configuration examples
+
+### For actors that perform blocking IO
+- Configuring a dispatcher with fixed thread pool size:
+```hocon
+blocking-io-dispatcher {
+  type = Dispatcher
+  executor = "thread-pool-executor"
+  thread-pool-executor {
+    fixed-pool-size = 32
+  }
+  throughput = 1
+}
+```
+- And then using it:
+```scala
+val myActor =
+  context.actorOf(Props[MyActor].withDispatcher("blocking-io-dispatcher"), "myactor2")
+```
+
+### For CPU bound tasks
+- Uses the thread pool based on the number of cores:
+```hocon
+my-thread-pool-dispatcher {
+  # Dispatcher is the name of the event-based dispatcher
+  type = Dispatcher
+  # What kind of ExecutionService to use
+  executor = "thread-pool-executor"
+  # Configuration for the thread pool
+  thread-pool-executor {
+    # minimum number of threads to cap factor-based core number to
+    core-pool-size-min = 2
+    # No of core threads ... ceil(available processors * factor)
+    core-pool-size-factor = 2.0
+    # maximum number of threads to cap factor-based number to
+    core-pool-size-max = 10
+  }
+  # Throughput defines the maximum number of messages to be
+  # processed per actor before the thread jumps to the next actor.
+  # Set to 1 for as fair as possible.
+  throughput = 100
+}
+```
+
+
+
+
+
+
 
 
 
 
 
 # Blocking Needs Careful Management
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
