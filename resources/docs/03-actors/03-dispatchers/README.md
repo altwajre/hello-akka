@@ -273,8 +273,20 @@ for (i ← 1 to 100) {
     - **Turquoise**: Sleeping state.
     - **Orange**: Waiting state.
     - **Green**: Runnable state.
-- The thread information was recorded using the YourKit profiler, however any good JVM profiler has this feature (including the free and bundled with the Oracle JDK VisualVM, as well as Oracle Flight Recorder).
-- The orange portion of the thread shows that it is idle. Idle threads are fine - they’re ready to accept new work. However, large amount of turquoise (blocked, or sleeping as in our example) threads is very bad and leads to thread starvation.
+- The thread information was recorded using the [YourKit profiler](https://www.yourkit.com/java/profiler/features/).
+- However any good JVM profiler has this feature:
+    - Oracle JDK VisualVM.
+    - Oracle Flight Recorder.
+- The orange portion of the thread shows that it is idle. 
+- Idle threads are fine - they’re ready to accept new work. 
+- However, large amount of turquoise (blocked, or sleeping as in our example) threads is very bad and leads to thread starvation.
+
+#### Note
+- If you own a Lightbend subscription you can use the commercial [Thread Starvation Detector](http://developer.lightbend.com/docs/akka-commercial-addons/current/starvation-detector.html?_ga=2.65045102.1383436497.1519017755-542223074.1518507267):
+- Which will issue warning log statements if it detects any of your dispatchers suffering from starvation and other. 
+- It is a helpful first step to identify the problem is occurring in a production system.
+- Then you can apply the proposed solutions as explained below.
+
 ![Thread State Diagram](https://doc.akka.io/docs/akka/current/images/dispatcher-behaviour-on-bad-code.png)
 
 
