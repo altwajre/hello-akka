@@ -1,0 +1,1 @@
+https://doc.akka.io/docs/akka/2.5.9/fault-tolerance-sample.html?language=scala
