@@ -98,41 +98,41 @@ akka.actor.default-mailbox {
 
 # Builtin Mailbox Implementations
 
-## UnboundedMailbox (default):
+## `UnboundedMailbox`:
 - The default mailbox
 - **Backed by:**  a `java.util.concurrent.ConcurrentLinkedQueue`
 - **Blocking:** No
 - **Bounded:** No
 - **Configuration name:** `unbounded` or `akka.dispatch.UnboundedMailbox`
 
-## SingleConsumerOnlyUnboundedMailbox: 
+## `SingleConsumerOnlyUnboundedMailbox`: 
 - This queue may or may not be faster than the default one depending on your use-case - **be sure to benchmark properly!**
 - **Backed by:**  a Multiple-Producer Single-Consumer queue, cannot be used with `BalancingDispatcher`
 - **Blocking:** No
 - **Bounded:** No
 - **Configuration name:** `akka.dispatch.SingleConsumerOnlyUnboundedMailbox`
 
-## NonBlockingBoundedMailbox:
+## `NonBlockingBoundedMailbox`:
 - **Backed by:**  a very efficient Multiple-Producer Single-Consumer queue
 - **Blocking:** No (discards overflowing messages into deadLetters)
 - **Bounded:** Yes
 - **Configuration name:** `akka.dispatch.NonBlockingBoundedMailbox`
 
-## UnboundedControlAwareMailbox:
+## `UnboundedControlAwareMailbox`:
 - Delivers messages that extend `akka.dispatch.ControlMessage` with higher priority
 - **Backed by:**  two `java.util.concurrent.ConcurrentLinkedQueue`
 - **Blocking:** No
 - **Bounded:** No
 - **Configuration name:** `akka.dispatch.UnboundedControlAwareMailbox`
 
-## UnboundedPriorityMailbox:
+## `UnboundedPriorityMailbox`:
 - **Backed by:**  a `java.util.concurrent.PriorityBlockingQueue`
     - Delivery order for messages of equal priority is undefined - contrast with the `UnboundedStablePriorityMailbox`
 - **Blocking:** No
 - **Bounded:** No
 - **Configuration name:** `akka.dispatch.UnboundedPriorityMailbox`
 
-## UnboundedStablePriorityMailbox:
+## `UnboundedStablePriorityMailbox`:
 - **Backed by:**  a `java.util.concurrent.PriorityBlockingQueue` wrapped in an `akka.util.PriorityQueueStabilizer`
     - FIFO order is preserved for messages of equal priority - contrast with the `UnboundedPriorityMailbox`
 - **Blocking:** No
