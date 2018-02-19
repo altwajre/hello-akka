@@ -81,7 +81,9 @@ class Master extends Actor {
 - See [Specially Handled Messages](#specially-handled-messages).
 
 ## Pool
-
+- The following code and configuration snippets show how to create a [round-robin](#roundrobinpool-and-roundrobingroup) router.
+- It forwards messages to five `Worker` routees. 
+- The routees will be created as the router’s children.
 
 
 
@@ -112,6 +114,53 @@ class Master extends Actor {
 
 
 # Router usage
+
+
+## RoundRobinPool and RoundRobinGroup
+
+
+
+
+
+## RandomPool and RandomGroup
+
+
+
+
+
+## BalancingPool
+
+
+
+
+
+## SmallestMailboxPool
+
+
+
+
+
+## BroadcastPool and BroadcastGroup
+
+
+
+
+
+## ScatterGatherFirstCompletedPool and ScatterGatherFirstCompletedGroup
+
+
+
+
+
+## TailChoppingPool and TailChoppingGroup
+
+
+
+
+
+## ConsistentHashingPool and ConsistentHashingGroup
+
+
 
 
 
