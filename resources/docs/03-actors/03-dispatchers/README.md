@@ -282,26 +282,89 @@ for (i ← 1 to 100) {
 - However, large amount of turquoise (blocked, or sleeping as in our example) threads is very bad and leads to thread starvation.
 
 #### Note
-- If you own a Lightbend subscription you can use the commercial [Thread Starvation Detector](http://developer.lightbend.com/docs/akka-commercial-addons/current/starvation-detector.html?_ga=2.65045102.1383436497.1519017755-542223074.1518507267):
-- Which will issue warning log statements if it detects any of your dispatchers suffering from starvation and other. 
+- If you own a Lightbend subscription you can use the commercial [Thread Starvation Detector](http://developer.lightbend.com/docs/akka-commercial-addons/current/starvation-detector.html?_ga=2.65045102.1383436497.1519017755-542223074.1518507267).
+- It will issue warning log statements if it detects any of your dispatchers suffering from starvation and other. 
 - It is a helpful first step to identify the problem is occurring in a production system.
 - Then you can apply the proposed solutions as explained below.
 
-![Thread State Diagram](https://doc.akka.io/docs/akka/current/images/dispatcher-behaviour-on-bad-code.png)
+![Thread State Diagram - Bad](https://doc.akka.io/docs/akka/current/images/dispatcher-behaviour-on-bad-code.png)
 
-
-
-
-
-
-
-
-
-
-
-
+- In the above example we put the code under load by sending hundreds of messages to the blocking actor.
+- This causes threads of the default dispatcher to be blocked. 
+- The fork join pool based dispatcher in Akka then attempts to compensate for this blocking by adding more threads to the pool.
+- This however is not able to help if those too will immediately get blocked.
+- Eventually the blocking operations will dominate the entire dispatcher.
+- In essence, the `Thread.sleep` operation has dominated all threads.
+- This caused anything executing on the default dispatcher to starve for resources.
+- Including any actor that you have not configured an explicit dispatcher for.
 
 ## Solution: Dedicated dispatcher for blocking operations
+- One of the most efficient methods of isolating the blocking behaviour:
+    - Is to prepare and use a dedicated dispatcher for all those blocking operations. 
+- This will prevent the blocking behaviour from impacting the rest of the system
+- This technique is often referred to as as “bulk-heading” or simply “isolating blocking”.
+- In `application.conf`, the dispatcher dedicated to blocking behaviour should be configured as follows:
+```hocon
+my-blocking-dispatcher {
+  type = Dispatcher
+  executor = "thread-pool-executor"
+  thread-pool-executor {
+    fixed-pool-size = 16
+  }
+  throughput = 1
+}
+```
+- A `thread-pool-executor` based dispatcher allows us to set a limit on the number of threads it will host.
+- This way we gain tight control over how at-most-how-many blocked threads will be in the system.
+- The exact size should be fine tuned depending on:
+    - The workload you’re expecting to run on this dispatcher.
+    - And the number of cores of the machine you’re running the application on. 
+- **Usually a small number around the number of cores is a good default to start from**.
+- Whenever blocking has to be done, use the above configured dispatcher instead of the default one:
+```scala
+class SeparateDispatcherFutureActor extends Actor {
+  implicit val executionContext: ExecutionContext = context.system.dispatchers.lookup("my-blocking-dispatcher")
+
+  def receive = {
+    case i: Int ⇒
+      println(s"Calling blocking Future: ${i}")
+      Future {
+        Thread.sleep(5000) //block for 5 seconds
+        println(s"Blocking future finished ${i}")
+      }
+  }
+}
+```
+- The thread pool behaviour is shown in the below diagram:
+![Thread State Diagram - Good](https://doc.akka.io/docs/akka/current/images/dispatcher-behaviour-on-good-code.png)
+
+- Messages sent to `SeparateDispatcherFutureActor` and `PrintActor` are easily handled by the default dispatcher.
+    - The green lines, which represent the actual execution.
+- When blocking operations are run on the `my-blocking-dispatcher`:
+    - It uses the threads (up to the configured limit) to handle these operations. 
+    - The sleeping in this case is nicely isolated to just this dispatcher, and the default one remains unaffected.
+    - This allows the rest of the application to proceed as if nothing bad was happening. 
+    - After a certain period idleness, threads started by this dispatcher will be shut down.
+- The throughput of other actors was not impacted - they were still served on the default dispatcher.
+- This is the recommended way of dealing with any kind of blocking in reactive applications.
+- See also this [Akka HTTP example](https://doc.akka.io/docs/akka-http/current/handling-blocking-operations-in-akka-http-routes.html?language=scala#handling-blocking-operations-in-akka-http).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
