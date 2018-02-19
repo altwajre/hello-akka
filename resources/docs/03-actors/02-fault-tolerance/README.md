@@ -88,9 +88,178 @@ override val supervisorStrategy =
 - Toplevel actors means those which are created using `system.actorOf()`, and they are children of the [User Guardian](../../02-general-concepts/04-supervision-and-monitoring#user-the-guardian-actor). 
 - There are no special rules applied in this case, the guardian simply applies the configured strategy.
 
-
-
 # Test Application
+- The following section shows the effects of the different directives in practice, where a test setup is needed. 
+- See [Example 2](./fault-tolerance-examples/src/main/scala/faulttolerance/example2)
+- First off, we need a suitable supervisor:
+```scala
+class Supervisor extends Actor {
+  import akka.actor.OneForOneStrategy
+  import akka.actor.SupervisorStrategy._
+  import scala.concurrent.duration._
+
+  override val supervisorStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+      case _: ArithmeticException      ⇒ Resume
+      case _: NullPointerException     ⇒ Restart
+      case _: IllegalArgumentException ⇒ Stop
+      case _: Exception                ⇒ Escalate
+    }
+
+  def receive = {
+    case p: Props ⇒ sender() ! context.actorOf(p)
+  }
+}
+```
+- This supervisor will be used to create a child, with which we can experiment:
+```scala
+class Child extends Actor {
+  var state = 0
+  def receive = {
+    case ex: Exception ⇒ throw ex
+    case x: Int        ⇒ state = x
+    case "get"         ⇒ sender() ! state
+  }
+}
+```
+- The test is easier by using the utilities described in [Testing Actor Systems](../11-testing-actor-systems):
+- Where `TestProbe` provides an actor ref useful for receiving and inspecting replies.
+```scala
+class FaultHandlingDocSpec(_system: ActorSystem) extends TestKit(_system)
+  with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll {
+
+  def this() = this(ActorSystem(
+    "FaultHandlingDocSpec",
+    ConfigFactory.parseString("""
+      akka {
+        loggers = ["akka.testkit.TestEventListener"]
+        loglevel = "WARNING"
+      }
+      """)))
+
+  override def afterAll {
+    TestKit.shutdownActorSystem(system)
+  }
+
+  "A supervisor" must {
+    "apply the chosen strategy for its child" in {
+      // code here
+    }
+  }
+}
+```
+- Let us create actors:
+```scala
+val supervisor = system.actorOf(Props[Supervisor], "supervisor")
+
+supervisor ! Props[Child]
+val child = expectMsgType[ActorRef] // retrieve answer from TestKit’s testActor
+```
+- The first test shall demonstrate the `Resume` directive.
+- So we try it out by setting some non-initial state in the actor and have it fail:
+```scala
+child ! 42 // set state to 42
+child ! "get"
+expectMsg(42)
+
+child ! new ArithmeticException // crash it
+child ! "get"
+expectMsg(42)
+```
+- As you can see the value `42` survives the fault handling directive. 
+- Now, if we change the failure to a more serious `NullPointerException`, that will no longer be the case:
+```scala
+child ! new NullPointerException // crash it harder
+child ! "get"
+expectMsg(0)
+```
+- And finally in case of the fatal `IllegalArgumentException` the child will be terminated by the supervisor:
+```scala
+watch(child) // have testActor watch “child”
+child ! new IllegalArgumentException // break it
+expectMsgPF() { case Terminated(`child`) ⇒ () }
+```
+- Up to now the supervisor was completely unaffected by the child’s failure, because the directives set did handle it. 
+- In case of an `Exception`, this is not true anymore and the supervisor escalates the failure.
+```scala
+supervisor ! Props[Child] // create new child
+val child2 = expectMsgType[ActorRef]
+watch(child2)
+child2 ! "get" // verify it is alive
+expectMsg(0)
+
+child2 ! new Exception("CRASH") // escalate failure
+expectMsgPF() {
+  case t @ Terminated(`child2`) if t.existenceConfirmed ⇒ ()
+}
+```
+- The supervisor itself is supervised by the top-level actor provided by the `ActorSystem`:
+    - Which has the default policy to restart in case of all `Exception` cases.
+    - With the notable exceptions of `ActorInitializationException` and `ActorKilledException`. 
+- Since the default directive in case of a restart is to kill all children:
+    - We expected our poor child not to survive this failure.
+- In case this is not desired, we need to use a different supervisor which overrides this behavior.
+```scala
+class Supervisor2 extends Actor {
+  import akka.actor.OneForOneStrategy
+  import akka.actor.SupervisorStrategy._
+  import scala.concurrent.duration._
+
+  override val supervisorStrategy =
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+      case _: ArithmeticException      ⇒ Resume
+      case _: NullPointerException     ⇒ Restart
+      case _: IllegalArgumentException ⇒ Stop
+      case _: Exception                ⇒ Escalate
+    }
+
+  def receive = {
+    case p: Props ⇒ sender() ! context.actorOf(p)
+  }
+  // override default to kill all children during restart
+  override def preRestart(cause: Throwable, msg: Option[Any]) {}
+}
+```
+- With this parent, the child survives the escalated restart, as demonstrated in the last test:
+```scala
+val supervisor2 = system.actorOf(Props[Supervisor2], "supervisor2")
+
+supervisor2 ! Props[Child]
+val child3 = expectMsgType[ActorRef]
+
+child3 ! 23
+child3 ! "get"
+expectMsg(23)
+
+child3 ! new Exception("CRASH")
+child3 ! "get"
+expectMsg(0)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
