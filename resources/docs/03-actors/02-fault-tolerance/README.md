@@ -33,7 +33,7 @@ override val supervisorStrategy =
 - In the above example, `10` and `1 minute` are passed to the `maxNrOfRetries` and `withinTimeRange` parameters respectively.
 - Which means that the strategy restarts a child up to 10 restarts per minute. 
 - The child actor is stopped if the restart count exceeds `maxNrOfRetries` during the `withinTimeRange` duration.
-- Also, there are special values for these parameters. If you specify:
+- There are special values for these parameters. If you specify:
     - `-1` to `maxNrOfRetries`, and `Duration.inf` to `withinTimeRange`:
         - Then the child is always restarted without any limit.
     - `-1` to `maxNrOfRetries`, and a non-infinite `Duration` to `withinTimeRange`:
@@ -41,14 +41,12 @@ override val supervisorStrategy =
     - A non-negative number to `maxNrOfRetries` and `Duration.inf` to `withinTimeRange`:
         - `withinTimeRange` is treated as infinite duration.
         - No matter how long it takes, once the restart count exceeds `maxNrOfRetries`, the child actor is stopped.
-- The match statement which forms the bulk of the body is of type Decider which is a PartialFunction[Throwable, Directive]. This is the piece which maps child failure types to their corresponding directives.
-Note
-If the strategy is declared inside the supervising actor (as opposed to within a companion object) its decider has access to all internal state of the actor in a thread-safe fashion, including obtaining a reference to the currently failed child (available as the sender of the failure message).
-
-
-
-
-
+- The match statement which forms the bulk of the body is of type `Decider` which is a `PartialFunction[Throwable, Directive]`. 
+- This is the piece which maps child failure types to their corresponding directives.
+- If the strategy is declared inside the supervising actor (as opposed to within a companion object):
+    - Its decider has access to all internal state of the actor in a thread-safe fashion.
+    - And can obtain a reference to the currently failed child.
+        - Available as the sender of the failure message.
 
 # Supervision of Top-Level Actors
 
