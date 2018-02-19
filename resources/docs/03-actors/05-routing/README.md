@@ -34,15 +34,15 @@ class Master extends Actor {
 - We create a `Router` and specify that it should use `RoundRobinRoutingLogic` when routing the messages to the routees.
 
 ### The routing logic shipped with Akka are:
-#### `akka.routing.RoundRobinRoutingLogic`
-#### `akka.routing.RandomRoutingLogic`
-#### `akka.routing.SmallestMailboxRoutingLogic`
-#### `akka.routing.BroadcastRoutingLogic`
-#### `akka.routing.ScatterGatherFirstCompletedRoutingLogic`
-#### `akka.routing.TailChoppingRoutingLogic`
-#### `akka.routing.ConsistentHashingRoutingLogic`
+- `akka.routing.RoundRobinRoutingLogic`
+- `akka.routing.RandomRoutingLogic`
+- `akka.routing.SmallestMailboxRoutingLogic`
+- `akka.routing.BroadcastRoutingLogic`
+- `akka.routing.ScatterGatherFirstCompletedRoutingLogic`
+- `akka.routing.TailChoppingRoutingLogic`
+- `akka.routing.ConsistentHashingRoutingLogic`
 
-We create the routees as ordinary child actors wrapped in ActorRefRoutee. We watch the routees to be able to replace them if they are terminated.
+* We create the routees as ordinary child actors wrapped in ActorRefRoutee. We watch the routees to be able to replace them if they are terminated.
 
 Sending messages via the router is done with the route method, as is done for the Work messages in the example above.
 
