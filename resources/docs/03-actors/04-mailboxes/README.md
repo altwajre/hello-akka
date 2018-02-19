@@ -298,40 +298,103 @@ val a = system.actorOf(Props(classOf[Logger]).withDispatcher("control-aware-mail
  */
 ```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Creating your own Mailbox type
+```scala
+// Marker trait used for mailbox requirements mapping
+trait MyUnboundedMessageQueueSemantics
+```
+- Make sure to include a constructor which takes `akka.actor.ActorSystem.Settings` and `com.typesafe.config.Config` arguments.
+- This constructor is invoked reflectively to construct your mailbox type. 
+- The config passed in as second argument:
+    - Is that section from the configuration which describes the dispatcher or mailbox setting using this mailbox type.
+    - The mailbox type will be instantiated once for each dispatcher or mailbox setting using it.
+```scala
+object MyUnboundedMailbox {
 
+  // This is the MessageQueue implementation
+  class MyMessageQueue extends MessageQueue with MyUnboundedMessageQueueSemantics {
 
+    private final val queue = new ConcurrentLinkedQueue[Envelope]()
 
+    // these should be implemented; queue used as example
+    def enqueue(receiver: ActorRef, handle: Envelope): Unit = queue.offer(handle)
 
+    def dequeue(): Envelope = queue.poll()
 
-# Special Semantics of system.actorOf
+    def numberOfMessages: Int = queue.size
 
+    def hasMessages: Boolean = !queue.isEmpty
 
+    def cleanUp(owner: ActorRef, deadLetters: MessageQueue) {
+      while (hasMessages) {
+        deadLetters.enqueue(owner, dequeue())
+      }
+    }
+  }
 
+}
 
+// This is the Mailbox implementation
+class MyUnboundedMailbox extends MailboxType with ProducesMessageQueue[MyUnboundedMailbox.MyMessageQueue] {
 
+  import MyUnboundedMailbox._
 
+  // This constructor signature must exist, it will be called by Akka
+  def this(settings: ActorSystem.Settings, config: Config) = {
+    // put your initialization code here
+    this()
+  }
 
+  // The create method is called to create the MessageQueue
+  final override def create(owner: Option[ActorRef], system: Option[ActorSystem]): MessageQueue = new MyMessageQueue()
+}
+```
+- And then you just specify the FQCN of your MailboxType as the value of the `mailbox-type` in the dispatcher configuration, or the mailbox configuration:
+```hocon
+custom-dispatcher-mailbox {
+  mailbox-type = "jdocs.dispatcher.MyUnboundedMailbox"
+}
+```
+- You can also use the mailbox as a requirement on the dispatcher like this:
+```hocon
+custom-dispatcher {
+  mailbox-requirement =
+  "jdocs.dispatcher.MyUnboundedMessageQueueSemantics"
+}
 
+akka.actor.mailbox.requirements {
+  "jdocs.dispatcher.MyUnboundedMessageQueueSemantics" =
+  custom-dispatcher-mailbox
+}
 
+custom-dispatcher-mailbox {
+  mailbox-type = "jdocs.dispatcher.MyUnboundedMailbox"
+}
+```
+- Or by defining the requirement on your actor class like this:
+```scala
+class MySpecialActor extends Actor
+  with RequiresMessageQueue[MyUnboundedMessageQueueSemantics] {
+  // ...
+}
+```
 
+# Special Semantics of `system.actorOf`
+- In order to make `system.actorOf` both synchronous and non-blocking:
+    - While keeping the return type `ActorRef`.
+    - And the semantics that the returned ref is fully functional.
+    - Special handling takes place for this case. 
+- Behind the scenes:
+    - A hollow kind of actor reference is constructed.
+    - Which is sent to the system’s guardian actor who actually creates the actor and its context.
+    - Puts those inside the reference. 
+    - Until that has happened, messages sent to the `ActorRef` will be queued locally.
+    - Only upon swapping the real filling in will they be transferred into the real mailbox.
+```scala
+val props: Props = ...
+// this actor uses MyCustomMailbox, which is assumed to be a singleton
+system.actorOf(props.withDispatcher("myCustomMailbox")) ! "bang"
+assert(MyCustomMailbox.instance.getLastEnqueuedMessage == "bang")
+```
+- This will probably fail.
+- You will have to allow for some time to pass and retry the check à la `TestKit.awaitCond`.
