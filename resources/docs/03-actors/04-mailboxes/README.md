@@ -98,6 +98,10 @@ akka.actor.default-mailbox {
 
 # Builtin Mailbox Implementations
 
+- Bounded mailbox implementations which will:
+      - Block the sender if the capacity is reached.
+      - And configured with non-zero `mailbox-push-timeout-time`.
+
 ## `UnboundedMailbox`:
 - The default mailbox.
 - **Backed by:**  a `java.util.concurrent.ConcurrentLinkedQueue`
@@ -142,7 +146,34 @@ akka.actor.default-mailbox {
 - **Bounded:** No.
 - **Configuration name:** `akka.dispatch.UnboundedStablePriorityMailbox`.
 
+------------------------------------------------------------------------------------------------------------------------
 
+- The following mailboxes should only be used with zero `mailbox-push-timeout-time`.
+
+## `BoundedMailbox`:
+- **Backed by:** a `java.util.concurrent.LinkedBlockingQueue`.
+- **Blocking:**  Yes if used with non-zero `mailbox-push-timeout-time`, otherwise No.
+- **Bounded:**  Yes.
+- **Configuration name** : `bounded` or `akka.dispatch.BoundedMailbox`.
+## `BoundedPriorityMailbox`:
+- **Backed by:** a `java.util.PriorityQueue` wrapped in an `akka.util.BoundedBlockingQueue`.
+    - Delivery order for messages of equal priority is undefined - contrast with the `BoundedStablePriorityMailbox`.
+- **Blocking:**  Yes if used with non-zero `mailbox-push-timeout-time`, otherwise No.
+- **Bounded:**  Yes.
+- **Configuration name** : `akka.dispatch.BoundedPriorityMailbox`.
+## `BoundedStablePriorityMailbox`:
+- **Backed by:** a `java.util.PriorityQueue` wrapped in an `akka.util.PriorityQueueStabilizer` and an `akka.util.BoundedBlockingQueue`.
+    - FIFO order is preserved for messages of equal priority.
+    - Contrast with the BoundedPriorityMailbox.
+- **Blocking:**  Yes if used with non-zero `mailbox-push-timeout-time`, otherwise No.
+- **Bounded:**  Yes.
+- **Configuration name** : `akka.dispatch.BoundedStablePriorityMailbox`.
+## `BoundedControlAwareMailbox`:
+- Delivers messages that extend `akka.dispatch.ControlMessage` with higher priority.
+- **Backed by:** two `java.util.concurrent.ConcurrentLinkedQueue` and blocking on enqueue if capacity has been reached.
+- **Blocking:**  Yes if used with non-zero `mailbox-push-timeout-time`, otherwise No.
+- **Bounded:**  Yes.
+- **Configuration name** : `akka.dispatch.BoundedControlAwareMailbox`.
 
 
 
