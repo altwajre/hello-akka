@@ -41,7 +41,8 @@ override val supervisorStrategy =
     - A non-negative number to `maxNrOfRetries` and `Duration.inf` to `withinTimeRange`:
         - `withinTimeRange` is treated as infinite duration.
         - No matter how long it takes, once the restart count exceeds `maxNrOfRetries`, the child actor is stopped.
-- The match statement which forms the bulk of the body is of type `Decider` which is a `PartialFunction[Throwable, Directive]`. 
+- The match statement which forms the bulk of the body is of type `Decider`:
+    - Which is a `PartialFunction[Throwable, Directive]`. 
 - This is the piece which maps child failure types to their corresponding directives.
 - If the strategy is declared inside the supervising actor (as opposed to within a companion object):
     - Its decider has access to all internal state of the actor in a thread-safe fashion.
