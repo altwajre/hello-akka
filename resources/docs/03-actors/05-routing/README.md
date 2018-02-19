@@ -118,27 +118,127 @@ val routerRemote = system.actorOf(
 
 ## Senders
 - By default, when a routee sends a message, it will [implicitly set itself as the sender](../01-actors#tell-fire-forget).
-
-
-
+```scala
+sender() ! x // replies will go to this actor
+```
+- However, it is often useful for routees to set the router as a sender. 
+- For example, you might want to set the router as the sender if you want to hide the details of the routees behind the router. 
+- The following code snippet shows how to set the parent router as sender.
+```scala
+sender().tell("reply", context.parent) // replies will go back to parent
+sender().!("reply")(context.parent) // alternative syntax (beware of the parens!)
+```
 
 ## Supervision
+- Routees that are created by a pool router will be created as the router’s children. 
+- The router is therefore also the children’s supervisor.
+- The supervision strategy of the router actor can be configured with the `supervisorStrategy` property of the Pool. 
+- If no configuration is provided, routers default to a strategy of “always escalate”. 
+- This means that errors are passed up to the router’s supervisor for handling. 
+- The router’s supervisor will decide what to do about any errors.
+- Note the router’s supervisor will treat the error as an error with the router itself. 
+- Therefore a directive to stop or restart will cause the router itself to stop or restart. 
+- The router, in turn, will cause its children to stop and restart.
+- It should be mentioned that the router’s restart behavior has been overridden:
+    - So that a restart will still preserve the same number of actors in the pool.
+    - While still re-creating the children. 
+- This means that if you have not specified `supervisorStrategy` of the router or its parent:
+    - A failure in a routee will escalate to the parent of the router.
+    - Which will by default restart the router.
+    - Which will restart all routees.
+    - It uses Escalate and does not stop routees during restart. 
+- The reason is to make the default behave such that:
+    - Adding `.withRouter` to a child’s definition does not change the supervision strategy applied to the child. 
+- This might be an inefficiency that you can avoid by specifying the strategy when defining the router.
+- Setting the strategy is easily done:
+```scala
+val escalator = OneForOneStrategy() {
+  case e ⇒ testActor ! e; SupervisorStrategy.Escalate
+}
+val router = system.actorOf(RoundRobinPool(1, supervisorStrategy = escalator).props(
+  routeeProps = Props[TestActor]))
+```
 
-
-
-
+#### Note
+- If the child of a pool router terminates, the pool router will not automatically spawn a new child. 
+- In the event that all children of a pool router have terminated:
+    - The router will terminate itself unless it is a dynamic router.
+    - E.g. using a resizer.
 
 ## Group
-
-
-
-
-
+- Sometimes, rather than having the router actor create its routees:
+    - It is desirable to create routees separately.
+    - And provide them to the router for its use. 
+- You can do this by passing an paths of the routees to the router’s configuration. 
+- Messages will be sent with `ActorSelection` to these paths.
+- The example below shows how to create a router by providing it with the path strings of three routee actors:
+```hocon
+akka.actor.deployment {
+  /parent/router3 {
+    router = round-robin-group
+    routees.paths = ["/user/workers/w1", "/user/workers/w2", "/user/workers/w3"]
+  }
+}
+``` 
+```scala
+val router3: ActorRef =
+  context.actorOf(FromConfig.props(), "router3")
+```
+- Here is the same example with the router configuration provided programmatically:
+```scala
+val router4: ActorRef =
+  context.actorOf(RoundRobinGroup(paths).props(), "router4")
+```
+- The routee actors are created externally from the router:
+```scala
+system.actorOf(Props[Workers], "workers")
+```
+```scala
+class Workers extends Actor {
+  context.actorOf(Props[Worker], name = "w1")
+  context.actorOf(Props[Worker], name = "w2")
+  context.actorOf(Props[Worker], name = "w3")
+  // ...
+```
+- The paths may contain protocol and address information for actors running on remote hosts. 
+- Remoting requires the `akka-remote` module to be included in the classpath.
+```hocon
+akka.actor.deployment {
+  /parent/remoteGroup {
+    router = round-robin-group
+    routees.paths = [
+      "akka.tcp://app@10.0.0.1:2552/user/workers/w1",
+      "akka.tcp://app@10.0.0.2:2552/user/workers/w1",
+      "akka.tcp://app@10.0.0.3:2552/user/workers/w1"]
+  }
+}
+```
 
 # Router usage
-
+- In this section we will describe how to create the different types of router actors.
+- The router actors in this section are created from within a top level actor named `parent`. 
+- Note that deployment paths in the configuration starts with `/parent/` followed by the name of the router actor. 
+```scala
+system.actorOf(Props[Parent], "parent")
+```
 
 ## RoundRobinPool and RoundRobinGroup
+- Routes in a [round-robin](http://en.wikipedia.org/wiki/Round-robin) fashion to its routees.
+
+- `RoundRobinPool` defined in configuration:
+```hocon
+akka.actor.deployment {
+  /parent/router1 {
+    router = round-robin-pool
+    nr-of-instances = 5
+  }
+}
+```
+```scala
+val router1: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router1")
+```
+- `RoundRobinPool` defined in code:
 
 
 
