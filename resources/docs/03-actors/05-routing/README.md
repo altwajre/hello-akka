@@ -348,6 +348,71 @@ val router9: ActorRef =
 val router10: ActorRef =
   context.actorOf(BalancingPool(5).props(Props[Worker]), "router10")
 ```
+- Additional configuration for the balancing dispatcher can be configured:
+    - Which is used by the pool.
+    - In the `pool-dispatcher` section of the router deployment configuration:
+```hocon
+akka.actor.deployment {
+  /parent/router9b {
+    router = balancing-pool
+    nr-of-instances = 5
+    pool-dispatcher {
+      attempt-teamwork = off
+    }
+  }
+}
+```
+- The `BalancingPool` automatically uses a special `BalancingDispatcher` for its routees.
+- Disregarding any dispatcher that is set on the routee `Props` object. 
+- This is needed in order to implement the balancing semantics via sharing the same mailbox by all the routees.
+- While it is not possible to change the dispatcher used by the routees:
+    - It is possible to fine tune the used executor. 
+- By default the `fork-join-dispatcher` is used and can be configured.
+    - See [Dispatchers](../03-dispatchers). 
+- In situations where the routees are expected to perform blocking operations:
+    - It may be useful to replace it with a `thread-pool-executor`.
+    - Hinting the number of allocated threads explicitly:
+```hocon
+akka.actor.deployment {
+  /parent/router10b {
+    router = balancing-pool
+    nr-of-instances = 5
+    pool-dispatcher {
+      executor = "thread-pool-executor"
+
+      # allocate exactly 5 threads for this pool
+      thread-pool-executor {
+        core-pool-size-min = 5
+        core-pool-size-max = 5
+      }
+    }
+  }
+}
+```
+- It is also possible to change the mailbox used by the balancing dispatcher.
+- For scenarios where the default unbounded mailbox is not well suited. 
+- E.g. whether there exists the need to manage priority for each message. 
+- You can then implement a priority mailbox and configure your dispatcher:
+```hocon
+akka.actor.deployment {
+  /parent/router10c {
+    router = balancing-pool
+    nr-of-instances = 5
+    pool-dispatcher {
+      mailbox = myapp.myprioritymailbox
+    }
+  }
+}
+```
+#### Note
+- `BalancingDispatcher` requires a message queue that must be thread-safe for multiple concurrent consumers. 
+- So it is mandatory for the message queue:
+    - Backing a custom mailbox for this kind of dispatcher.
+    - To implement `akka.dispatch.MultipleConsumerSemantics`. 
+- See [Create your own Mailbox type](../04-mailboxes#creating-your-own-mailbox-type).
+
+#### Note
+- There is no Group variant of the BalancingPool.
 
 ## SmallestMailboxPool
 
