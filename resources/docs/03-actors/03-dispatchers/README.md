@@ -121,7 +121,6 @@ blocking-io-dispatcher {
   throughput = 1
 }
 ```
-- And then using it:
 ```scala
 val myActor =
   context.actorOf(Props[MyActor].withDispatcher("blocking-io-dispatcher"), "myactor2")
@@ -151,15 +150,48 @@ my-thread-pool-dispatcher {
 }
 ```
 
+### Small number of actors with state
+- A different kind of dispatcher that uses an **affinity pool** may increase throughput.
+- The affinity pool tries its best to ensure that an actor is always scheduled to run on the same thread. 
+- This actor to thread pinning aims to decrease CPU cache misses which can result in significant throughput improvement:
+```hocon
+affinity-pool-dispatcher {
+  # Dispatcher is the name of the event-based dispatcher
+  type = Dispatcher
+  # What kind of ExecutionService to use
+  executor = "affinity-pool-executor"
+  # Configuration for the thread pool
+  affinity-pool-executor {
+    # Min number of threads to cap factor-based parallelism number to
+    parallelism-min = 8
+    # Parallelism (threads) ... ceil(available processors * factor)
+    parallelism-factor = 1
+    # Max number of threads to cap factor-based parallelism number to
+    parallelism-max = 16
+  }
+  # Throughput defines the maximum number of messages to be
+  # processed per actor before the thread jumps to the next actor.
+  # Set to 1 for as fair as possible.
+  throughput = 100
+}
+```
 
-
-
-
-
-
-
-
-
+### Configuring a `PinnedDispatcher`
+```hocon
+my-pinned-dispatcher {
+  executor = "thread-pool-executor"
+  type = PinnedDispatcher
+}
+```
+```scala
+val myActor =
+  context.actorOf(Props[MyActor].withDispatcher("my-pinned-dispatcher"), "myactor3")
+```
+- Note that `thread-pool-executor` configuration as per the above `my-thread-pool-dispatcher` example is **NOT applicable**. 
+- This is because every actor will have its own thread pool when using `PinnedDispatcher`, and that pool will have only one thread.
+- It’s not guaranteed that the same thread is used over time:
+    - Since the core pool timeout is used for `PinnedDispatcher` to keep resource usage down in case of idle actors. 
+- To use the same thread all the time you need to add `thread-pool-executor.allow-core-timeout=off` to the configuration of the `PinnedDispatcher`.
 
 # Blocking Needs Careful Management
 
