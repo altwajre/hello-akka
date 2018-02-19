@@ -75,21 +75,90 @@ my-dispatcher {
 - The default mailbox `akka.actor.default-mailbox` will be used.
 
 ## Default Mailbox
-
-
-
-
+- When the mailbox is not specified as described above the default mailbox is used. 
+- By default it is an unbounded mailbox, which is backed by a `java.util.concurrent.ConcurrentLinkedQueue`.
+- `SingleConsumerOnlyUnboundedMailbox` is an even more efficient mailbox:
+    - It can be used as the default mailbox.
+    - But it cannot be used with a `BalancingDispatcher`.
+- Configuration of `SingleConsumerOnlyUnboundedMailbox` as default mailbox:
+```hocon
+akka.actor.default-mailbox {
+  mailbox-type = "akka.dispatch.SingleConsumerOnlyUnboundedMailbox"
+}
+```
 
 ## Which Configuration is passed to the Mailbox Type
-
-
-
-
-
-
-
+- Each mailbox type is implemented by a class which:
+    - Extends `MailboxType`.
+    - And takes two constructor arguments: a `ActorSystem.Settings` object and a `Config` section. 
+- The latter is computed by:
+    - Obtaining the named configuration section from the actor system’s configuration.
+    - Overriding its `id` key with the configuration path of the mailbox type.
+    - And adding a fall-back to the default mailbox configuration section.
 
 # Builtin Mailbox Implementations
+
+## UnboundedMailbox (default):
+- The default mailbox
+- **Backed by:**  a `java.util.concurrent.ConcurrentLinkedQueue`
+- **Blocking:** No
+- **Bounded:** No
+- **Configuration name:** `unbounded` or `akka.dispatch.UnboundedMailbox`
+
+## SingleConsumerOnlyUnboundedMailbox: 
+- This queue may or may not be faster than the default one depending on your use-case—be sure to benchmark properly!
+- **Backed by:**  a Multiple-Producer Single-Consumer queue, cannot be used with `BalancingDispatcher`
+- **Blocking:** No
+- **Bounded:** No
+- **Configuration name:** `akka.dispatch.SingleConsumerOnlyUnboundedMailbox`
+
+## NonBlockingBoundedMailbox:
+- **Backed by:**  a very efficient Multiple-Producer Single-Consumer queue
+- **Blocking:** No (discards overflowing messages into deadLetters)
+- **Bounded:** Yes
+- **Configuration name:** `akka.dispatch.NonBlockingBoundedMailbox`
+
+## UnboundedControlAwareMailbox:
+- Delivers messages that extend `akka.dispatch.ControlMessage` with higher priority
+- **Backed by:**  two `java.util.concurrent.ConcurrentLinkedQueue`
+- **Blocking:** No
+- **Bounded:** No
+- **Configuration name:** `akka.dispatch.UnboundedControlAwareMailbox`
+
+## UnboundedPriorityMailbox:
+- **Backed by:**  a `java.util.concurrent.PriorityBlockingQueue`
+- Delivery order for messages of equal priority is undefined - contrast with the `UnboundedStablePriorityMailbox`
+- **Blocking:** No
+- **Bounded:** No
+- **Configuration name:** `akka.dispatch.UnboundedPriorityMailbox`
+
+## UnboundedStablePriorityMailbox:
+- **Backed by:**  a `java.util.concurrent.PriorityBlockingQueue` wrapped in an `akka.util.PriorityQueueStabilizer`
+- FIFO order is preserved for messages of equal priority - contrast with the `UnboundedPriorityMailbox`
+- **Blocking:** No
+- **Bounded:** No
+- **Configuration name:** “akka.dispatch.UnboundedStablePriorityMailbox”
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
