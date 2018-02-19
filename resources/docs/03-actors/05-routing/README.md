@@ -238,13 +238,98 @@ akka.actor.deployment {
 val router1: ActorRef =
   context.actorOf(FromConfig.props(Props[Worker]), "router1")
 ```
-- `RoundRobinPool` defined in code:
+
+### `RoundRobinPool` defined in code
+```scala
+val router2: ActorRef =
+  context.actorOf(RoundRobinPool(5).props(Props[Worker]), "router2")
+```
 
 
 
+### RoundRobinGroup defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router3 {
+    router = round-robin-group
+    routees.paths = ["/user/workers/w1", "/user/workers/w2", "/user/workers/w3"]
+  }
+}
+```
+```scala
+val router3: ActorRef =
+  context.actorOf(FromConfig.props(), "router3")
+```
 
+
+### RoundRobinGroup defined in code
+```scala
+val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
+val router4: ActorRef =
+  context.actorOf(RoundRobinGroup(paths).props(), "router4")
+```
 
 ## RandomPool and RandomGroup
+
+
+
+### RandomPool defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router5 {
+    router = random-pool
+    nr-of-instances = 5
+  }
+}
+```
+```scala
+val router5: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router5")
+```
+
+
+
+### RandomPool defined in code
+```scala
+val router6: ActorRef =
+  context.actorOf(RandomPool(5).props(Props[Worker]), "router6")
+```
+
+
+
+
+### RandomGroup defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router7 {
+    router = random-group
+    routees.paths = ["/user/workers/w1", "/user/workers/w2", "/user/workers/w3"]
+  }
+}
+```
+```scala
+val router7: ActorRef =
+  context.actorOf(FromConfig.props(), "router7")
+```
+
+
+
+### RandomGroup defined in code
+```scala
+val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
+val router8: ActorRef =
+  context.actorOf(RandomGroup(paths).props(), "router8")
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -254,9 +339,63 @@ val router1: ActorRef =
 
 
 
+### BalancingPool defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router9 {
+    router = balancing-pool
+    nr-of-instances = 5
+  }
+}
+```
+```scala
+val router9: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router9")
+```
+
+
+### BalancingPool defined in code
+```scala
+val router10: ActorRef =
+  context.actorOf(BalancingPool(5).props(Props[Worker]), "router10")
+```
+
+
+
+
+
+
+
+
+
 
 
 ## SmallestMailboxPool
+
+
+
+### SmallestMailboxPool defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router11 {
+    router = smallest-mailbox-pool
+    nr-of-instances = 5
+  }
+}
+```
+```scala
+val router11: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router11")
+```
+
+
+### SmallestMailboxPool defined in code
+```scala
+val router12: ActorRef =
+  context.actorOf(SmallestMailboxPool(5).props(Props[Worker]), "router12")
+```
+
+
 
 
 
@@ -266,9 +405,113 @@ val router1: ActorRef =
 
 
 
+### BroadcastPool defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router13 {
+    router = broadcast-pool
+    nr-of-instances = 5
+  }
+}
+```
+```scala
+val router13: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router13")
+```
+
+
+
+### BroadcastPool defined in code
+```scala
+val router14: ActorRef =
+  context.actorOf(BroadcastPool(5).props(Props[Worker]), "router14")
+```
+
+
+
+
+### BroadcastGroup defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router15 {
+    router = broadcast-group
+    routees.paths = ["/user/workers/w1", "/user/workers/w2", "/user/workers/w3"]
+  }
+}
+```
+```scala
+val router15: ActorRef =
+  context.actorOf(FromConfig.props(), "router15")
+```
+
+
+
+### BroadcastGroup defined in code
+```scala
+val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
+val router16: ActorRef =
+  context.actorOf(BroadcastGroup(paths).props(), "router16")
+```
+
+
+
+
+
 
 
 ## ScatterGatherFirstCompletedPool and ScatterGatherFirstCompletedGroup
+
+### ScatterGatherFirstCompletedPool defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router17 {
+    router = scatter-gather-pool
+    nr-of-instances = 5
+    within = 10 seconds
+  }
+}
+```
+```scala
+val router17: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router17")
+```
+
+
+
+### ScatterGatherFirstCompletedPool defined in code
+```scala
+val router18: ActorRef =
+  context.actorOf(ScatterGatherFirstCompletedPool(5, within = 10.seconds).
+    props(Props[Worker]), "router18")
+```
+
+
+
+### ScatterGatherFirstCompletedGroup defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router19 {
+    router = scatter-gather-group
+    routees.paths = ["/user/workers/w1", "/user/workers/w2", "/user/workers/w3"]
+    within = 10 seconds
+  }
+}
+```
+```scala
+val router19: ActorRef =
+  context.actorOf(FromConfig.props(), "router19")
+```
+
+
+### ScatterGatherFirstCompletedGroup defined in code
+```scala
+val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
+val router20: ActorRef =
+  context.actorOf(ScatterGatherFirstCompletedGroup(
+    paths,
+    within = 10.seconds).props(), "router20")
+```
+
 
 
 
@@ -278,11 +521,123 @@ val router1: ActorRef =
 
 
 
+### TailChoppingPool defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router21 {
+    router = tail-chopping-pool
+    nr-of-instances = 5
+    within = 10 seconds
+    tail-chopping-router.interval = 20 milliseconds
+  }
+}
+```
+```scala
+val router21: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router21")
+```
+
+
+
+### TailChoppingPool defined in code
+```scala
+val router22: ActorRef =
+  context.actorOf(TailChoppingPool(5, within = 10.seconds, interval = 20.millis).
+    props(Props[Worker]), "router22")
+```
+
+
+
+
+### TailChoppingGroup defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router23 {
+    router = tail-chopping-group
+    routees.paths = ["/user/workers/w1", "/user/workers/w2", "/user/workers/w3"]
+    within = 10 seconds
+    tail-chopping-router.interval = 20 milliseconds
+  }
+}
+```
+```scala
+val router23: ActorRef =
+  context.actorOf(FromConfig.props(), "router23")
+```
+
+
+
+### TailChoppingGroup defined in code
+```scala
+val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
+val router24: ActorRef =
+  context.actorOf(TailChoppingGroup(
+    paths,
+    within = 10.seconds, interval = 20.millis).props(), "router24")
+```
+
+
+
+
+
+
 
 
 ## ConsistentHashingPool and ConsistentHashingGroup
 
 
+
+### ConsistentHashingPool defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router25 {
+    router = consistent-hashing-pool
+    nr-of-instances = 5
+    virtual-nodes-factor = 10
+  }
+}
+```
+```scala
+val router25: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router25")
+```
+
+
+
+### ConsistentHashingPool defined in code
+```scala
+val router26: ActorRef =
+  context.actorOf(
+    ConsistentHashingPool(5).props(Props[Worker]),
+    "router26")
+```
+
+
+
+
+### ConsistentHashingGroup defined in configuration
+```hocon
+akka.actor.deployment {
+  /parent/router27 {
+    router = consistent-hashing-group
+    routees.paths = ["/user/workers/w1", "/user/workers/w2", "/user/workers/w3"]
+    virtual-nodes-factor = 10
+  }
+}
+```
+```scala
+val router27: ActorRef =
+  context.actorOf(FromConfig.props(), "router27")
+```
+
+
+
+### ConsistentHashingGroup defined in code
+```scala
+val paths = List("/user/workers/w1", "/user/workers/w2", "/user/workers/w3")
+val router28: ActorRef =
+  context.actorOf(ConsistentHashingGroup(paths).props(), "router28")
+```
 
 
 
@@ -319,8 +674,8 @@ val router1: ActorRef =
 
 # Dynamically Resizable Pool
 
-
-
+## Default Resizer
+## Optimal Size Exploring Resizer
 
 
 # How Routing is Designed within Akka
