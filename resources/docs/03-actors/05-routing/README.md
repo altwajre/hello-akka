@@ -6,6 +6,15 @@
 - Akka comes with several useful routing strategies right out of the box. 
 - It is also possible to [create your own](#custom-router).
 
+### The routing logic shipped with Akka are:
+- `akka.routing.RoundRobinRoutingLogic`
+- `akka.routing.RandomRoutingLogic`
+- `akka.routing.SmallestMailboxRoutingLogic`
+- `akka.routing.BroadcastRoutingLogic`
+- `akka.routing.ScatterGatherFirstCompletedRoutingLogic`
+- `akka.routing.TailChoppingRoutingLogic`
+- `akka.routing.ConsistentHashingRoutingLogic`
+
 # A Simple Router
 - See [Example code](./routing-examples/src/main/scala/routing/simple)
 - The following example illustrates how to use a `Router` and manage the routees from within an actor.
@@ -32,21 +41,17 @@ class Master extends Actor {
 }
 ```
 - We create a `Router` and specify that it should use `RoundRobinRoutingLogic` when routing the messages to the routees.
+- We create the routees as ordinary child actors wrapped in `ActorRefRoutee`. 
+- We watch the routees to be able to replace them if they are terminated.
+- Sending messages via the router is done with the `route` method, as is done for the `Work` messages in the example above.
+- The `Router` is immutable and the `RoutingLogic` is thread safe.
+- Meaning that they can also be used outside of actors. 
 
-### The routing logic shipped with Akka are:
-- `akka.routing.RoundRobinRoutingLogic`
-- `akka.routing.RandomRoutingLogic`
-- `akka.routing.SmallestMailboxRoutingLogic`
-- `akka.routing.BroadcastRoutingLogic`
-- `akka.routing.ScatterGatherFirstCompletedRoutingLogic`
-- `akka.routing.TailChoppingRoutingLogic`
-- `akka.routing.ConsistentHashingRoutingLogic`
-
-* We create the routees as ordinary child actors wrapped in ActorRefRoutee. We watch the routees to be able to replace them if they are terminated.
-
-Sending messages via the router is done with the route method, as is done for the Work messages in the example above.
-
-The Router is immutable and the RoutingLogic is thread safe; meaning that they can also be used outside of actors. 
+#### Note
+- In general, any message sent to a router will be sent onwards to its routees.
+- But there is one exception: 
+    - The special [Broadcast Messages](#broadcast-messages) will send to all of a router’s routees. 
+    - However, do not use _Broadcast Messages_ when you use `BalancingPool` for routees as described in [Specially Handled Messages](#specially-handled-messages).
 
 # A Router Actor
 
@@ -61,6 +66,29 @@ The Router is immutable and the RoutingLogic is thread safe; meaning that they c
 
 
 # Specially Handled Messages
+
+
+## Broadcast Messages
+
+
+
+
+
+## PoisonPill Messages
+
+
+
+
+
+## Kill Messages
+
+
+
+
+
+## Management Messages
+
+
 
 
 
