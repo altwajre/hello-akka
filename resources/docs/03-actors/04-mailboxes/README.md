@@ -175,30 +175,112 @@ akka.actor.default-mailbox {
 - **Bounded:**  Yes.
 - **Configuration name** : `akka.dispatch.BoundedControlAwareMailbox`.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Mailbox configuration examples
+
+## `PriorityMailbox`
+```scala
+// We inherit, in this case, from UnboundedStablePriorityMailbox
+// and seed it with the priority generator
+class MyPrioMailbox(settings: ActorSystem.Settings, config: Config)
+  extends UnboundedStablePriorityMailbox(
+    // Create a new PriorityGenerator, lower prio means more important
+    PriorityGenerator {
+      // 'highpriority messages should be treated first if possible
+      case 'highpriority ⇒ 0
+
+      // 'lowpriority messages should be treated last if possible
+      case 'lowpriority  ⇒ 2
+
+      // PoisonPill when no other left
+      case PoisonPill    ⇒ 3
+
+      // We default to 1, which is in between high and low
+      case otherwise     ⇒ 1
+    })
+```
+- And then add it to the configuration:
+```hocon
+prio-mailbox {
+  mailbox-type = "docs.dispatcher.DispatcherDocSpec$MyPrioMailbox"
+  //Other dispatcher configuration goes here
+}
+```
+- And then an example on how you would use it:
+```scala
+// We create a new Actor that just prints out what it processes
+class Logger extends Actor {
+  val log: LoggingAdapter = Logging(context.system, this)
+
+  self ! 'lowpriority
+  self ! 'lowpriority
+  self ! 'highpriority
+  self ! 'pigdog
+  self ! 'pigdog2
+  self ! 'pigdog3
+  self ! 'highpriority
+  self ! PoisonPill
+
+  def receive = {
+    case x ⇒ log.info(x.toString)
+  }
+}
+val a = system.actorOf(Props(classOf[Logger]).withDispatcher("prio-mailbox"))
+
+/*
+ * Logs:
+ * 'highpriority
+ * 'highpriority
+ * 'pigdog
+ * 'pigdog2
+ * 'pigdog3
+ * 'lowpriority
+ * 'lowpriority
+ */
+```
+- It is also possible to configure a mailbox type directly like this:
+```hocon
+prio-mailbox {
+  mailbox-type = "docs.dispatcher.DispatcherDocSpec$MyPrioMailbox"
+  //Other mailbox configuration goes here
+}
+
+akka.actor.deployment {
+  /priomailboxactor {
+    mailbox = prio-mailbox
+  }
+}
+```
+- And then use it either from deployment like this:
+```scala
+val myActor = context.actorOf(Props[MyActor], "priomailboxactor")
+```
+- Or code like this:
+```scala
+val myActor = context.actorOf(Props[MyActor].withMailbox("prio-mailbox"))
+```
+
+## `ControlAwareMailbox`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
