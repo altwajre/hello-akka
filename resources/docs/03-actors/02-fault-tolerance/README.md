@@ -85,8 +85,8 @@ override val supervisorStrategy =
 - You may also customize the logging in your own `SupervisorStrategy` implementation by overriding the `logFailure` method.
 
 # Supervision of Top-Level Actors
-- Toplevel actors means those which are created using `system.actorOf()`, and they are children of the [User Guardian](../../02-general-concepts/04-supervision-and-monitoring#user-the-guardian-actor). There are no special rules applied in this case, the guardian simply applies the configured strategy.
-
+- Toplevel actors means those which are created using `system.actorOf()`, and they are children of the [User Guardian](../../02-general-concepts/04-supervision-and-monitoring#user-the-guardian-actor). 
+- There are no special rules applied in this case, the guardian simply applies the configured strategy.
 
 
 
