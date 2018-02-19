@@ -1,5 +1,120 @@
+# Mailboxes - Overview
+- An Akka `Mailbox` holds the messages that are destined for an `Actor`. 
+- Normally each `Actor` has its own mailbox, but with for example a `BalancingPool` all routees will share a single mailbox instance.
+
 # Mailbox Selection
+
+## Requiring a Message Queue Type for an Actor
+- It is possible to require a certain type of message queue for a certain type of actor:
+- By having that actor extend the parameterized trait `RequiresMessageQueue`:
+```scala
+class MyBoundedActor extends MyActor
+  with RequiresMessageQueue[BoundedMessageQueueSemantics]
+```
+- The type parameter to the `RequiresMessageQueue` trait needs to be mapped to a mailbox in configuration like this:
+```hocon
+bounded-mailbox {
+  mailbox-type = "akka.dispatch.BoundedMailbox"
+  mailbox-capacity = 1000
+  mailbox-push-timeout-time = 10s
+}
+
+akka.actor.mailbox.requirements {
+  "akka.dispatch.BoundedMessageQueueSemantics" = bounded-mailbox
+}
+```
+- Now every time you create an actor of type `MyBoundedActor` it will try to get a bounded mailbox. 
+- If the actor has a different mailbox configured in deployment:
+    - Either directly or via a dispatcher with a specified mailbox type.
+    - Then that will override this mapping.
+- The type of the queue in the mailbox created for an actor will be checked against the required type in the trait.
+- If the queue doesn’t implement the required type then actor creation will fail.
+
+## Requiring a Message Queue Type for a Dispatcher
+- A dispatcher may also have a requirement for the mailbox type used by the actors running on it. 
+- An example is the `BalancingDispatcher`:
+    - Which requires a message queue that is thread-safe for multiple concurrent consumers. 
+- Such a requirement is formulated within the dispatcher configuration section like this:
+```hocon
+my-dispatcher {
+  mailbox-requirement = org.example.MyInterface
+}
+```
+- The given requirement names a class or interface which will then be ensured to be a supertype of the message queue’s implementation. 
+- In case of a conflict:
+    - E.g. if the actor requires a mailbox type which does not satisfy this requirement.
+    - Then actor creation will fail.
+
+## How the Mailbox Type is Selected
+- When an actor is created, the `ActorRefProvider` first determines the dispatcher which will execute it. 
+- Then the mailbox is determined as follows:
+
+### Priority 1:
+- If the actor’s deployment configuration section contains a `mailbox` key:
+- Then that names a configuration section describing the mailbox type to be used.
+
+### Priority 2:
+- If the actor’s `Props` contains a mailbox selection:
+- I.e. `withMailbox` was called on it.
+- Then that names a configuration section describing the mailbox type to be used.
+
+### Priority 3:
+- If the dispatcher’s configuration section contains a `mailbox-type` key:
+- The same section will be used to configure the mailbox type.
+
+### Priority 4:
+- If the actor requires a mailbox type as described above:
+- Then the mapping for that requirement will be used to determine the mailbox type to be used.
+- If that fails then the dispatcher’s requirement (if any) will be tried instead.
+
+### Priority 5:
+- If the dispatcher requires a mailbox type as described above:
+- Then the mapping for that requirement will be used to determine the mailbox type to be used.
+
+### Priority 6:
+- The default mailbox `akka.actor.default-mailbox` will be used.
+
+## Default Mailbox
+
+
+
+
+
+## Which Configuration is passed to the Mailbox Type
+
+
+
+
+
+
+
+
 # Builtin Mailbox Implementations
+
+
+
+
+
 # Mailbox configuration examples
+
+
+
+
+
 # Creating your own Mailbox type
+
+
+
+
+
 # Special Semantics of system.actorOf
+
+
+
+
+
+
+
+
+
+

@@ -354,7 +354,7 @@ class SeparateDispatcherFutureActor extends Actor {
 #### Solution 1:
 - Do the blocking call within an actor (or a set of actors) managed by a router.
 - Make sure to configure a thread pool which is either dedicated for this purpose or sufficiently sized.
-- This especially well-suited for resources which are single-threaded in nature:
+- This is especially well-suited for resources which are single-threaded in nature:
     - Like database handles which traditionally can only execute one outstanding query at a time.
     - And use internal synchronization to ensure this. 
 - A common pattern is to create a router for N actors:
