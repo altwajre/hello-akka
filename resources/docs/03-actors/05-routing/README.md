@@ -84,18 +84,40 @@ class Master extends Actor {
 - The following code and configuration snippets show how to create a [round-robin](#roundrobinpool-and-roundrobingroup) router.
 - It forwards messages to five `Worker` routees. 
 - The routees will be created as the router’s children.
-
-
-
+```hocon
+akka.actor.deployment {
+  /parent/router1 {
+    router = round-robin-pool
+    nr-of-instances = 5
+  }
+}
+```
+```scala
+val router1: ActorRef =
+  context.actorOf(FromConfig.props(Props[Worker]), "router1")
+```
+- Here is the same example, but with the router configuration provided programmatically instead of from configuration:
+```scala
+val router2: ActorRef =
+  context.actorOf(RoundRobinPool(5).props(Props[Worker]), "router2")
+```
 
 ## Remote Deployed Routees
-
-
-
-
+- You can instruct the router to deploy its created children on a set of remote hosts. 
+- Routees will be deployed in round-robin fashion. 
+- In order to deploy routees remotely, wrap the router configuration in a `RemoteRouterConfig`.
+- Attaching the remote addresses of the nodes to deploy to. 
+- Remote deployment requires the `akka-remote` module to be included in the classpath.
+```scala
+val addresses = Seq(
+  Address("akka.tcp", "remotesys", "otherhost", 1234),
+  AddressFromURIString("akka.tcp://othersys@anotherhost:1234"))
+val routerRemote = system.actorOf(
+  RemoteRouterConfig(RoundRobinPool(5), addresses).props(Props[Echo]))
+```
 
 ## Senders
-
+- By default, when a routee sends a message, it will [implicitly set itself as the sender](../01-actors#tell-fire-forget).
 
 
 
