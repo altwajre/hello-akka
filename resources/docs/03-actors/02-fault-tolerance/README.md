@@ -48,9 +48,44 @@ override val supervisorStrategy =
     - Its decider has access to all internal state of the actor in a thread-safe fashion.
     - And can obtain a reference to the currently failed child.
         - Available as the sender of the failure message.
+        
+## Default Supervisor Strategy
+- `Escalate` is used if the defined strategy doesn’t cover the exception that was thrown.
+- When the supervisor strategy is not defined for an actor the following exceptions are handled by default:
+    - `ActorInitializationException`: Stop child.
+    - `ActorKilledException`: Stop child.
+    - `DeathPactException`: Stop child.
+    - `Exception`: Restart child.
+    - Other types of `Throwable`: Escalated to parent.
+- If the exception escalate all the way up to the root guardian it will handle it in the same way as the default strategy defined above.
+- You can combine your own strategy with the default strategy:
+```scala
+override val supervisorStrategy =
+  OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute) {
+    case _: ArithmeticException ⇒ Resume
+    case t ⇒
+      super.supervisorStrategy.decider.applyOrElse(t, (_: Any) ⇒ Escalate)
+  }
+```
+
+## Stopping Supervisor Strategy
+- Closer to the _Erlang_ way is the strategy to:
+    - Just stop children when they fail.
+    - Then take corrective action in the supervisor when DeathWatch signals the loss of the child. 
+- This strategy is also provided pre-packaged as `SupervisorStrategy.stoppingStrategy`:
+    - With an accompanying `StoppingSupervisorStrategy` configurator to be used when you want the `/user` guardian to apply it.
+
+## Logging of Actor Failures
+- By default the `SupervisorStrategy` logs failures unless they are escalated. 
+- Escalated failures are supposed to be handled, and potentially logged, at a level higher in the hierarchy.
+- You can mute the default logging of a `SupervisorStrategy` by setting `loggingEnabled` to `false` when instantiating it. 
+- Customized logging can be done inside the `Decider`. 
+- The reference to the currently failed child is available as the `sender`:
+    - When the `SupervisorStrategy` is declared inside the supervising actor.
+- You may also customize the logging in your own `SupervisorStrategy` implementation by overriding the `logFailure` method.
 
 # Supervision of Top-Level Actors
-
+- Toplevel actors means those which are created using `system.actorOf()`, and they are children of the [User Guardian](../../02-general-concepts/04-supervision-and-monitoring#user-the-guardian-actor). There are no special rules applied in this case, the guardian simply applies the configured strategy.
 
 
 
