@@ -350,20 +350,29 @@ class SeparateDispatcherFutureActor extends Actor {
 - See also this [Akka HTTP example](https://doc.akka.io/docs/akka-http/current/handling-blocking-operations-in-akka-http-routes.html?language=scala#handling-blocking-operations-in-akka-http).
 
 ## Available solutions to blocking operations
-- The non-exhaustive list of adequate solutions to the “blocking problem” includes the following suggestions:
 
 #### Solution 1:
-- Do the blocking call within an actor (or a set of actors) managed by a router, making sure to configure a thread pool which is either dedicated for this purpose or sufficiently sized.
-- This especially well-suited for resources which are single-threaded in nature, like database handles which traditionally can only execute one outstanding query at a time and use internal synchronization to ensure this. A common pattern is to create a router for N actors, each of which wraps a single DB connection and handles queries as sent to the router. The number N must then be tuned for maximum throughput, which will vary depending on which DBMS is deployed on what hardware.
+- Do the blocking call within an actor (or a set of actors) managed by a router.
+- Make sure to configure a thread pool which is either dedicated for this purpose or sufficiently sized.
+- This especially well-suited for resources which are single-threaded in nature:
+    - Like database handles which traditionally can only execute one outstanding query at a time.
+    - And use internal synchronization to ensure this. 
+- A common pattern is to create a router for N actors:
+    - Each of which wraps a single DB connection and handles queries as sent to the router. 
+    - The number N must then be tuned for maximum throughput.
+    - This will vary depending on which DBMS is deployed on what hardware.
 
 #### Solution 2:
-- Do the blocking call within a Future, ensuring an upper bound on the number of such calls at any point in time (submitting an unbounded number of tasks of this nature will exhaust your memory or thread limits).
+- Do the blocking call within a `Future`, ensuring an upper bound on the number of such calls at any point in time.
+- Submitting an unbounded number of tasks of this nature will exhaust your memory or thread limits.
 
 #### Solution 3:
-- Do the blocking call within a Future, providing a thread pool with an upper limit on the number of threads which is appropriate for the hardware on which the application runs, as explained in detail in this section.
+- Do the blocking call within a `Future`, providing a thread pool with an upper limit on the number of threads.
+- Which is appropriate for the hardware on which the application runs, as explained in detail in this section.
 
 #### Solution 4:
-- Dedicate a single thread to manage a set of blocking resources (e.g. a NIO selector driving multiple channels) and dispatch events as they occur as actor messages.
+- Dedicate a single thread to manage a set of blocking resources and dispatch events as they occur as actor messages.
+- E.g. a NIO selector driving multiple channels.
 
 # Note
 - Configuring thread pools is a task best delegated to Akka.
