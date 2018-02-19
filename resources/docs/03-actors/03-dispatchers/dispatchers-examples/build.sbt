@@ -1,4 +1,4 @@
-name := "fault-tolerance-examples"
+name := "dispatchers-examples"
 
 version := "1.0"
 

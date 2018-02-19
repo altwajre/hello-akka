@@ -194,6 +194,72 @@ val myActor =
 - To use the same thread all the time you need to add `thread-pool-executor.allow-core-timeout=off` to the configuration of the `PinnedDispatcher`.
 
 # Blocking Needs Careful Management
+- In some cases it is unavoidable to do blocking operations.
+- I.e. to put a thread to sleep for an indeterminate time, waiting for an external event to occur. 
+- Examples are **legacy RDBMS drivers** or **messaging APIs**.
+- The underlying reason is typically that network I/O occurs under the covers.
+```scala
+class BlockingActor extends Actor {
+   def receive = {
+     case i: Int ⇒
+       Thread.sleep(5000) //block for 5 seconds, representing blocking I/O, etc
+       println(s"Blocking operation finished: ${i}")
+   }
+}
+```
+- When facing this, you may be tempted to just wrap the blocking call inside a `Future` and work with that instead.
+- But this strategy is too simple: 
+- You are quite likely to find bottlenecks or run out of memory or threads when the application runs under increased load.
+```scala
+class BlockingFutureActor extends Actor {
+   implicit val executionContext: ExecutionContext = context.dispatcher
+ 
+   def receive = {
+     case i: Int ⇒
+       println(s"Calling blocking Future: ${i}")
+       Future {
+         Thread.sleep(5000) //block for 5 seconds
+         println(s"Blocking future finished ${i}")
+       }
+   }
+}
+```
+
+## Problem: Blocking on default dispatcher
+- The key here is this line:
+```scala
+implicit val executionContext: ExecutionContext = context.dispatcher
+```
+- Using `context.dispatcher` as the dispatcher on which the blocking `Future` executes can be a problem.
+- This dispatcher is by default used for all other actor processing unless you set up a separate dispatcher for the actor.
+- If all of the available threads are blocked:
+    - Then all the actors on the same dispatcher will starve for threads and will not be able to process incoming messages.
+- Blocking APIs should be avoided if possible. 
+- Try to find or build **Reactive APIs**, such that blocking is minimised, or moved over to dedicated dispatchers.
+- Often when integrating with existing libraries or systems it is not possible to avoid blocking APIs. 
+- The [following solution](#solution-dedicated-dispatcher-for-blocking-operations) explains how to handle blocking operations properly.
+- Note that the same hints apply to managing blocking operations anywhere in Akka:
+    - Including Streams, Http and other reactive libraries built on top of it.
+- Let’s set up an application with the above `BlockingFutureActor` and the following `PrintActor`.
+- See [Example 1](./dispatchers-examples/src/main/scala/dispatchers/example1)  
+```scala
+class PrintActor extends Actor {
+   def receive = {
+     case i: Int ⇒
+       println(s"PrintActor: ${i}")
+   }
+}
+```
+```scala
+val actor1 = system.actorOf(Props(new BlockingFutureActor))
+val actor2 = system.actorOf(Props(new PrintActor))
+
+for (i ← 1 to 100) {
+  actor1 ! i
+  actor2 ! i
+}
+```
+- Here the app is sending 100 messages to BlockingFutureActor and PrintActor and large numbers of akka.actor.default-dispatcher threads are handling requests. When you run the above code, you will likely to see the entire application gets stuck somewhere like this:
 
 
 
@@ -203,6 +269,19 @@ val myActor =
 
 
 
+
+
+
+
+
+
+## Solution: Dedicated dispatcher for blocking operations
+
+
+
+
+
+## Available solutions to blocking operations
 
 
 
