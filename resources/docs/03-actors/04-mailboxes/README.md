@@ -106,7 +106,7 @@ akka.actor.default-mailbox {
 - **Configuration name:** `unbounded` or `akka.dispatch.UnboundedMailbox`
 
 ## SingleConsumerOnlyUnboundedMailbox: 
-- This queue may or may not be faster than the default one depending on your use-case—be sure to benchmark properly!
+- This queue may or may not be faster than the default one depending on your use-case - **be sure to benchmark properly!**
 - **Backed by:**  a Multiple-Producer Single-Consumer queue, cannot be used with `BalancingDispatcher`
 - **Blocking:** No
 - **Bounded:** No
@@ -127,14 +127,14 @@ akka.actor.default-mailbox {
 
 ## UnboundedPriorityMailbox:
 - **Backed by:**  a `java.util.concurrent.PriorityBlockingQueue`
-- Delivery order for messages of equal priority is undefined - contrast with the `UnboundedStablePriorityMailbox`
+    - Delivery order for messages of equal priority is undefined - contrast with the `UnboundedStablePriorityMailbox`
 - **Blocking:** No
 - **Bounded:** No
 - **Configuration name:** `akka.dispatch.UnboundedPriorityMailbox`
 
 ## UnboundedStablePriorityMailbox:
 - **Backed by:**  a `java.util.concurrent.PriorityBlockingQueue` wrapped in an `akka.util.PriorityQueueStabilizer`
-- FIFO order is preserved for messages of equal priority - contrast with the `UnboundedPriorityMailbox`
+    - FIFO order is preserved for messages of equal priority - contrast with the `UnboundedPriorityMailbox`
 - **Blocking:** No
 - **Bounded:** No
 - **Configuration name:** “akka.dispatch.UnboundedStablePriorityMailbox”
