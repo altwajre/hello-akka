@@ -365,24 +365,6 @@ class SeparateDispatcherFutureActor extends Actor {
 #### Solution 4:
 - Dedicate a single thread to manage a set of blocking resources (e.g. a NIO selector driving multiple channels) and dispatch events as they occur as actor messages.
 
-#### Note
-- Configuring thread pools is a task best delegated to Akka, simply configure in the application.conf and instantiate through an ActorSystem
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Note
+- Configuring thread pools is a task best delegated to Akka.
+- Simply configure in the `application.conf` and instantiate through an `ActorSystem`.
