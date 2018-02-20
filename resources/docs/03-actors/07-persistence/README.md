@@ -401,7 +401,7 @@ Message deletion doesn’t affect the highest sequence number of the journal, ev
 Persisting, deleting, and replaying messages can either succeed or fail.
 
 | Method                 | Success                 |
-|------------------------|-------------------------|
+|:-----------------------|:------------------------|
 | persist / persistAsync | persist handler invoked |
 | onPersistRejected      | No automatic actions.   |
 | recovery               | RecoveryCompleted       |
@@ -546,7 +546,7 @@ To bulk-delete a range of snapshots matching SnapshotSelectionCriteria, persiste
 Saving or deleting snapshots can either succeed or fail – this information is reported back to the persistent actor via status messages as illustrated in the following table.
 
 | Method                                     | Success                | Failure message        |
-|:-------------------------------------------|------------------------|------------------------|
+|:-------------------------------------------|:-----------------------|:-----------------------|
 | saveSnapshot(Any)                          | SaveSnapshotSuccess    | SaveSnapshotFailure    |
 | deleteSnapshot(Long)                       | DeleteSnapshotSuccess  | DeleteSnapshotFailure  |
 | deleteSnapshots(SnapshotSelectionCriteria) | DeleteSnapshotsSuccess | DeleteSnapshotsFailure |
