@@ -432,30 +432,49 @@ when(Active, stateTimeout = 1 second) {
 when(SomeState)(FSM.NullFunction)
 ```
 
-
-
-
-
 ## Defining the Initial State
-
-
-
-
-
-
-
+- Each FSM needs a starting point, which is declared using:
+```scala
+startWith(state, data[, timeout])
+```
+- The optionally given timeout argument overrides any specification given for the desired initial state. 
+- If you want to cancel a default timeout, use `None`.
 
 ## Unhandled Events
+- If a state doesn’t handle a received event a warning is logged. 
+- If you want to do something else in this case:
+- You can specify that with `whenUnhandled(stateFunction)`:
+```scala
+whenUnhandled {
+  case Event(x: X, data) ⇒
+    log.info("Received unhandled event: " + x)
+    stay
+  case Event(msg, _) ⇒
+    log.warning("Received unknown event: " + msg)
+    goto(Error)
+}
+```
+- Within this handler the state of the FSM may be queried using the `stateName` method.
 
-
-
-
-
-
-
+#### Important
+- This handler is not stacked:
+- Meaning that each invocation of `whenUnhandled` replaces the previously installed handler.
 
 ## Initiating Transitions
-
+- The result of any `stateFunction` must be a definition of the next state:
+- Unless terminating the FSM.
+- See [Termination from Inside](#termination-from-inside). 
+- The state definition can either be the current state:
+- As described by the stay directive:
+- Or it is a different state as given by `goto(state)`. 
+- The resulting object allows further qualification by way of the modifiers described in the following:
+- **`forMax(duration)`**: 
+    - This modifier sets a state timeout on the next state. This means that a timer is started which upon expiry sends a StateTimeout message to the FSM. This timer is canceled upon reception of any other message in the meantime; you can rely on the fact that the StateTimeout message will not be processed after an intervening message. This modifier can also be used to override any default timeout which is specified for the target state. If you want to cancel the default timeout, use Duration.Inf.
+- **`using(data)`**: 
+    - This modifier replaces the old state data with the new data given. If you follow the advice above, this is the only place where internal state data are ever modified.
+- **`replying(msg)`**: 
+    - This modifier sends a reply to the currently processed message and otherwise does not modify the state transition.
+- All modifiers can be chained to achieve a nice and concise description:
 
 
 
