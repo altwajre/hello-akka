@@ -366,7 +366,7 @@ class Buncher extends FSM[State, Data] {
 
 #### Note
 - The `FSM` trait defines a `receive` method.
-- Which handles internal messages and passes everything else through to the FSM logic.
+- Which handles internal messages and passes everything else through to the FSM logic:
     - According to the current state. 
 - When overriding the `receive` method:
     - State timeout handling depends on actually passing the messages through the FSM logic.
