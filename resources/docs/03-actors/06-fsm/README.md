@@ -325,6 +325,8 @@ class FSMDocSpec extends MyFavoriteTestFrameWorkPlusAkkaTestKit {
 ```
 
 # Reference
+
+## The FSM Trait and Object
 - The `FSM` trait inherits directly from `Actor`.
 - When you extend `FSM` you must be aware that an actor is actually created: 
 ```scala
@@ -379,21 +381,30 @@ class Buncher extends FSM[State, Data] {
 - The state data together with the state name describe the internal state of the state machine.
 - If you stick to this scheme and do not add mutable fields to the `FSM` class:
 - You have the advantage of making all changes of the internal state explicit in a few well-known places.
-##
-
-## The FSM Trait and Object
-
-
-
-
-
-
-
 
 ## Defining States
-
-
-
+- A state is defined by one or more invocations of the method:
+```
+when(<name>[, stateTimeout = <timeout>])(stateFunction)
+```
+- The given name must be an object:
+- Which is type-compatible with the first type parameter given to the `FSM` trait. 
+- This object is used as a hash key:
+- So you must ensure that it properly implements `equals` and `hashCode`.
+- In particular it must not be mutable. 
+- The easiest fit for these requirements are case objects.
+- If the `stateTimeout` parameter is given:
+- Then all transitions into this state:
+    - Including staying:
+    - Receive this timeout by default. 
+- Initiating the transition with an explicit timeout may be used to override this default.
+    - See [Initiating Transitions](#initiating-transitions). 
+- The state timeout of any state may be changed during action processing:
+    - With `setStateTimeout(state, duration)`. 
+- This enables runtime configuration:
+    - E.g. via external message.
+- The `stateFunction` argument is a `PartialFunction[Event, State]`:
+- Which is conveniently given using the partial function literal syntax:
 
 
 
