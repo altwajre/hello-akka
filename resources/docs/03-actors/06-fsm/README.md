@@ -400,11 +400,10 @@ when(<name>[, stateTimeout = <timeout>])(stateFunction)
 - Initiating the transition with an explicit timeout may be used to override this default.
     - See [Initiating Transitions](#initiating-transitions). 
 - The state timeout of any state may be changed during action processing:
-    - With `setStateTimeout(state, duration)`. 
-- This enables runtime configuration:
-    - E.g. via external message.
+    - with `setStateTimeout(state, duration)`. 
+- This enables runtime configuration via external message.
 - The `stateFunction` argument is a `PartialFunction[Event, State]`:
-- Which is conveniently given using the partial function literal syntax:
+    - which is conveniently given using the partial function literal syntax:
 ```scala
 when(Idle) {
   case Event(SetTarget(ref), Uninitialized) ⇒
@@ -417,7 +416,7 @@ when(Active, stateTimeout = 1 second) {
 }
 ```
 - The `Event(msg: Any, data: D)` case class:
-- Is parameterized with the data type held by the FSM for convenient pattern matching.
+    - is parameterized with the data type held by the FSM for convenient pattern matching.
 
 #### Warning
 - It is required that you define handlers for each of the possible FSM states:
