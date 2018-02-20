@@ -405,6 +405,32 @@ when(<name>[, stateTimeout = <timeout>])(stateFunction)
     - E.g. via external message.
 - The `stateFunction` argument is a `PartialFunction[Event, State]`:
 - Which is conveniently given using the partial function literal syntax:
+```scala
+when(Idle) {
+  case Event(SetTarget(ref), Uninitialized) ⇒
+    stay using Todo(ref, Vector.empty)
+}
+
+when(Active, stateTimeout = 1 second) {
+  case Event(Flush | StateTimeout, t: Todo) ⇒
+    goto(Idle) using t.copy(queue = Vector.empty)
+}
+```
+- The `Event(msg: Any, data: D)` case class:
+- Is parameterized with the data type held by the FSM for convenient pattern matching.
+
+#### Warning
+- It is required that you define handlers for each of the possible FSM states:
+- Otherwise there will be failures when trying to switch to undeclared states.
+##
+- It is recommended practice:
+- To declare the states as objects extending a sealed trait:
+- And then verify that there is a when clause for each of the states. 
+- If you want to leave the handling of a state “unhandled”:
+- It still needs to be declared like this:
+```scala
+when(SomeState)(FSM.NullFunction)
+```
 
 
 
