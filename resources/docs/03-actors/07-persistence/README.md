@@ -711,11 +711,14 @@ akka.persistence.journal.leveldb.replay-filter {
 ```
 
 # Snapshots
-- As you model your domain using actors, you may notice that some actors may be prone to accumulating extremely long event logs and experiencing long recovery times.
+- As you model your domain using actors,  
+    - you may notice that some actors may be prone to accumulating extremely long event logs  
+    - and experiencing long recovery times.
 - Sometimes, the right approach may be to split out into a set of shorter lived actors.
 - However, when this is not an option, you can use snapshots to reduce recovery times drastically.
 - Persistent actors can save snapshots of internal state by calling the saveSnapshot method.
-- If saving of a snapshot succeeds, the persistent actor receives a SaveSnapshotSuccess message, otherwise a SaveSnapshotFailure message
+- If saving of a snapshot succeeds, the persistent actor receives a SaveSnapshotSuccess message,  
+    - otherwise a SaveSnapshotFailure message
 ```scala
 var state: Any = _
 
@@ -735,7 +738,8 @@ override def receiveCommand: Receive = {
 ```scala
 final case class SnapshotMetadata(persistenceId: String, sequenceNr: Long, timestamp: Long = 0L)
 ```
-- During recovery, the persistent actor is offered a previously saved snapshot via a SnapshotOffer message from which it can initialize internal state.
+- During recovery, the persistent actor is offered a previously saved snapshot via a SnapshotOffer message  
+    - from which it can initialize internal state.
 ```scala
 var state: Any = _
 
@@ -747,7 +751,9 @@ override def receiveRecover: Receive = {
 ```
 - The replayed messages that follow the SnapshotOffer message, if any, are younger than the offered snapshot.
 - They finally recover the persistent actor to its current (i.e. latest) state.
-- In general, a persistent actor is only offered a snapshot if that persistent actor has previously saved one or more snapshots and at least one of these snapshots matches the SnapshotSelectionCriteria that can be specified for recovery.
+- In general, a persistent actor is only offered a snapshot if that persistent actor  
+    - has previously saved one or more snapshots  
+    - and at least one of these snapshots matches the SnapshotSelectionCriteria that can be specified for recovery.
 ```scala
 override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
   maxSequenceNr = 457L,
@@ -758,18 +764,24 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - A recovery where no saved snapshot matches the specified SnapshotSelectionCriteria will replay all journaled messages.
 
 #### Note
-- In order to use snapshots, a default snapshot-store (akka.persistence.snapshot-store.plugin) must be configured, or the PersistentActor can pick a snapshot store explicitly by overriding def snapshotPluginId: String.
+- In order to use snapshots, a default snapshot-store (akka.persistence.snapshot-store.plugin) must be configured,  
+    - or the PersistentActor can pick a snapshot store explicitly by overriding def snapshotPluginId: String.
 - Since it is acceptable for some applications to not use any snapshotting, it is legal to not configure a snapshot store.
-- However, Akka will log a warning message when this situation is detected and then continue to operate until an actor tries to store a snapshot, at which point the operation will fail (by replying with an SaveSnapshotFailure for example).
+- However, Akka will log a warning message when this situation is detected  
+    - and then continue to operate until an actor tries to store a snapshot,  
+    - at which point the operation will fail (by replying with an SaveSnapshotFailure for example).
 - Note that the "persistence mode" of Cluster Sharding makes use of snapshots.
 - If you use that mode, you’ll need to define a snapshot store plugin.
 
 ## Snapshot deletion
-- A persistent actor can delete individual snapshots by calling the deleteSnapshot method with the sequence number of when the snapshot was taken.
+- A persistent actor can delete individual snapshots by calling the deleteSnapshot method  
+    - with the sequence number of when the snapshot was taken.
 - To bulk-delete a range of snapshots matching SnapshotSelectionCriteria, persistent actors should use the deleteSnapshots method.
 
 ## Snapshot status handling
-- Saving or deleting snapshots can either succeed or fail - this information is reported back to the persistent actor via status messages as illustrated in the following table.
+- Saving or deleting snapshots can either succeed or fail 
+    - this information is reported back to the persistent actor via status messages  
+    - as illustrated in the following table:
 
 | Method                                     | Success                | Failure message        |
 |:-------------------------------------------|:-----------------------|:-----------------------|
@@ -777,22 +789,31 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 | deleteSnapshot(Long)                       | DeleteSnapshotSuccess  | DeleteSnapshotFailure  |
 | deleteSnapshots(SnapshotSelectionCriteria) | DeleteSnapshotsSuccess | DeleteSnapshotsFailure |
 
-- If failure messages are left unhandled by the actor, a default warning log message will be logged for each incoming failure message.
-- No default action is performed on the success messages, however you’re free to handle them e.g. in order to delete an in memory representation of the snapshot, or in the case of failure to attempt save the snapshot again.
+- If failure messages are left unhandled by the actor,  
+    - a default warning log message will be logged  
+    - for each incoming failure message.
+- No default action is performed on the success messages, however you’re free to handle them  
+    - e.g. in order to delete an in memory representation of the snapshot,  
+    - or in the case of failure to attempt save the snapshot again.
 
 # At-Least-Once Delivery
-- To send messages with at-least-once delivery semantics to destinations you can mix-in AtLeastOnceDelivery trait to your PersistentActor on the sending side.
+- To send messages with at-least-once delivery semantics to destinations  
+    - you can mix-in AtLeastOnceDelivery trait to your PersistentActor on the sending side.
 - It takes care of re-sending messages when they have not been confirmed within a configurable timeout.
-- The state of the sending actor, including which messages have been sent that have not been confirmed by the recipient must be persistent so that it can survive a crash of the sending actor or JVM.
+- The state of the sending actor,  
+    - including which messages have been sent that have not been confirmed by the recipient  
+    - must be persistent so that it can survive a crash of the sending actor or JVM.
 - The AtLeastOnceDelivery trait does not persist anything by itself.
 - It is your responsibility to persist the intent that a message is sent and that a confirmation has been received.
 #### Note
-- At-least-once delivery implies that original message sending order is not always preserved, and the destination may receive duplicate messages.
+- At-least-once delivery implies that original message sending order is not always preserved,  
+    - and the destination may receive duplicate messages.
 - Semantics do not match those of a normal ActorRef send operation:
     - it is not at-most-once delivery
     - message order for the same sender-receiver pair is not preserved due to possible resends
     - after a crash and restart of the destination messages are still delivered to the new actor incarnation
-- These semantics are similar to what an ActorPath represents (see Actor Lifecycle), therefore you need to supply a path and not a reference when delivering messages.
+- These semantics are similar to what an ActorPath represents (see Actor Lifecycle),  
+    - therefore you need to supply a path and not a reference when delivering messages.
 - The messages are sent to the path with an actor selection.
 - Use the deliver method to send a message to a destination.
 - Call the confirmDelivery method when the destination has replied with a confirmation message.
@@ -800,13 +821,18 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 ## Relationship between deliver and confirmDelivery
 - To send messages to the destination path, use the deliver method after you have persisted the intent to send the message.
 - The destination actor must send back a confirmation message.
-- When the sending actor receives this confirmation message you should persist the fact that the message was delivered successfully and then call the confirmDelivery method.
+- When the sending actor receives this confirmation message  
+    - you should persist the fact that the message was delivered successfully and then call the confirmDelivery method.
 - If the persistent actor is not currently recovering, the deliver method will send the message to the destination actor.
 - When recovering, messages will be buffered until they have been confirmed using confirmDelivery.
-- Once recovery has completed, if there are outstanding messages that have not been confirmed (during the message replay), the persistent actor will resend these before sending any other messages.
-- Deliver requires a deliveryIdToMessage function to pass the provided deliveryId into the message so that the correlation between deliver and confirmDelivery is possible.
+- Once recovery has completed,  
+    - if there are outstanding messages that have not been confirmed (during the message replay),  
+    - the persistent actor will resend these before sending any other messages.
+- Deliver requires a deliveryIdToMessage function to pass the provided deliveryId into the message  
+    - so that the correlation between deliver and confirmDelivery is possible.
 - The deliveryId must do the round trip.
-- Upon receipt of the message, the destination actor will send the samedeliveryId wrapped in a confirmation message back to the sender.
+- Upon receipt of the message,  
+    - the destination actor will send the samedeliveryId wrapped in a confirmation message back to the sender.
 - The sender will then use it to call confirmDelivery method to complete the delivery routine.
 ```scala
 import akka.actor.{ Actor, ActorSelection }
@@ -850,16 +876,23 @@ class MyDestination extends Actor {
 }
 ```
 - The deliveryId generated by the persistence module is a strictly monotonically increasing sequence number without gaps.
-- The same sequence is used for all destinations of the actor, i.e. when sending to multiple destinations the destinations will see gaps in the sequence.
+- The same sequence is used for all destinations of the actor,  
+    - i.e. when sending to multiple destinations the destinations will see gaps in the sequence.
 - It is not possible to use custom deliveryId.
 - However, you can send a custom correlation identifier in the message to the destination.
-- You must then retain a mapping between the internal deliveryId (passed into the deliveryIdToMessage function) and your custom correlation id (passed into the message).
-- You can do this by storing such mapping in a Map(correlationId -> deliveryId) from which you can retrieve the deliveryId to be passed into the confirmDelivery method once the receiver of your message has replied with your custom correlation id.
+- You must then retain a mapping between  
+    - the internal deliveryId (passed into the deliveryIdToMessage function)  
+    - and your custom correlation id (passed into the message).
+- You can do this by storing such mapping in a Map(correlationId -> deliveryId)  
+    - from which you can retrieve the deliveryId to be passed into the confirmDelivery method  
+    - once the receiver of your message has replied with your custom correlation id.
 - The AtLeastOnceDelivery trait has a state consisting of unconfirmed messages and a sequence number.
 - It does not store this state itself.
-- You must persist events corresponding to the deliver and confirmDelivery invocations from your PersistentActor so that the state can be restored by calling the same methods during the recovery phase of the PersistentActor.
+- You must persist events corresponding to the deliver and confirmDelivery invocations from your PersistentActor  
+    - so that the state can be restored by calling the same methods during the recovery phase of the PersistentActor.
 - Sometimes these events can be derived from other business level events, and sometimes you must create separate events.
-- During recovery, calls to deliver will not send out messages, those will be sent later if no matching confirmDelivery will have been performed.
+- During recovery, calls to deliver will not send out messages,  
+    - those will be sent later if no matching confirmDelivery will have been performed.
 - Support for snapshots is provided by getDeliverySnapshot and setDeliverySnapshot.
 - The AtLeastOnceDeliverySnapshot contains the full delivery state, including unconfirmed messages.
 - If you need a custom snapshot for other parts of the actor state you must also include the AtLeastOnceDeliverySnapshot.
@@ -868,8 +901,10 @@ class MyDestination extends Actor {
 - The interval between redelivery attempts is defined by the redeliverInterval method.
 - The default value can be configured with the akka.persistence.at-least-once-delivery.redeliver-interval configuration key.
 - The method can be overridden by implementation classes to return non-default values.
-- The maximum number of messages that will be sent at each redelivery burst is defined by the redeliveryBurstLimit method (burst frequency is half of the redelivery interval).
-- If there’s a lot of unconfirmed messages (e.g. if the destination is not available for a long time), this helps to prevent an overwhelming amount of messages to be sent at once.
+- The maximum number of messages that will be sent at each redelivery burst is defined by  
+    - the redeliveryBurstLimit method (burst frequency is half of the redelivery interval).
+- If there’s a lot of unconfirmed messages (e.g. if the destination is not available for a long time),  
+    - this helps to prevent an overwhelming amount of messages to be sent at once.
 - The default value can be configured with the akka.persistence.at-least-once-delivery.redelivery-burst-limit configuration key.
 - The method can be overridden by implementation classes to return non-default values.
 - After a number of delivery attempts a AtLeastOnceDelivery.UnconfirmedWarning message will be sent to self.
@@ -878,21 +913,33 @@ class MyDestination extends Actor {
 - The default value can be configured with the akka.persistence.at-least-once-delivery.warn-after-number-of-unconfirmed-attempts configuration key.
 - The method can be overridden by implementation classes to return non-default values.
 - The AtLeastOnceDelivery trait holds messages in memory until their successful delivery has been confirmed.
-- The maximum number of unconfirmed messages that the actor is allowed to hold in memory is defined by the maxUnconfirmedMessages method.
-- If this limit is exceed the deliver method will not accept more messages and it will throw AtLeastOnceDelivery.MaxUnconfirmedMessagesExceededException.
+- The maximum number of unconfirmed messages that the actor is allowed to hold in memory  
+    - is defined by the maxUnconfirmedMessages method.
+- If this limit is exceed the deliver method will not accept more messages  
+    - and it will throw AtLeastOnceDelivery.MaxUnconfirmedMessagesExceededException.
 - The default value can be configured with the akka.persistence.at-least-once-delivery.max-unconfirmed-messages configuration key.
 - The method can be overridden by implementation classes to return non-default values.
 
 # Event Adapters
 - In long running projects using event sourcing sometimes the need arises to detach the data model from the domain model completely.
-- Event Adapters help in situations where:
-    - Version Migrations - existing events stored in Version 1 should be "upcasted" to a new Version 2 representation, and the process of doing so involves actual code, not just changes on the serialization layer.
+
+### Event Adapters help in situations where:
+
+#### Version Migrations  
+- Existing events stored in Version 1 should be "upcasted" to a new Version 2 representation,  
+- and the process of doing so involves actual code, not just changes on the serialization layer.
 - For these scenarios the toJournal function is usually an identity function, however the fromJournal is implemented as v1.Event=>v2.Event, performing the necessary mapping inside the fromJournal method.
 - This technique is sometimes referred to as "upcasting" in other CQRS libraries.
-    - Separating Domain and Data models - thanks to EventAdapters it is possible to completely separate the domain model from the model used to persist data in the Journals.
+
+#### Separating Domain and Data models 
+- Thanks to EventAdapters it is possible to completely separate the domain model from the model used to persist data in the Journals.
 - For example one may want to use case classes in the domain model, however persist their protocol-buffer (or any other binary serialization format) counter-parts to the Journal.
 - A simple toJournal:MyModel=>MyDataModel and fromJournal:MyDataModel=>MyModel adapter can be used to implement this feature.
-    - Journal Specialized Data Types - exposing data types understood by the underlying Journal, for example for data stores which understand JSON it is possible to write an EventAdapter toJournal:Any=>JSON such that the Journal can directly store the json instead of serializing the object to its binary representation.
+
+#### Journal Specialized Data Types
+- Exposing data types understood by the underlying Journal, for example for data stores which understand JSON it is possible to write an EventAdapter toJournal:Any=>JSON such that the Journal can directly store the json instead of serializing the object to its binary representation.
+##
+
 - Implementing an EventAdapter is rather straight forward:
 ```scala
 class MyEventAdapter(system: ExtendedActorSystem) extends EventAdapter {
