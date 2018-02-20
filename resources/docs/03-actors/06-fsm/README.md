@@ -547,92 +547,182 @@ def handler(from: StateType, to: StateType) {
 - not only the first matching one. 
 - This is designed specifically,
 - so you can put all transition handling for a certain aspect,
-- into one place without having to worry about earlier declarations,
-- shadowing later ones.
+- into one place without having to worry about earlier declarations shadowing later ones.
 - The actions are still executed in declaration order.
 
-
-
-
+#### Note
+- This kind of internal monitoring may be used to structure your FSM according to transitions, 
+- so that for example the cancellation of a timer upon leaving a certain state,
+- cannot be forgot when adding new target states.
 
 ### External Monitoring
-
-
-
-
-
-
-
-
-
-
-
+- External actors may be registered to be notified of state transitions,
+- by sending a message `SubscribeTransitionCallBack(actorRef)`. 
+- The named actor will be sent a `CurrentState(self, stateName)` message immediately,
+- and will receive `Transition(actorRef, oldState, newState)` messages whenever a state change is triggered.
+- Please note that a state change includes the action of performing an `goto(S)`, 
+- while already being state `S`. 
+- In that case the monitoring actor will be notified with a `Transition(ref,S,S)` message. 
+- This may be useful if your FSM should react on all (also same-state) transitions. 
+- In case you’d rather not emit events for same-state transitions use `stay()` instead of `goto(S)`.
+- External monitors may be unregistered:
+    - by sending `UnsubscribeTransitionCallBack(actorRef)` to the `FSM` actor.
+- Stopping a listener without unregistering:
+    - will not remove the listener from the subscription list; 
+    - use `UnsubscribeTransitionCallback` before stopping the listener.
 
 ## Transforming State
+- The partial functions supplied as argument to the `when()` blocks:
+- can be transformed using Scala’s full supplement of functional programming tools. 
+- In order to retain type inference, 
+- there is a helper function which may be used,
+- in case some common handling logic shall be applied to different clauses:
+```scala
+when(SomeState)(transform {
+  case Event(bytes: ByteString, read) ⇒ stay using (read + bytes.length)
+} using {
+  case s @ FSM.State(state, read, timeout, stopReason, replies) if read > 1000 ⇒
+    goto(Processing)
+})
+```
+- The arguments to this method may also be stored, 
+- to be used several times, 
+- e.g. when applying the same transformation to several `when()` blocks:
+```scala
+val processingTrigger: PartialFunction[State, State] = {
+  case s @ FSM.State(state, read, timeout, stopReason, replies) if read > 1000 ⇒
+    goto(Processing)
+}
 
-
-
-
-
-
-
+when(SomeState)(transform {
+  case Event(bytes: ByteString, read) ⇒ stay using (read + bytes.length)
+} using processingTrigger)
+```
 
 ## Timers
-
-
-
-
-
-
-
+- Besides state timeouts, 
+- FSM manages timers identified by `String` names. 
+- You may set a timer using:
+```scala
+setTimer(name, msg, interval, repeat)
+```
+- where msg is the message object which will be sent after the duration interval has elapsed. 
+- If repeat is true, 
+- then the timer is scheduled at fixed rate given by the interval parameter. 
+- Any existing timer with the same name will automatically be canceled before adding the new timer.
+- Timers may be canceled using:
+```scala
+cancelTimer(name)
+```
+- which is guaranteed to work immediately, 
+- meaning that the scheduled message will not be processed after this call,
+- even if the timer already fired and queued it. 
+- The status of any timer may be inquired with:
+```scala
+isTimerActive(name)
+```
+- These named timers complement state timeouts,
+- because they are not affected by intervening reception of other messages.
 
 ## Termination from Inside
+- The FSM is stopped by specifying the result state as:
+```
+stop([reason[, data]])
+```
+- The reason must be one of:
+- `Normal` (which is the default), `Shutdown` or `Failure(reason)`, 
+- and the second argument may be given to change the state data which is available during termination handling.
 
-
-
-
-
-
-
+#### Note
+- `stop` does not abort the actions and stop the FSM immediately. 
+- The stop action must be returned from the event handler in the same way as a state transition,
+- but the `return` statement may not be used within a `when` block.
+```scala
+when(Error) {
+  case Event("stop", _) ⇒
+    // do cleanup ...
+    stop()
+}
+```
+- You can use `onTermination(handler)` to specify custom code that is executed when the FSM is stopped. 
+- The handler is a partial function which takes a `StopEvent(reason, stateName, stateData)` as argument:
+```scala
+onTermination {
+  case StopEvent(FSM.Normal, state, data)         ⇒ // ...
+  case StopEvent(FSM.Shutdown, state, data)       ⇒ // ...
+  case StopEvent(FSM.Failure(cause), state, data) ⇒ // ...
+}
+```
+- As for the `whenUnhandled` case, this handler is not stacked, 
+- so each invocation of `onTermination` replaces the previously installed handler.
 
 ## Termination from Outside
+- When an `ActorRef` associated to a FSM is stopped using the `stop()` method, 
+- its `postStop` hook will be executed. 
+- The default implementation by the `FSM` trait:
+- is to execute the `onTermination` handler,
+- if that is prepared to handle a `StopEvent(Shutdown, ...)`.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#### Warning
+- In case you override `postStop` and want to have your `onTermination` handler called, 
+- do not forget to call super.postStop.
 
 # Testing and Debugging Finite State Machines
+- During development and for trouble shooting,
+- FSMs need care just as any other actor. 
+- There are specialized tools available as described in [Testing and Finite State Machines](../11-testing-actor-systems#testing-finite-state-machines) and in the following.
 
+## Event Tracing
+- The setting `akka.actor.debug.fsm` in [configuration](../../02-general-concepts/09-configuration) enables logging of an event trace by `LoggingFSM` instances:
+```scala
+class MyFSM extends LoggingFSM[StateType, Data] {
+  override def logDepth = 12
+  onTermination {
+    case StopEvent(FSM.Failure(_), state, data) ⇒
+      val lastEvents = getLog.mkString("\n\t")
+      log.warning("Failure in state " + state + " with data " + data + "\n" +
+        "Events leading up to this point:\n\t" + lastEvents)
+  }
+  // ...
+}
+```
+- This FSM will log at DEBUG level:
+    - All processed events, including `StateTimeout` and scheduled timer messages.
+    - Every setting and cancellation of named timers.
+    - All state transitions.
+- Life cycle changes and special messages can be logged as described for [Actors](../11-testing-actor-systems).
 
+## Rolling Event Log
+- The `LoggingFSM` trait adds one more feature to the FSM: 
+- a rolling event log which may be used during debugging,
+- for tracing how the FSM entered a certain failure state,
+- or for other creative uses:
+```scala
+class MyFSM extends LoggingFSM[StateType, Data] {
+  override def logDepth = 12
+  onTermination {
+    case StopEvent(FSM.Failure(_), state, data) ⇒
+      val lastEvents = getLog.mkString("\n\t")
+      log.warning("Failure in state " + state + " with data " + data + "\n" +
+        "Events leading up to this point:\n\t" + lastEvents)
+  }
+  // ...
+}
+```
+- The `logDepth` defaults to zero, which turns off the event log.
 
+#### Warning
+- The log buffer is allocated during actor creation, 
+- which is why the configuration is done using a virtual method call. 
+- If you want to override with a `val`, 
+- make sure that its initialization happens before the initializer of `LoggingFSM` runs, 
+- and do not change the value returned by `logDepth` after the buffer has been allocated.
+##
 
+- The contents of the event log are available using method `getLog`, 
+- which returns an `IndexedSeq[LogEntry]` where the oldest entry is at index zero.
 
 # Examples
-
-
-
-
-
-
-
-
-
-
+- A bigger FSM example contrasted with Actor’s `become`/`unbecome`,
+- can be downloaded as a ready to run [Akka FSM sample](https://example.lightbend.com/v1/download/akka-samples-fsm-scala?_ga=2.36208611.231864662.1519093539-542223074.1518507267) together with a tutorial. 
+- The source code of this sample can be found in the [Akka Samples Repository](https://github.com/akka/akka-samples/tree/2.5/akka-sample-fsm-scala).
