@@ -593,43 +593,45 @@ when(SomeState)(transform {
 ```
 
 ## Timers
-- Besides state timeouts, 
-- FSM manages timers identified by `String` names. 
+- Besides state timeouts, FSM manages timers identified by `String` names. 
 - You may set a timer using:
 ```scala
 setTimer(name, msg, interval, repeat)
 ```
-- where msg is the message object which will be sent after the duration interval has elapsed. 
-- If repeat is true, 
-- then the timer is scheduled at fixed rate given by the interval parameter. 
+- Where `msg` is the message object which will be sent after the duration `interval` has elapsed. 
+- If `repeat` is `true`, the timer is scheduled at fixed rate given by the `interval` parameter. 
 - Any existing timer with the same name will automatically be canceled before adding the new timer.
 - Timers may be canceled using:
 ```scala
 cancelTimer(name)
 ```
-- which is guaranteed to work immediately, 
-- meaning that the scheduled message will not be processed after this call,
-- even if the timer already fired and queued it. 
+- This is guaranteed to work immediately: 
+    - The scheduled message will not be processed after this call.
+    - Even if the timer already fired and queued it. 
 - The status of any timer may be inquired with:
 ```scala
 isTimerActive(name)
 ```
-- These named timers complement state timeouts,
-- because they are not affected by intervening reception of other messages.
+- These named timers complement state timeouts:
+    - They are not affected by intervening reception of other messages.
 
 ## Termination from Inside
 - The FSM is stopped by specifying the result state as:
 ```
 stop([reason[, data]])
 ```
-- The reason must be one of:
-- `Normal` (which is the default), `Shutdown` or `Failure(reason)`, 
-- and the second argument may be given to change the state data which is available during termination handling.
+- The `reason` must be one of:
+    - `Normal` (which is the default).
+    - `Shutdown`.
+    - `Failure(reason)`. 
+- `data` may be specified to change the state data which is available during termination handling.
 
 #### Note
-- `stop` does not abort the actions and stop the FSM immediately. 
-- The stop action must be returned from the event handler in the same way as a state transition,
-- but the `return` statement may not be used within a `when` block.
+- `stop()` does not abort the actions and stop the FSM immediately. 
+- The stop action must be returned from the event handler in the same way as a state transition.
+- The `return` statement may not be used within a `when` block.
+##
+
 ```scala
 when(Error) {
   case Event("stop", _) ⇒
