@@ -493,28 +493,26 @@ when(SomeState) {
     goto(Processing) using (newData) forMax (5 seconds) replying (WillDo)
 }
 ```
-- The parentheses are not actually needed in all cases, 
-- but they visually distinguish between modifiers and their arguments,
-- and therefore make the code even more pleasant to read.
+- The parentheses are not actually needed in all cases.
+- But they visually distinguish between modifiers and their arguments.
+- Therefore they make the code easier to read.
   
 #### Note
-- The return statement may not be used in `when` blocks or similar; 
-- this is a Scala restriction. 
-- Either refactor your code using `if () ... else ...`,
-- or move it into a method definition.
+- The return statement may not be used in `when` blocks or similar.
+    - This is a Scala restriction. 
+- Either refactor your code using `if () ... else ...`, or move it into a method definition.
 ##
 
 ## Monitoring Transitions
-- Transitions occur “between states” conceptually, 
-- which means after any actions you have put into the event handling block.
+- Transitions occur “between states” conceptually, which means:
+    - **after any actions** you have put into the **event handling block**.
 - This is obvious since the next state is only defined by the value returned by the event handling logic. 
 - You do not need to worry about the exact order with respect to setting the internal state variable, 
-- as everything within the `FSM` actor is running single-threaded anyway.
+    - as everything within the `FSM` actor is running single-threaded anyway.
 
 ### Internal Monitoring
-- Up to this point, 
-- the FSM DSL has been centered on states and events. 
-- The dual view is to describe it as a series of transitions. 
+- Up to this point, the FSM DSL has been centered on states and events. 
+- You can also describe it as a series of transitions. 
 - This is enabled by the method:
 ```scala
 onTransition(handler)
@@ -529,13 +527,11 @@ onTransition {
   case x -> Idle      ⇒ log.info("entering Idle from " + x)
 }
 ```
-- The convenience extractor `->` enables decomposition of the pair of states,
-- with a clear visual reminder of the transition’s direction. 
-- As usual in pattern matches, an underscore may be used for irrelevant parts.
-- Alternatively you could bind the unconstrained state to a variable, 
-- E.g. for logging as shown in the last case.
-- It is also possible to pass a function object accepting two states to `onTransition`, 
-- in case your transition handling logic is implemented as a method:
+- The convenience extractor `->` enables decomposition of the pair of states.
+- An underscore may be used for irrelevant parts.
+- Alternatively you could bind the unconstrained state to a variable. 
+    - E.g. for logging as shown in the last case.
+- It is also possible to pass a function object accepting two states to `onTransition`:
 ```scala
 onTransition(handler _)
 
@@ -543,30 +539,31 @@ def handler(from: StateType, to: StateType) {
   // handle it here ...
 }
 ```
-- The handlers registered with this method are stacked, 
-- so you can intersperse `onTransition` blocks with when blocks as suits your design. 
-- However, all handlers will be invoked for each transition, 
-- not only the first matching one. 
-- This is designed specifically,
-- so you can put all transition handling for a certain aspect,
-- into one place without having to worry about earlier declarations shadowing later ones.
+- The handlers registered with this method are stacked.
+    - You can intersperse `onTransition` blocks with `when` blocks as suits your design. 
+- However, all handlers will be invoked for each transition, not only the first matching one.
+- You can put all transition handling for a certain aspect into one place.
+- You do not have to worry about earlier declarations shadowing later ones.
 - The actions are still executed in declaration order.
 
 #### Note
-- This kind of internal monitoring may be used to structure your FSM according to transitions, 
-- so that for example the cancellation of a timer upon leaving a certain state,
-- cannot be forgot when adding new target states.
+- This kind of internal monitoring may be used to structure your FSM according to transitions. 
+- As in the example above:
+    - The cancellation of the timer upon leaving the `Active` state cannot be forgotten when adding new target states.
 
 ### External Monitoring
-- External actors may be registered to be notified of state transitions,
-- by sending a message `SubscribeTransitionCallBack(actorRef)`. 
+- External actors may be registered to be notified of state transitions.
+- By sending a message `SubscribeTransitionCallBack(actorRef)`. 
 - The named actor will be sent a `CurrentState(self, stateName)` message immediately,
-- and will receive `Transition(actorRef, oldState, newState)` messages whenever a state change is triggered.
-- Please note that a state change includes the action of performing an `goto(S)`, 
-- while already being state `S`. 
+- And will receive `Transition(actorRef, oldState, newState)` messages whenever a state change is triggered.
+
+#### Note
+- A state change includes the action of performing an `goto(S)` while already being state `S`. 
 - In that case the monitoring actor will be notified with a `Transition(ref,S,S)` message. 
-- This may be useful if your FSM should react on all (also same-state) transitions. 
-- In case you’d rather not emit events for same-state transitions use `stay()` instead of `goto(S)`.
+- This may be useful if your FSM should react on all (also **same-state**) transitions. 
+- In case you would rather not emit events for same-state transitions use `stay()` instead of `goto(S)`.
+##
+
 - External monitors may be unregistered:
     - by sending `UnsubscribeTransitionCallBack(actorRef)` to the `FSM` actor.
 - Stopping a listener without unregistering:
