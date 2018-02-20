@@ -464,6 +464,7 @@ whenUnhandled {
 - The state definition can either be:
     - The **current state**, as described by the `stay` directive.
     - Or it is a **different state** as given by `goto(state)`. 
+##
 - The resulting object allows further qualification by way of the modifiers described in the following:
 #### `forMax(duration)`: 
 - This modifier sets a state timeout on the next state. 
