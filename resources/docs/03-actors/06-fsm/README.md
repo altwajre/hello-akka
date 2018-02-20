@@ -482,7 +482,8 @@ whenUnhandled {
     - If you follow the advice above, 
     - this is the only place where internal state data are ever modified.
 - **`replying(msg)`**: 
-    - This modifier sends a reply to the currently processed message and otherwise does not modify the state transition.
+    - This modifier sends a reply to the currently processed message
+    - and otherwise does not modify the state transition.
 - All modifiers can be chained to achieve a nice and concise description:
 
 
