@@ -56,18 +56,25 @@
 - The storage backend of a snapshot store is pluggable.  
 - The persistence extension comes with a "local" snapshot storage plugin, which writes to the local filesystem.
 
-### Event sourcing.   
-- Based on the building blocks described above, Akka persistence provides abstractions for the development of event sourced applications (see section Event sourcing) Replicated snapshot stores are available as Community plugins.
+### Event sourcing: 
+- Based on the building blocks described above:
+- Akka persistence provides abstractions for the development of event sourced applications (see section Event sourcing).
+- Replicated snapshot stores are available as Community plugins.
 
 # Event sourcing
 - The basic idea behind Event Sourcing is quite simple.  
-- A persistent actor receives a (non-persistent) command which is first validated if it can be applied to the current state.  
-- Here validation can mean anything, from simple inspection of a command message’s fields up to a conversation with several external services, for example.  
+- A persistent actor receives a (non-persistent) command:
+    - which is first validated if it can be applied to the current state.  
+- Here validation can mean anything:
+    - from simple inspection of a command message’s fields 
+    - up to a conversation with several external services, for example.  
 - If validation succeeds, events are generated from the command, representing the effect of the command.  
 - These events are then persisted and, after successful persistence, used to change the actor’s state.
-- When the persistent actor needs to be recovered, only the persisted events are replayed of which we know that they can be successfully applied.
+- When the persistent actor needs to be recovered:
+    - only the persisted events are replayed of which we know that they can be successfully applied.
 - In other words, events cannot fail when being replayed to a persistent actor, in contrast to commands.
-- Event sourced actors may of course also process commands that do not change application state such as query commands for example.
+- Event sourced actors may of course also process commands that do not change application state:
+    - such as query commands for example.
 - Another excellent article about "thinking in Events" is Events As First-Class Citizens by Randy Shoup.
 - It is a short and recommended read if you’re starting developing Events based applications.
 - Akka persistence supports event sourcing with the PersistentActor trait.
@@ -119,27 +126,46 @@ class ExamplePersistentActor extends PersistentActor {
 ```
 - The example defines two data types, Cmd and Evt to represent commands and events, respectively.
 - The state of the ExamplePersistentActor is a list of persisted event data contained in ExampleState.
-- The persistent actor’s receiveRecover method defines how state is updated during recovery by handling Evt and SnapshotOffer messages.
+- The persistent actor’s receiveRecover method defines how state is updated during recovery:
+    - by handling Evt and SnapshotOffer messages.
 - The persistent actor’s receiveCommand method is a command handler.
 - In this example, a command is handled by generating an event which is then persisted and handled.
-- Events are persisted by calling persist with an event (or a sequence of events) as first argument and an event handler as second argument.
+- Events are persisted by calling persist with:
+    - an event (or a sequence of events) as first argument 
+    - and an event handler as second argument.
 - The persist method persists events asynchronously and the event handler is executed for successfully persisted events.
-- Successfully persisted events are internally sent back to the persistent actor as individual messages that trigger event handler executions.
+- Successfully persisted events are internally sent back to the persistent actor:
+    - as individual messages that trigger event handler executions.
 - An event handler may close over persistent actor state and mutate it.
 - The sender of a persisted event is the sender of the corresponding command.
 - This allows event handlers to reply to the sender of a command (not shown).
-- The main responsibility of an event handler is changing persistent actor state using event data and notifying others about successful state changes by publishing events.
-- When persisting events with persist it is guaranteed that the persistent actor will not receive further commands between the persist call and the execution(s) of the associated event handler.
+- The main responsibility of an event handler is:
+    - changing persistent actor state using event data 
+    - and notifying others about successful state changes by publishing events.
+- When persisting events with persist it is guaranteed that:
+    - the persistent actor will not receive further commands
+    - between the persist call and the execution(s) of the associated event handler.
 - This also holds for multiple persist calls in context of a single command.
 - Incoming messages are stashed until the persist is completed.
-- If persistence of an event fails, onPersistFailure will be invoked (logging the error by default), and the actor will unconditionally be stopped.
-- If persistence of an event is rejected before it is stored, e.g. due to serialization error, onPersistRejected will be invoked (logging a warning by default) and the actor continues with the next message.
-- The easiest way to run this example yourself is to download the ready to run Akka Persistence Sample with Scala together with the tutorial. It contains instructions on how to run the PersistentActorExample.
+- If persistence of an event fails, onPersistFailure will be invoked 
+    - (logging the error by default), 
+    - and the actor will unconditionally be stopped.
+- If persistence of an event is rejected before it is stored, 
+    - e.g. due to serialization error, 
+    - onPersistRejected will be invoked (logging a warning by default) 
+    - and the actor continues with the next message.
+- The easiest way to run this example yourself is to 
+    - download the ready to run Akka Persistence Sample with Scala together with the tutorial. 
+- It contains instructions on how to run the PersistentActorExample.
 - The source code of this sample can be found in the Akka Samples Repository.
 
 #### Note
-- It’s also possible to switch between different command handlers during normal processing and recovery with context.become() and context.unbecome().
-- To get the actor into the same state after recovery you need to take special care to perform the same state transitions with become and unbecome in the receiveRecover method as you would have done in the command handler.
+- It’s also possible to switch between different command handlers during normal processing and recovery
+    - with context.become() and context.unbecome().
+- To get the actor into the same state after recovery 
+    - you need to take special care to perform the same state transitions
+    - with become and unbecome in the receiveRecover method 
+    - as you would have done in the command handler.
 - Note that when using become from receiveRecover it will still only use the receiveRecover behavior when replaying the events.
 - When replay is completed it will use the new behavior.
 
@@ -158,18 +184,22 @@ override def persistenceId = "my-stable-persistence-id"
 - By default, a persistent actor is automatically recovered on start and on restart by replaying journaled messages.
 - New messages sent to a persistent actor during recovery do not interfere with replayed messages.
 - They are stashed and received by a persistent actor after recovery phase completes.
-- The number of concurrent recoveries that can be in progress at the same time is limited to not overload the system and the backend data store.
+- The number of concurrent recoveries that can be in progress at the same time is limited 
+    - to not overload the system and the backend data store.
 - When exceeding the limit the actors will wait until other recoveries have been completed.
 - This is configured by:
 ```hocon
 akka.persistence.max-concurrent-recoveries = 50
 ```
 #### Note
-- Accessing the sender() for replayed messages will always result in a deadLetters reference, as the original sender is presumed to be long gone.
-- If you indeed have to notify an actor during recovery in the future, store its ActorPath explicitly in your persisted events.
+- Accessing the sender() for replayed messages will always result in a deadLetters reference, 
+    - as the original sender is presumed to be long gone.
+- If you indeed have to notify an actor during recovery in the future, 
+    - store its ActorPath explicitly in your persisted events.
 
 ### Recovery customization
-- Applications may also customise how recovery is performed by returning a customised Recovery object in the recovery method of a PersistentActor,
+- Applications may also customise how recovery is performed by returning a customised Recovery object 
+    - in the recovery method of a PersistentActor,
 - To skip loading snapshots and replay all events you can use SnapshotSelectionCriteria.None.
 - This can be useful if snapshot serialization format has changed in an incompatible way.
 - It should typically not be used when events have been deleted.
@@ -177,8 +207,13 @@ akka.persistence.max-concurrent-recoveries = 50
 override def recovery =
   Recovery(fromSnapshot = SnapshotSelectionCriteria.None)
 ```
-- Another possible recovery customization, which can be useful for debugging, is setting an upper bound on the replay, causing the actor to be replayed only up to a certain point "in the past" (instead of being replayed to its most up to date state).
-- Note that after that it is a bad idea to persist new events because a later recovery will probably be confused by the new events that follow the events that were previously skipped.
+- Another possible recovery customization, which can be useful for debugging, 
+    - is setting an upper bound on the replay, 
+    - causing the actor to be replayed only up to a certain point "in the past" 
+    - (instead of being replayed to its most up to date state).
+- Note that after that it is a bad idea to persist new events 
+    - because a later recovery will probably be confused by the new events 
+    - that follow the events that were previously skipped.
 ```scala
 override def recovery = Recovery(toSequenceNr = 457L)
 ```
@@ -193,8 +228,10 @@ override def recovery = Recovery.none
 def recoveryRunning: Boolean
 def recoveryFinished: Boolean
 ```
-- Sometimes there is a need for performing additional initialization when the recovery has completed before processing any other message sent to the persistent actor.
-- The persistent actor will receive a special RecoveryCompleted message right after recovery and before any other received messages.
+- Sometimes there is a need for performing additional initialization when the recovery has completed 
+    - before processing any other message sent to the persistent actor.
+- The persistent actor will receive a special RecoveryCompleted message 
+    - right after recovery and before any other received messages.
 ```scala
 override def receiveRecover: Receive = {
   case RecoveryCompleted ⇒
@@ -207,23 +244,36 @@ override def receiveCommand: Receive = {
   case msg ⇒ //...
 }
 ```
-- The actor will always receive a RecoveryCompleted message, even if there are no events in the journal and the snapshot store is empty, or if it’s a new persistent actor with a previously unused persistenceId.
-- If there is a problem with recovering the state of the actor from the journal, onRecoveryFailure is called (logging the error by default) and the actor will be stopped.
+- The actor will always receive a RecoveryCompleted message, 
+    - even if there are no events in the journal and the snapshot store is empty, 
+    - or if it’s a new persistent actor with a previously unused persistenceId.
+- If there is a problem with recovering the state of the actor from the journal, 
+    - onRecoveryFailure is called (logging the error by default) and the actor will be stopped.
 
 ## Internal stash
-- The persistent actor has a private stash for internally caching incoming messages during recovery or the persist\persistAll method persisting events.
+- The persistent actor has a private stash for internally caching incoming messages 
+    - during recovery or the persist\persistAll method persisting events.
 - You can still use/inherit from the Stash interface.
-- The internal stash cooperates with the normal stash by hooking into unstashAll method and making sure messages are unstashed properly to the internal stash to maintain ordering guarantees.
-- You should be careful to not send more messages to a persistent actor than it can keep up with, otherwise the number of stashed messages will grow without bounds.
+- The internal stash cooperates with the normal stash by hooking into unstashAll method 
+    - and making sure messages are unstashed properly to the internal stash to maintain ordering guarantees.
+- You should be careful to not send more messages to a persistent actor than it can keep up with, 
+    - otherwise the number of stashed messages will grow without bounds.
 - It can be wise to protect against OutOfMemoryError by defining a maximum stash capacity in the mailbox configuration:
 ```hocon
 akka.actor.default-mailbox.stash-capacity=10000
 ```
 - Note that the stash capacity is per actor.
-- If you have many persistent actors, e.g. when using cluster sharding, you may need to define a small stash capacity to ensure that the total number of stashed messages in the system doesn’t consume too much memory.
+- If you have many persistent actors, e.g. when using cluster sharding, 
+    - you may need to define a small stash capacity 
+    - to ensure that the total number of stashed messages in the system doesn’t consume too much memory.
 - Additionally, the persistent actor defines three strategies to handle failure when the internal stash capacity is exceeded.
-- The default overflow strategy is the ThrowOverflowExceptionStrategy, which discards the current received message and throws a StashOverflowException, causing actor restart if the default supervision strategy is used.
-- You can override the internalStashOverflowStrategy method to return DiscardToDeadLetterStrategy or ReplyToStrategy for any "individual" persistent actor, or define the "default" for all persistent actors by providing FQCN, which must be a subclass of StashOverflowStrategyConfigurator, in the persistence configuration:
+- The default overflow strategy is the ThrowOverflowExceptionStrategy, 
+    - which discards the current received message and throws a StashOverflowException, 
+    - causing actor restart if the default supervision strategy is used.
+- You can override the internalStashOverflowStrategy method 
+    - to return DiscardToDeadLetterStrategy or ReplyToStrategy for any "individual" persistent actor, 
+    - or define the "default" for all persistent actors by providing FQCN, 
+    - which must be a subclass of StashOverflowStrategyConfigurator, in the persistence configuration:
 ```hocon
 akka.persistence.internal-stash-overflow-strategy=
   "akka.persistence.ThrowExceptionConfigurator"
