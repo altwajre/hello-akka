@@ -416,7 +416,8 @@ class MyPersistentActor extends PersistentActor {
     - as well as stashing guarantees.
 - In general it is encouraged to create command handlers which do not need to resort to nested event persisting,  
     - however there are situations where it may be useful.
-- It is important to understand the ordering of callback execution in those situations, as well as their implication on the stashing behaviour (that persist() enforces).
+- It is important to understand the ordering of callback execution in those situations,  
+    - as well as their implication on the stashing behaviour (that persist() enforces).
 - In the following example two persist calls are issued, and each of them issues another persist inside its callback:
 ```scala
 override def receiveCommand: Receive = {
@@ -457,9 +458,13 @@ persistentActor ! "b"
 // b-inner-2
 ```
 - First the "outer layer" of persist calls is issued and their callbacks are applied.
-- After these have successfully completed, the inner callbacks will be invoked (once the events they are persisting have been confirmed to be persisted by the journal).
+- After these have successfully completed,  
+    - the inner callbacks will be invoked  
+    - (once the events they are persisting have been confirmed to be persisted by the journal).
 - Only after all these handlers have been successfully invoked will the next command be delivered to the persistent Actor.
-- In other words, the stashing of incoming commands that is guaranteed by initially calling persist() on the outer layer is extended until all nested persist callbacks have been handled.
+- In other words, the stashing of incoming commands  
+    - that is guaranteed by initially calling persist() on the outer layer  
+    - is extended until all nested persist callbacks have been handled.
 - It is also possible to nest persistAsync calls, using the same pattern:
 ```scala
 override def receiveCommand: Receive = {
@@ -496,15 +501,23 @@ persistentActor ! "b"
 // a -> a-outer-1 -> a-outer-2 -> a-inner-1 -> a-inner-2
 // b -> b-outer-1 -> b-outer-2 -> b-inner-1 -> b-inner-2
 ```
-- While it is possible to nest mixed persist and persistAsync with keeping their respective semantics it is not a recommended practice, as it may lead to overly complex nesting.
+- While it is possible to nest mixed persist and persistAsync with keeping their respective semantics  
+    - it is not a recommended practice, as it may lead to overly complex nesting.
+    
 #### Warning
-- While it is possible to nest persist calls within one another, it is not legal call persist from any other Thread than the Actors message processing Thread.
-- For example, it is not legal to call persist from Futures! Doing so will break the guarantees that the persist methods aim to provide.
-- Always call persist and persistAsync from within the Actor’s receive block (or methods synchronously invoked from there).
+- While it is possible to nest persist calls within one another,  
+    - it is not legal to call persist from any other Thread than the Actors message processing Thread.
+- For example, **it is not legal to call persist from Futures**. 
+- Doing so will break the guarantees that the persist methods aim to provide.
+- Always call persist and persistAsync from within the Actor’s receive block  
+    - (or methods synchronously invoked from there).
 
 ## Failures
-- If persistence of an event fails, onPersistFailure will be invoked (logging the error by default), and the actor will unconditionally be stopped.
-- The reason that it cannot resume when persist fails is that it is unknown if the event was actually persisted or not, and therefore it is in an inconsistent state.
+- If persistence of an event fails, onPersistFailure will be invoked (logging the error by default),  
+    - and the actor will unconditionally be stopped.
+- The reason that it cannot resume when persist fails  
+    - is that it is unknown if the event was actually persisted or not,  
+    - and therefore it is in an inconsistent state.
 - Restarting on persistent failures will most likely fail anyway since the journal is probably unavailable.
 - It is better to stop the actor and after a back-off timeout start it again.
 - The akka.pattern.BackoffSupervisor actor is provided to support such restarts.
@@ -519,29 +532,51 @@ val props = BackoffSupervisor.props(
     randomFactor = 0.2))
 context.actorOf(props, name = "mySupervisor")
 ```
-- If persistence of an event is rejected before it is stored, e.g. due to serialization error, onPersistRejected will be invoked (logging a warning by default), and the actor continues with next message.
-- If there is a problem with recovering the state of the actor from the journal when the actor is started, onRecoveryFailure is called (logging the error by default), and the actor will be stopped.
-- Note that failure to load snapshot is also treated like this, but you can disable loading of snapshots if you for example know that serialization format has changed in an incompatible way, see Recovery customization.
+- If persistence of an event is rejected before it is stored, e.g. due to serialization error,  
+    - onPersistRejected will be invoked (logging a warning by default), and the actor continues with next message.
+- If there is a problem with recovering the state of the actor from the journal when the actor is started,  
+    - onRecoveryFailure is called (logging the error by default), and the actor will be stopped.
+- Note that failure to load snapshot is also treated like this,  
+    - but you can disable loading of snapshots  
+    - if you for example know that serialization format has changed in an incompatible way,  
+    - see Recovery customization.
 
 ## Atomic writes
-- Each event is of course stored atomically, but it is also possible to store several events atomically by using the persistAll or persistAllAsync method.
+- Each event is of course stored atomically, but it is also possible to store several events atomically  
+    - by using the persistAll or persistAllAsync method.
 - That means that all events passed to that method are stored or none of them are stored if there is an error.
 - The recovery of a persistent actor will therefore never be done partially with only a subset of events persisted by persistAll.
-- Some journals may not support atomic writes of several events and they will then reject the persistAll command, i.e. onPersistRejected is called with an exception (typically UnsupportedOperationException).
+- Some journals may not support atomic writes of several events and they will then reject the persistAll command,  
+    - i.e. onPersistRejected is called with an exception (typically UnsupportedOperationException).
 
 ## Batch writes
-- In order to optimize throughput when using persistAsync, a persistent actor internally batches events to be stored under high load before writing them to the journal (as a single batch).
-- The batch size is dynamically determined by how many events are emitted during the time of a journal round-trip: after sending a batch to the journal no further batch can be sent before confirmation has been received that the previous batch has been written.
+- In order to optimize throughput when using persistAsync,  
+    - a persistent actor internally batches events to be stored under high load  
+    - before writing them to the journal (as a single batch).
+- The batch size is dynamically determined by how many events are emitted during the time of a journal round-trip:  
+    - after sending a batch to the journal no further batch can be sent  
+    - before confirmation has been received that the previous batch has been written.
 - Batch writes are never timer-based which keeps latencies at a minimum.
 
 ## Message deletion
-- It is possible to delete all messages (journaled by a single persistent actor) up to a specified sequence number; Persistent actors may call the deleteMessages method to this end.
-- Deleting messages in event sourcing based applications is typically either not used at all, or used in conjunction with snapshotting, i.e. after a snapshot has been successfully stored, a deleteMessages(toSequenceNr) up until the sequence number of the data held by that snapshot can be issued to safely delete the previous events while still having access to the accumulated state during replays - by loading the snapshot.
+- It is possible to delete all messages (journaled by a single persistent actor) up to a specified sequence number;  
+    - Persistent actors may call the deleteMessages method to this end.
+- Deleting messages in event sourcing based applications is typically either  
+    - not used at all, or used in conjunction with snapshotting,  
+    - i.e. after a snapshot has been successfully stored,  
+    - a deleteMessages(toSequenceNr) up until the sequence number of the data held by that snapshot can be issued  
+    - to safely delete the previous events while still having access to the accumulated state during replays 
+    - by loading the snapshot.
 #### Warning
-- If you are using Persistence Query, query results may be missing deleted messages in a journal, depending on how deletions are implemented in the journal plugin.
-- Unless you use a plugin which still shows deleted messages in persistence query results, you have to design your application so that it is not affected by missing messages.
-- The result of the deleteMessages request is signaled to the persistent actor with a DeleteMessagesSuccess message if the delete was successful or a DeleteMessagesFailure message if it failed.
-- Message deletion doesn’t affect the highest sequence number of the journal, even if all messages were deleted from it after deleteMessages invocation.
+- If you are using Persistence Query, query results may be missing deleted messages in a journal,  
+    - depending on how deletions are implemented in the journal plugin.
+- Unless you use a plugin which still shows deleted messages in persistence query results,  
+    - you have to design your application so that it is not affected by missing messages.
+- The result of the deleteMessages request is signaled to the persistent actor  
+    - with a DeleteMessagesSuccess message if the delete was successful  
+    - or a DeleteMessagesFailure message if it failed.
+- Message deletion doesn’t affect the highest sequence number of the journal,  
+    - even if all messages were deleted from it after deleteMessages invocation.
 
 ## Persistence status handling
 - Persisting, deleting, and replaying messages can either succeed or fail.
@@ -553,8 +588,11 @@ context.actorOf(props, name = "mySupervisor")
 | recovery               | RecoveryCompleted       |
 | deleteMessages         | DeleteMessagesSuccess   |
 
-- The most important operations (persist and recovery) have failure handlers modelled as explicit callbacks which the user can override in the PersistentActor.
-- The default implementations of these handlers emit a log message (error for persist/recovery failures, and warning for others), logging the failure cause and information about which message caused the failure.
+- The most important operations (persist and recovery) have failure handlers modelled as explicit callbacks  
+    - which the user can override in the PersistentActor.
+- The default implementations of these handlers emit a log message  
+    - (error for persist/recovery failures, and warning for others),  
+    - logging the failure cause and information about which message caused the failure.
 - For critical failures, such as recovery or persisting events failing, the persistent actor will be stopped after the failure handler is invoked.
 - This is because if the underlying journal implementation is signalling persistence failures it is most likely either failing completely or overloaded and restarting right-away and trying to persist the event again will most likely not help the journal recover - as it would likely cause a Thundering herd problem, as many persistent actors would restart and try to persist their events again.
 - Instead, using a BackoffSupervisor (as described in Failures) which implements an exponential-backoff strategy which allows for more breathing room for the journal to recover between restarts of the persistent actor.
