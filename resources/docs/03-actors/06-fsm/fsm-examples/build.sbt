@@ -1,4 +1,4 @@
-name := "akka-quickstart-scala"
+name := "fsm-examples"
 
 version := "1.0"
 
