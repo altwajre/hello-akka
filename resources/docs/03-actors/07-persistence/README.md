@@ -1007,6 +1007,7 @@ case object GetCurrentCart extends Command
 - **Buy**: when the customer finishes the purchase
 - **Leave**: when the customer leaves the store without purchasing anything
 - **GetCurrentCart**: allows to query the current state of customer’s shopping cart
+##
 - The customer can be in one of the following states:
 ```scala
 sealed trait UserState extends FSMState
