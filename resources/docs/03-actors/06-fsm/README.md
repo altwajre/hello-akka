@@ -394,8 +394,8 @@ when(<name>[, stateTimeout = <timeout>])(stateFunction)
     - In particular it must not be mutable. 
     - The easiest fit for these requirements are case objects.
 - If the `stateTimeout` parameter is given:
-- Then all transitions into this state:
-    - including _staying_,
+    - then all transitions into this state:
+        - including _staying_,
     - receive this timeout by default. 
 - Initiating the transition with an explicit timeout may be used to override this default.
     - See [Initiating Transitions](#initiating-transitions). 
