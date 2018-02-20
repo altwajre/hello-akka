@@ -502,10 +502,64 @@ when(SomeState) {
 - or move it into a method definition.
 ##
 
-
-
-
 ## Monitoring Transitions
+- Transitions occur “between states” conceptually, 
+- which means after any actions you have put into the event handling block.
+- This is obvious since the next state is only defined by the value returned by the event handling logic. 
+- You do not need to worry about the exact order with respect to setting the internal state variable, 
+- as everything within the `FSM` actor is running single-threaded anyway.
+
+### Internal Monitoring
+- Up to this point, 
+- the FSM DSL has been centered on states and events. 
+- The dual view is to describe it as a series of transitions. 
+- This is enabled by the method:
+```scala
+onTransition(handler)
+```
+- Which associates actions with a transition instead of with a state and event. 
+- The handler is a partial function which takes a pair of states as input.
+- No resulting state is needed as it is not possible to modify the transition in progress.
+```scala
+onTransition {
+  case Idle -> Active ⇒ setTimer("timeout", Tick, 1 second, repeat = true)
+  case Active -> _    ⇒ cancelTimer("timeout")
+  case x -> Idle      ⇒ log.info("entering Idle from " + x)
+}
+```
+- The convenience extractor `->` enables decomposition of the pair of states,
+- with a clear visual reminder of the transition’s direction. 
+- As usual in pattern matches, an underscore may be used for irrelevant parts.
+- Alternatively you could bind the unconstrained state to a variable, 
+- E.g. for logging as shown in the last case.
+- It is also possible to pass a function object accepting two states to `onTransition`, 
+- in case your transition handling logic is implemented as a method:
+```scala
+onTransition(handler _)
+
+def handler(from: StateType, to: StateType) {
+  // handle it here ...
+}
+```
+- The handlers registered with this method are stacked, 
+- so you can intersperse `onTransition` blocks with when blocks as suits your design. 
+- However, all handlers will be invoked for each transition, 
+- not only the first matching one. 
+- This is designed specifically,
+- so you can put all transition handling for a certain aspect,
+- into one place without having to worry about earlier declarations,
+- shadowing later ones.
+- The actions are still executed in declaration order.
+
+
+
+
+
+### External Monitoring
+
+
+
+
 
 
 
