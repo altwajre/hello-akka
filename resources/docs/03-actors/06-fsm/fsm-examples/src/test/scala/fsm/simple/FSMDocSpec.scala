@@ -2,11 +2,10 @@ package fsm.simple
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
-import fsm.simple.Protocol.{Batch, Queue, SetTarget, _}
+import fsm.simple.Protocol._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.collection.immutable
-
 
 class FSMDocSpec(_system: ActorSystem) extends TestKit(_system)
   with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll {
