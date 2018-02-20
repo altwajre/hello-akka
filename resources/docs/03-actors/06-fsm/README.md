@@ -6,7 +6,7 @@
     - _If we are in state S and the event E occurs, we should perform the actions A and make a transition to the state S’_.
 
 # A Simple Example
-- See [Example](./fsm-examples/src/test/scala/fsm/simple/FSMDocSpec.scala)
+- See [Example](./fsm-examples/src/test/scala/fsm/simple)
 - To demonstrate most of the features of the FSM trait:
     - Consider an actor which shall receive and queue messages while they arrive in a burst.
     - And send them on after the burst ended or a flush request is received.
