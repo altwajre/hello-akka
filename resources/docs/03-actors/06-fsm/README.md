@@ -556,26 +556,21 @@ def handler(from: StateType, to: StateType) {
 - By sending a message `SubscribeTransitionCallBack(actorRef)`. 
 - The named actor will be sent a `CurrentState(self, stateName)` message immediately,
 - And will receive `Transition(actorRef, oldState, newState)` messages whenever a state change is triggered.
+- External monitors may be unregistered:
+    - By sending `UnsubscribeTransitionCallBack(actorRef)` to the `FSM` actor.
+- Stopping a listener without unregistering:
+    - Will not remove the listener from the subscription list.
+    - Use `UnsubscribeTransitionCallback` before stopping the listener.
 
 #### Note
-- A state change includes the action of performing an `goto(S)` while already being state `S`. 
+- A state change includes the action of performing a `goto(S)` while already being state `S`. 
 - In that case the monitoring actor will be notified with a `Transition(ref,S,S)` message. 
 - This may be useful if your FSM should react on all (also **same-state**) transitions. 
 - In case you would rather not emit events for same-state transitions use `stay()` instead of `goto(S)`.
-##
 
-- External monitors may be unregistered:
-    - by sending `UnsubscribeTransitionCallBack(actorRef)` to the `FSM` actor.
-- Stopping a listener without unregistering:
-    - will not remove the listener from the subscription list; 
-    - use `UnsubscribeTransitionCallback` before stopping the listener.
-
-## Transforming State
-- The partial functions supplied as argument to the `when()` blocks:
-- can be transformed using Scala’s full supplement of functional programming tools. 
-- In order to retain type inference, 
-- there is a helper function which may be used,
-- in case some common handling logic shall be applied to different clauses:
+## Transforming State with `transform()`
+- Retains type inference.
+- Use in cases where common handling logic shall be applied to different clauses:
 ```scala
 when(SomeState)(transform {
   case Event(bytes: ByteString, read) ⇒ stay using (read + bytes.length)
@@ -584,9 +579,8 @@ when(SomeState)(transform {
     goto(Processing)
 })
 ```
-- The arguments to this method may also be stored, 
-- to be used several times, 
-- e.g. when applying the same transformation to several `when()` blocks:
+- The arguments to this method may also be stored to be used several times. 
+- E.g. when applying the same transformation to several `when()` blocks:
 ```scala
 val processingTrigger: PartialFunction[State, State] = {
   case s @ FSM.State(state, read, timeout, stopReason, replies) if read > 1000 ⇒
