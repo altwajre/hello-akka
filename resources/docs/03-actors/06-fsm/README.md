@@ -648,23 +648,19 @@ onTermination {
   case StopEvent(FSM.Failure(cause), state, data) ⇒ // ...
 }
 ```
-- As for the `whenUnhandled` case, this handler is not stacked, 
-- so each invocation of `onTermination` replaces the previously installed handler.
+- As for the `whenUnhandled` case, this handler is not stacked.
+- Each invocation of `onTermination` replaces the previously installed handler.
 
 ## Termination from Outside
-- When an `ActorRef` associated to a FSM is stopped using the `stop()` method, 
-- its `postStop` hook will be executed. 
-- The default implementation by the `FSM` trait:
-- is to execute the `onTermination` handler,
-- if that is prepared to handle a `StopEvent(Shutdown, ...)`.
+- When an `ActorRef` associated to a FSM is stopped using the `stop()` method:
+    - The `postStop` hook will be executed. 
+    - The `onTermination` handler will be executed if that is prepared to handle a `StopEvent(Shutdown, ...)`.
 
 #### Warning
-- In case you override `postStop` and want to have your `onTermination` handler called, 
-- do not forget to call super.postStop.
+- In case you override `postStop` and want to have your `onTermination` handler called do not forget to call `super.postStop`.
 
 # Testing and Debugging Finite State Machines
-- During development and for trouble shooting,
-- FSMs need care just as any other actor. 
+- During development and for trouble shooting, FSMs need care just as any other actor. 
 - There are specialized tools available as described in [Testing and Finite State Machines](../11-testing-actor-systems#testing-finite-state-machines) and in the following.
 
 ## Event Tracing
@@ -688,10 +684,9 @@ class MyFSM extends LoggingFSM[StateType, Data] {
 - Life cycle changes and special messages can be logged as described for [Actors](../11-testing-actor-systems).
 
 ## Rolling Event Log
-- The `LoggingFSM` trait adds one more feature to the FSM: 
-- a rolling event log which may be used during debugging,
-- for tracing how the FSM entered a certain failure state,
-- or for other creative uses:
+- The `LoggingFSM` trait adds a rolling event log which may be used during debugging:
+    - For tracing how the FSM entered a certain failure state.
+    - Or for other creative uses:
 ```scala
 class MyFSM extends LoggingFSM[StateType, Data] {
   override def logDepth = 12
@@ -707,17 +702,16 @@ class MyFSM extends LoggingFSM[StateType, Data] {
 - The `logDepth` defaults to zero, which turns off the event log.
 
 #### Warning
-- The log buffer is allocated during actor creation, 
-- which is why the configuration is done using a virtual method call. 
-- If you want to override with a `val`, 
-- make sure that its initialization happens before the initializer of `LoggingFSM` runs, 
-- and do not change the value returned by `logDepth` after the buffer has been allocated.
+- The log buffer is allocated during actor creation, which is why the configuration is done using a virtual method call. 
+- If you want to override with a `val`:
+    - Make sure that its initialization happens before the initializer of `LoggingFSM` runs. 
+    - Do not change the value returned by `logDepth` after the buffer has been allocated.
 ##
 
-- The contents of the event log are available using method `getLog`, 
-- which returns an `IndexedSeq[LogEntry]` where the oldest entry is at index zero.
+- The contents of the event log are available using method `getLog`. 
+- This returns an `IndexedSeq[LogEntry]` where the oldest entry is at index zero.
 
 # Examples
-- A bigger FSM example contrasted with Actor’s `become`/`unbecome`,
-- can be downloaded as a ready to run [Akka FSM sample](https://example.lightbend.com/v1/download/akka-samples-fsm-scala?_ga=2.36208611.231864662.1519093539-542223074.1518507267) together with a tutorial. 
+- A bigger FSM example contrasted with Actor’s `become`/`unbecome`, can be downloaded as a ready to run together with a tutorial:
+    - See [Akka FSM sample](https://example.lightbend.com/v1/download/akka-samples-fsm-scala?_ga=2.36208611.231864662.1519093539-542223074.1518507267). 
 - The source code of this sample can be found in the [Akka Samples Repository](https://github.com/akka/akka-samples/tree/2.5/akka-sample-fsm-scala).
