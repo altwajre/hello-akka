@@ -161,6 +161,7 @@ onTransition {
 - To verify that this buncher actually works:
     - It is quite easy to write a test using the [Testing Actor Systems](../11-testing-actor-systems).
     - Which is conveniently bundled with _ScalaTest_ traits into `AkkaSpec`:
+- **TODO:** Create runnable code.
 ```scala
 import akka.actor.Props
 import scala.collection.immutable
@@ -324,6 +325,151 @@ class FSMDocSpec extends MyFavoriteTestFrameWorkPlusAkkaTestKit {
 ```
 
 # Reference
+- The `FSM` trait inherits directly from `Actor`.
+- When you extend `FSM` you must be aware that an actor is actually created: 
+```scala
+class Buncher extends FSM[State, Data] {
+
+  startWith(Idle, Uninitialized)
+
+  when(Idle) {
+    case Event(SetTarget(ref), Uninitialized) ⇒
+      stay using Todo(ref, Vector.empty)
+  }
+
+  onTransition {
+    case Active -> Idle ⇒
+      stateData match {
+        case Todo(ref, queue) ⇒ ref ! Batch(queue)
+        case _                ⇒ // nothing to do
+      }
+  }
+
+  when(Active, stateTimeout = 1 second) {
+    case Event(Flush | StateTimeout, t: Todo) ⇒
+      goto(Idle) using t.copy(queue = Vector.empty)
+  }
+
+  whenUnhandled {
+    // common code for both states
+    case Event(Queue(obj), t @ Todo(_, v)) ⇒
+      goto(Active) using t.copy(queue = v :+ obj)
+
+    case Event(e, s) ⇒
+      log.warning("received unhandled request {} in state {}/{}", e, stateName, s)
+      stay
+  }
+
+  initialize()
+}
+```
+
+#### Note
+- The FSM trait defines a receive method which handles internal messages and passes everything else through to the FSM logic (according to the current state). When overriding the receive method, keep in mind that e.g. state timeout handling depends on actually passing the messages through the FSM logic.
+####
+- The FSM trait takes two type parameters:
+
+
+## The FSM Trait and Object
+
+
+
+
+
+
+
+
+## Defining States
+
+
+
+
+
+
+
+
+## Defining the Initial State
+
+
+
+
+
+
+
+
+## Unhandled Events
+
+
+
+
+
+
+
+
+## Initiating Transitions
+
+
+
+
+
+
+
+
+## Monitoring Transitions
+
+
+
+
+
+
+
+
+## Transforming State
+
+
+
+
+
+
+
+
+## Timers
+
+
+
+
+
+
+
+
+## Termination from Inside
+
+
+
+
+
+
+
+
+## Termination from Outside
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
