@@ -25,7 +25,7 @@
     - and LevelDB based journal.
 - LevelDB based plugins will require the following additional dependency declaration:
 ```sbtshell
-"org.fusesource.leveldbjni"   % "leveldbjni-all"   % "1.8"
+"org.fusesource.leveldbjni" % "leveldbjni-all"   % "1.8"
 ```
 
 
@@ -43,19 +43,18 @@
 - also in case of sender and receiver JVM crashes.
 
 ### `AsyncWriteJournal`:  
-- A journal stores the sequence of messages sent to a persistent actor. An application can control which messages are journaled and which are received by the persistent actor without being journaled. Journal maintains highestSequenceNr that is increased on each message. The storage backend of a journal is pluggable. The persistence extension comes with a “leveldb” journal plugin, which writes to the local filesystem. Replicated journals are available as Community plugins.
+- A journal stores the sequence of messages sent to a persistent actor. An application can control which messages are journaled and which are received by the persistent actor without being journaled. Journal maintains highestSequenceNr that is increased on each message. The storage backend of a journal is pluggable. The persistence extension comes with a "leveldb" journal plugin, which writes to the local filesystem. Replicated journals are available as Community plugins.
 
 ### Snapshot store:   
-- A snapshot store persists snapshots of a persistent actor’s internal state. Snapshots are used for optimizing recovery times. The storage backend of a snapshot store is pluggable. The persistence extension comes with a “local” snapshot storage plugin, which writes to the local filesystem.
+- A snapshot store persists snapshots of a persistent actor’s internal state. Snapshots are used for optimizing recovery times. The storage backend of a snapshot store is pluggable. The persistence extension comes with a "local" snapshot storage plugin, which writes to the local filesystem.
 
 ### Event sourcing.   
 - Based on the building blocks described above, Akka persistence provides abstractions for the development of event sourced applications (see section Event sourcing) Replicated snapshot stores are available as Community plugins.
 
 # Event sourcing
 The basic idea behind Event Sourcing is quite simple. A persistent actor receives a (non-persistent) command which is first validated if it can be applied to the current state. Here validation can mean anything, from simple inspection of a command message’s fields up to a conversation with several external services, for example. If validation succeeds, events are generated from the command, representing the effect of the command. These events are then persisted and, after successful persistence, used to change the actor’s state. When the persistent actor needs to be recovered, only the persisted events are replayed of which we know that they can be successfully applied. In other words, events cannot fail when being replayed to a persistent actor, in contrast to commands. Event sourced actors may of course also process commands that do not change application state such as query commands for example.
-Another excellent article about “thinking in Events” is Events As First-Class Citizens by Randy Shoup. It is a short and recommended read if you’re starting developing Events based applications.
+Another excellent article about "thinking in Events" is Events As First-Class Citizens by Randy Shoup. It is a short and recommended read if you’re starting developing Events based applications.
 Akka persistence supports event sourcing with the PersistentActor trait. An actor that extends this trait uses the persist method to persist and handle events. The behavior of a PersistentActor is defined by implementing receiveRecover and receiveCommand. This is demonstrated in the following example.
-
 ```scala
 import akka.actor._
 import akka.persistence._
@@ -99,7 +98,6 @@ class ExamplePersistentActor extends PersistentActor {
 
 }
 ```
-
 The example defines two data types, Cmd and Evt to represent commands and events, respectively. The state of the ExamplePersistentActor is a list of persisted event data contained in ExampleState.
 The persistent actor’s receiveRecover method defines how state is updated during recovery by handling Evt and SnapshotOffer messages. The persistent actor’s receiveCommand method is a command handler. In this example, a command is handled by generating an event which is then persisted and handled. Events are persisted by calling persist with an event (or a sequence of events) as first argument and an event handler as second argument.
 The persist method persists events asynchronously and the event handler is executed for successfully persisted events. Successfully persisted events are internally sent back to the persistent actor as individual messages that trigger event handler executions. An event handler may close over persistent actor state and mutate it. The sender of a persisted event is the sender of the corresponding command. This allows event handlers to reply to the sender of a command (not shown).
@@ -111,7 +109,6 @@ Note
 It’s also possible to switch between different command handlers during normal processing and recovery with context.become() and context.unbecome(). To get the actor into the same state after recovery you need to take special care to perform the same state transitions with become and unbecome in the receiveRecover method as you would have done in the command handler. Note that when using become from receiveRecover it will still only use the receiveRecover behavior when replaying the events. When replay is completed it will use the new behavior.
 
 ## Identifiers
-
 A persistent actor must have an identifier that doesn’t change across different actor incarnations. The identifier must be defined with the persistenceId method.
 ```scala
 override def persistenceId = "my-stable-persistence-id"
@@ -135,7 +132,7 @@ To skip loading snapshots and replay all events you can use SnapshotSelectionCri
 override def recovery =
   Recovery(fromSnapshot = SnapshotSelectionCriteria.None)
 ```
-Another possible recovery customization, which can be useful for debugging, is setting an upper bound on the replay, causing the actor to be replayed only up to a certain point “in the past” (instead of being replayed to its most up to date state). Note that after that it is a bad idea to persist new events because a later recovery will probably be confused by the new events that follow the events that were previously skipped.
+Another possible recovery customization, which can be useful for debugging, is setting an upper bound on the replay, causing the actor to be replayed only up to a certain point "in the past" (instead of being replayed to its most up to date state). Note that after that it is a bad idea to persist new events because a later recovery will probably be confused by the new events that follow the events that were previously skipped.
 ```scala
 override def recovery = Recovery(toSequenceNr = 457L)
 ```
@@ -172,7 +169,7 @@ You should be careful to not send more messages to a persistent actor than it ca
 ```hocon
 akka.actor.default-mailbox.stash-capacity=10000
 ```
-Note that the stash capacity is per actor. If you have many persistent actors, e.g. when using cluster sharding, you may need to define a small stash capacity to ensure that the total number of stashed messages in the system doesn’t consume too much memory. Additionally, the persistent actor defines three strategies to handle failure when the internal stash capacity is exceeded. The default overflow strategy is the ThrowOverflowExceptionStrategy, which discards the current received message and throws a StashOverflowException, causing actor restart if the default supervision strategy is used. You can override the internalStashOverflowStrategy method to return DiscardToDeadLetterStrategy or ReplyToStrategy for any “individual” persistent actor, or define the “default” for all persistent actors by providing FQCN, which must be a subclass of StashOverflowStrategyConfigurator, in the persistence configuration:
+Note that the stash capacity is per actor. If you have many persistent actors, e.g. when using cluster sharding, you may need to define a small stash capacity to ensure that the total number of stashed messages in the system doesn’t consume too much memory. Additionally, the persistent actor defines three strategies to handle failure when the internal stash capacity is exceeded. The default overflow strategy is the ThrowOverflowExceptionStrategy, which discards the current received message and throws a StashOverflowException, causing actor restart if the default supervision strategy is used. You can override the internalStashOverflowStrategy method to return DiscardToDeadLetterStrategy or ReplyToStrategy for any "individual" persistent actor, or define the "default" for all persistent actors by providing FQCN, which must be a subclass of StashOverflowStrategyConfigurator, in the persistence configuration:
 ```hocon
 akka.persistence.internal-stash-overflow-strategy=
   "akka.persistence.ThrowExceptionConfigurator"
@@ -188,7 +185,7 @@ The bounded mailbox should be avoided in the persistent actor, by which the mess
 ## Relaxed local consistency requirements and high throughput use-cases
 If faced with relaxed local consistency requirements and high throughput demands sometimes PersistentActor and its persist may not be enough in terms of consuming incoming Commands at a high rate, because it has to wait until all Events related to a given Command are processed in order to start processing the next Command. While this abstraction is very useful for most cases, sometimes you may be faced with relaxed requirements about consistency – for example you may want to process commands as fast as you can, assuming that the Event will eventually be persisted and handled properly in the background, retroactively reacting to persistence failures if needed.
 The persistAsync method provides a tool for implementing high-throughput persistent actors. It will not stash incoming Commands while the Journal is still working on persisting and/or user code is executing event callbacks.
-In the below example, the event callbacks may be called “at any time”, even after the next Command has been processed. The ordering between events is still guaranteed (“evt-b-1” will be sent after “evt-a-2”, which will be sent after “evt-a-1” etc.).
+In the below example, the event callbacks may be called "at any time", even after the next Command has been processed. The ordering between events is still guaranteed ("evt-b-1" will be sent after "evt-a-2", which will be sent after "evt-a-1" etc.).
 ```scala
 class MyPersistentActor extends PersistentActor {
 
@@ -220,7 +217,7 @@ persistentActor ! "b"
 // evt-b-2
 ```
 Note
-In order to implement the pattern known as “command sourcing” simply call persistAsync(cmd)(...) right away on all incoming messages and handle them in the callback.
+In order to implement the pattern known as "command sourcing" simply call persistAsync(cmd)(...) right away on all incoming messages and handle them in the callback.
 Warning
 The callback will not be invoked if the actor is restarted (or stopped) in between the call to persistAsync and the journal has confirmed the write.
 
@@ -326,7 +323,7 @@ persistentActor ! "b"
 // b-inner-1
 // b-inner-2
 ```
-First the “outer layer” of persist calls is issued and their callbacks are applied. After these have successfully completed, the inner callbacks will be invoked (once the events they are persisting have been confirmed to be persisted by the journal). Only after all these handlers have been successfully invoked will the next command be delivered to the persistent Actor. In other words, the stashing of incoming commands that is guaranteed by initially calling persist() on the outer layer is extended until all nested persist callbacks have been handled.
+First the "outer layer" of persist calls is issued and their callbacks are applied. After these have successfully completed, the inner callbacks will be invoked (once the events they are persisting have been confirmed to be persisted by the journal). Only after all these handlers have been successfully invoked will the next command be delivered to the persistent Actor. In other words, the stashing of incoming commands that is guaranteed by initially calling persist() on the outer layer is extended until all nested persist callbacks have been handled.
 It is also possible to nest persistAsync calls, using the same pattern:
 ```scala
 override def receiveCommand: Receive = {
@@ -403,11 +400,12 @@ Message deletion doesn’t affect the highest sequence number of the journal, ev
 ## Persistence status handling
 Persisting, deleting, and replaying messages can either succeed or fail.
 
-Method 	Success
-persist / persistAsync 	persist handler invoked
-onPersistRejected 	No automatic actions.
-recovery 	RecoveryCompleted
-deleteMessages 	DeleteMessagesSuccess
+| Method                 | Success                 |
+|------------------------|-------------------------|
+| persist / persistAsync | persist handler invoked |
+| onPersistRejected      | No automatic actions.   |
+| recovery               | RecoveryCompleted       |
+| deleteMessages         | DeleteMessagesSuccess   |
 
 The most important operations (persist and recovery) have failure handlers modelled as explicit callbacks which the user can override in the PersistentActor. The default implementations of these handlers emit a log message (error for persist/recovery failures, and warning for others), logging the failure cause and information about which message caused the failure.
 For critical failures, such as recovery or persisting events failing, the persistent actor will be stopped after the failure handler is invoked. This is because if the underlying journal implementation is signalling persistence failures it is most likely either failing completely or overloaded and restarting right-away and trying to persist the event again will most likely not help the journal recover – as it would likely cause a Thundering herd problem, as many persistent actors would restart and try to persist their events again. Instead, using a BackoffSupervisor (as described in Failures) which implements an exponential-backoff strategy which allows for more breathing room for the journal to recover between restarts of the persistent actor.
@@ -538,7 +536,7 @@ If not specified, they default to SnapshotSelectionCriteria.Latest which selects
 Note
 In order to use snapshots, a default snapshot-store (akka.persistence.snapshot-store.plugin) must be configured, or the PersistentActor can pick a snapshot store explicitly by overriding def snapshotPluginId: String.
 Since it is acceptable for some applications to not use any snapshotting, it is legal to not configure a snapshot store. However, Akka will log a warning message when this situation is detected and then continue to operate until an actor tries to store a snapshot, at which point the operation will fail (by replying with an SaveSnapshotFailure for example).
-Note that the “persistence mode” of Cluster Sharding makes use of snapshots. If you use that mode, you’ll need to define a snapshot store plugin.
+Note that the "persistence mode" of Cluster Sharding makes use of snapshots. If you use that mode, you’ll need to define a snapshot store plugin.
 
 ## Snapshot deletion
 A persistent actor can delete individual snapshots by calling the deleteSnapshot method with the sequence number of when the snapshot was taken.
@@ -622,7 +620,7 @@ The AtLeastOnceDelivery trait holds messages in memory until their successful de
 # Event Adapters
 In long running projects using event sourcing sometimes the need arises to detach the data model from the domain model completely.
 Event Adapters help in situations where:
-    Version Migrations – existing events stored in Version 1 should be “upcasted” to a new Version 2 representation, and the process of doing so involves actual code, not just changes on the serialization layer. For these scenarios the toJournal function is usually an identity function, however the fromJournal is implemented as v1.Event=>v2.Event, performing the necessary mapping inside the fromJournal method. This technique is sometimes referred to as “upcasting” in other CQRS libraries.
+    Version Migrations – existing events stored in Version 1 should be "upcasted" to a new Version 2 representation, and the process of doing so involves actual code, not just changes on the serialization layer. For these scenarios the toJournal function is usually an identity function, however the fromJournal is implemented as v1.Event=>v2.Event, performing the necessary mapping inside the fromJournal method. This technique is sometimes referred to as "upcasting" in other CQRS libraries.
     Separating Domain and Data models – thanks to EventAdapters it is possible to completely separate the domain model from the model used to persist data in the Journals. For example one may want to use case classes in the domain model, however persist their protocol-buffer (or any other binary serialization format) counter-parts to the Journal. A simple toJournal:MyModel=>MyDataModel and fromJournal:MyDataModel=>MyModel adapter can be used to implement this feature.
     Journal Specialized Data Types – exposing data types understood by the underlying Journal, for example for data stores which understand JSON it is possible to write an EventAdapter toJournal:Any=>JSON such that the Journal can directly store the json instead of serializing the object to its binary representation.
 Implementing an EventAdapter is rather stright forward:
@@ -664,7 +662,7 @@ For more advanced schema evolution techniques refer to the Persistence - Schema 
 PersistentFSM handles the incoming messages in an FSM like fashion. Its internal state is persisted as a sequence of changes, later referred to as domain events. Relationship between incoming messages, FSM’s states and transitions, persistence of domain events is defined by a DSL.
 
 ## A Simple Example
-To demonstrate the features of the PersistentFSM trait, consider an actor which represents a Web store customer. The contract of our “WebStoreCustomerFSMActor” is that it accepts the following commands:
+To demonstrate the features of the PersistentFSM trait, consider an actor which represents a Web store customer. The contract of our "WebStoreCustomerFSMActor" is that it accepts the following commands:
 ```scala
 sealed trait Command
 case class AddItem(item: Item) extends Command
@@ -692,7 +690,7 @@ case object Paid extends UserState {
 LookingAround customer is browsing the site, but hasn’t added anything to the shopping cart Shopping customer has recently added items to the shopping cart Inactive customer has items in the shopping cart, but hasn’t added anything recently Paid customer has purchased the items
 Note
 PersistentFSM states must inherit from trait PersistentFSM.FSMState and implement the def identifier: String method. This is required in order to simplify the serialization of FSM states. String identifiers should be unique!
-Customer’s actions are “recorded” as a sequence of “domain events” which are persisted. Those events are replayed on an actor’s start in order to restore the latest customer’s state:
+Customer’s actions are "recorded" as a sequence of "domain events" which are persisted. Those events are replayed on an actor’s start in order to restore the latest customer’s state:
 ```scala
 sealed trait DomainEvent
 case class ItemAdded(item: Item) extends DomainEvent
@@ -775,7 +773,7 @@ override def applyEvent(event: DomainEvent, cartBeforeEvent: ShoppingCart): Shop
   }
 }
 ```
-andThen can be used to define actions which will be executed following event’s persistence - convenient for “side effects” like sending a message or logging. Notice that actions defined in andThen block are not executed on recovery:
+andThen can be used to define actions which will be executed following event’s persistence - convenient for "side effects" like sending a message or logging. Notice that actions defined in andThen block are not executed on recovery:
 ```scala
 goto(Paid) applying OrderExecuted andThen {
   case NonEmptyShoppingCart(items) ⇒
@@ -799,13 +797,13 @@ akka.persistence.fsm.snapshot-after = 1000
 ```
 this means saveStateSnapshot() is called after the sequence number reaches multiple of 1000.
 Note
-saveStateSnapshot() might not be called exactly at sequence numbers being multiple of the snapshot-after configuration value. This is because PersistentFSM works in a sort of “batch” mode when processing and persisting events, and saveStateSnapshot() is called only at the end of the “batch”. For example, if you set akka.persistence.fsm.snapshot-after = 1000, it is possible that saveStateSnapshot() is called at lastSequenceNr = 1005, 2003, ... A single batch might persist state transition, also there could be multiple domain events to be persisted if you pass them to applying method in the PersistFSM DSL.
+saveStateSnapshot() might not be called exactly at sequence numbers being multiple of the snapshot-after configuration value. This is because PersistentFSM works in a sort of "batch" mode when processing and persisting events, and saveStateSnapshot() is called only at the end of the "batch". For example, if you set akka.persistence.fsm.snapshot-after = 1000, it is possible that saveStateSnapshot() is called at lastSequenceNr = 1005, 2003, ... A single batch might persist state transition, also there could be multiple domain events to be persisted if you pass them to applying method in the PersistFSM DSL.
 
 # Storage plugins
 Storage backends for journals and snapshot stores are pluggable in the Akka persistence extension.
 A directory of persistence journal and snapshot store plugins is available at the Akka Community Projects page, see Community plugins
-Plugins can be selected either by “default” for all persistent actors, or “individually”, when a persistent actor defines its own set of plugins.
-When a persistent actor does NOT override the journalPluginId and snapshotPluginId methods, the persistence extension will use the “default” journal and snapshot-store plugins configured in reference.conf:
+Plugins can be selected either by "default" for all persistent actors, or "individually", when a persistent actor defines its own set of plugins.
+When a persistent actor does NOT override the journalPluginId and snapshotPluginId methods, the persistence extension will use the "default" journal and snapshot-store plugins configured in reference.conf:
 ```hocon
 akka.persistence.journal.plugin = ""
 akka.persistence.snapshot-store.plugin = ""
@@ -1171,7 +1169,7 @@ The default location of LevelDB files is a directory named journal in the curren
 akka.persistence.journal.leveldb.dir = "target/journal"
 ```
 With this plugin, each actor system runs its own private LevelDB instance.
-One peculiarity of LevelDB is that the deletion operation does not remove messages from the journal, but adds a “tombstone” for each deleted message instead. In the case of heavy journal usage, especially one including frequent deletes, this may be an issue as users may find themselves dealing with continuously increasing journal sizes. To this end, LevelDB offers a special journal compaction function that is exposed via the following configuration:
+One peculiarity of LevelDB is that the deletion operation does not remove messages from the journal, but adds a "tombstone" for each deleted message instead. In the case of heavy journal usage, especially one including frequent deletes, this may be an issue as users may find themselves dealing with continuously increasing journal sizes. To this end, LevelDB offers a special journal compaction function that is exposed via the following configuration:
 ```hocon
 # Number of deleted messages per persistence id that will trigger journal compaction
 akka.persistence.journal.leveldb.compaction-intervals {
@@ -1283,7 +1281,7 @@ When testing Persistence based projects always rely on asynchronous messaging us
 There are several configuration properties for the persistence module, please refer to the reference configuration.
 
 # Multiple persistence plugin configurations
-By default, a persistent actor will use the “default” journal and snapshot store plugins configured in the following sections of the reference.conf configuration resource:
+By default, a persistent actor will use the "default" journal and snapshot store plugins configured in the following sections of the reference.conf configuration resource:
 ```hocon
 # Absolute path to the default journal plugin configuration entry.
 akka.persistence.journal.plugin = "akka.persistence.journal.inmem"
