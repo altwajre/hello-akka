@@ -593,24 +593,43 @@ context.actorOf(props, name = "mySupervisor")
 - The default implementations of these handlers emit a log message  
     - (error for persist/recovery failures, and warning for others),  
     - logging the failure cause and information about which message caused the failure.
-- For critical failures, such as recovery or persisting events failing, the persistent actor will be stopped after the failure handler is invoked.
-- This is because if the underlying journal implementation is signalling persistence failures it is most likely either failing completely or overloaded and restarting right-away and trying to persist the event again will most likely not help the journal recover - as it would likely cause a Thundering herd problem, as many persistent actors would restart and try to persist their events again.
-- Instead, using a BackoffSupervisor (as described in Failures) which implements an exponential-backoff strategy which allows for more breathing room for the journal to recover between restarts of the persistent actor.
+- For critical failures, such as recovery or persisting events failing,  
+    - the persistent actor will be stopped after the failure handler is invoked.
+- This is because if the underlying journal implementation is signalling persistence failures  
+    - it is most likely either failing completely or overloaded  
+    - and restarting right-away and trying to persist the event again will most likely not help the journal recover 
+    - as it would likely cause a Thundering herd problem,  
+    - as many persistent actors would restart and try to persist their events again.
+- Instead, use a BackoffSupervisor (as described in Failures)  
+    - which implements an exponential-backoff strategy  
+    - and allows for more breathing room for the journal to recover  
+    - between restarts of the persistent actor.
 
 #### Note
-Journal implementations may choose to implement a retry mechanism, e.g. such that only after a write fails N number of times a persistence failure is signalled back to the user.
-- In other words, once a journal returns a failure, it is considered fatal by Akka Persistence, and the persistent actor which caused the failure will be stopped.
-Check the documentation of the journal implementation you are using for details if/how it is using this technique.
+- Journal implementations may choose to implement a retry mechanism,  
+    - e.g. such that only after a write fails N number of times a persistence failure is signalled back to the user.
+- In other words, once a journal returns a failure, it is considered fatal by Akka Persistence,  
+    - and the persistent actor which caused the failure will be stopped.
+- Check the documentation of the journal implementation you are using for details if/how it is using this technique.
 
 ## Safely shutting down persistent actors
 - Special care should be given when shutting down persistent actors from the outside.
-- With normal Actors it is often acceptable to use the special PoisonPill message to signal to an Actor that it should stop itself once it receives this message - in fact this message is handled automatically by Akka, leaving the target actor no way to refuse stopping itself when given a poison pill.
-- This can be dangerous when used with PersistentActor due to the fact that incoming commands are stashed while the persistent actor is awaiting confirmation from the Journal that events have been written when persist() was used.
-- Since the incoming commands will be drained from the Actor’s mailbox and put into its internal stash while awaiting the confirmation (thus, before calling the persist handlers) the Actor may receive and (auto)handle the PoisonPill before it processes the other messages which have been put into its stash, causing a pre-mature shutdown of the Actor.
+- With normal Actors it is often acceptable to use the special PoisonPill message  
+    - to signal to an Actor that it should stop itself once it receives this message 
+    - in fact this message is handled automatically by Akka,  
+    - leaving the target actor no way to refuse stopping itself when given a poison pill.
+- This can be dangerous when used with PersistentActor due to the fact that incoming commands are stashed  
+    - while the persistent actor is awaiting confirmation from the Journal  
+    - that events have been written when persist() was used.
+- Since the incoming commands will be drained from the Actor’s mailbox and put into its internal stash  
+    - while awaiting the confirmation (thus, before calling the persist handlers)  
+    - the Actor may receive and (auto)handle the PoisonPill before it processes the other messages  
+    - which have been put into its stash, causing a pre-mature shutdown of the Actor.
 
 #### Warning
 - Consider using explicit shut-down messages instead of PoisonPill when working with persistent actors.
-- The example below highlights how messages arrive in the Actor’s mailbox and how they interact with its internal stashing mechanism when persist() is used.
+- The example below highlights how messages arrive in the Actor’s mailbox  
+    - and how they interact with its internal stashing mechanism when persist() is used.
 - Notice the early stop behaviour that occurs when PoisonPill is used:
 
 ```scala
@@ -664,13 +683,17 @@ persistentActor ! Shutdown
 ```
 
 ## Replay Filter
-- There could be cases where event streams are corrupted and multiple writers (i.e. multiple persistent actor instances) journaled different messages with the same sequence number.
+- There could be cases where event streams are corrupted  
+    - and multiple writers (i.e. multiple persistent actor instances)  
+    - journaled different messages with the same sequence number.
 - In such a case, you can configure how you filter replayed messages from multiple writers, upon recovery.
-- In your configuration, under the akka.persistence.journal.xxx.replay-filter section (where xxx is your journal plugin id), you can select the replay filter mode from one of the following values:
-    - repair-by-discard-old
-    - fail
-    - warn
-    - off
+- In your configuration, under the akka.persistence.journal.xxx.replay-filter section  
+    - (where xxx is your journal plugin id),  
+    - you can select the replay filter mode from one of the following values:
+        - repair-by-discard-old
+        - fail
+        - warn
+        - off
 - For example, if you configure the replay filter for leveldb plugin, it looks like this:
 ```hocon
 # The replay filter can detect a corrupt event stream by inspecting
