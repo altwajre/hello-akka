@@ -105,7 +105,7 @@ The main responsibility of an event handler is changing persistent actor state u
 When persisting events with persist it is guaranteed that the persistent actor will not receive further commands between the persist call and the execution(s) of the associated event handler. This also holds for multiple persist calls in context of a single command. Incoming messages are stashed until the persist is completed.
 If persistence of an event fails, onPersistFailure will be invoked (logging the error by default), and the actor will unconditionally be stopped. If persistence of an event is rejected before it is stored, e.g. due to serialization error, onPersistRejected will be invoked (logging a warning by default) and the actor continues with the next message.
 The easiest way to run this example yourself is to download the ready to run Akka Persistence Sample with Scala together with the tutorial. It contains instructions on how to run the PersistentActorExample. The source code of this sample can be found in the Akka Samples Repository.
-Note
+#### Note
 It’s also possible to switch between different command handlers during normal processing and recovery with context.become() and context.unbecome(). To get the actor into the same state after recovery you need to take special care to perform the same state transitions with become and unbecome in the receiveRecover method as you would have done in the command handler. Note that when using become from receiveRecover it will still only use the receiveRecover behavior when replaying the events. When replay is completed it will use the new behavior.
 
 ## Identifiers
@@ -113,7 +113,7 @@ A persistent actor must have an identifier that doesn’t change across differen
 ```scala
 override def persistenceId = "my-stable-persistence-id"
 ```
-Note
+#### Note
 persistenceId must be unique to a given entity in the journal (database table/keyspace). When replaying messages persisted to the journal, you query messages with a persistenceId. So, if two different entities share the same persistenceId, message-replaying behavior is corrupted.
 
 ## Recovery
@@ -122,7 +122,7 @@ The number of concurrent recoveries that can be in progress at the same time is 
 ```hocon
 akka.persistence.max-concurrent-recoveries = 50
 ```
-Note
+#### Note
 Accessing the sender() for replayed messages will always result in a deadLetters reference, as the original sender is presumed to be long gone. If you indeed have to notify an actor during recovery in the future, store its ActorPath explicitly in your persisted events.
 
 ### Recovery customization
@@ -179,7 +179,7 @@ You can also query the default strategy via the Akka persistence extension singl
 ```scala
 Persistence(context.system).defaultInternalStashOverflowStrategy
 ```
-Note
+#### Note
 The bounded mailbox should be avoided in the persistent actor, by which the messages come from storage backends may be discarded. You can use bounded stash instead of it.
 
 ## Relaxed local consistency requirements and high throughput use-cases
@@ -216,9 +216,9 @@ persistentActor ! "b"
 // evt-b-1
 // evt-b-2
 ```
-Note
+#### Note
 In order to implement the pattern known as "command sourcing" simply call persistAsync(cmd)(...) right away on all incoming messages and handle them in the callback.
-Warning
+#### Warning
 The callback will not be invoked if the actor is restarted (or stopped) in between the call to persistAsync and the journal has confirmed the write.
 
 ## Deferring actions until preceding persist handlers have executed
@@ -279,7 +279,7 @@ class MyPersistentActor extends PersistentActor {
   }
 }
 ```
-Warning
+#### Warning
 The callback will not be invoked if the actor is restarted (or stopped) in between the call to deferAsync and the journal has processed and confirmed all preceding writes.
 
 ## Nested persist calls
@@ -361,7 +361,7 @@ persistentActor ! "b"
 // b -> b-outer-1 -> b-outer-2 -> b-inner-1 -> b-inner-2
 ```
 While it is possible to nest mixed persist and persistAsync with keeping their respective semantics it is not a recommended practice, as it may lead to overly complex nesting.
-Warning
+#### Warning
 While it is possible to nest persist calls within one another, it is not legal call persist from any other Thread than the Actors message processing Thread. For example, it is not legal to call persist from Futures! Doing so will break the guarantees that the persist methods aim to provide. Always call persist and persistAsync from within the Actor’s receive block (or methods synchronously invoked from there).
 
 ## Failures
@@ -392,7 +392,7 @@ In order to optimize throughput when using persistAsync, a persistent actor inte
 ## Message deletion
 It is possible to delete all messages (journaled by a single persistent actor) up to a specified sequence number; Persistent actors may call the deleteMessages method to this end.
 Deleting messages in event sourcing based applications is typically either not used at all, or used in conjunction with snapshotting, i.e. after a snapshot has been successfully stored, a deleteMessages(toSequenceNr) up until the sequence number of the data held by that snapshot can be issued to safely delete the previous events while still having access to the accumulated state during replays - by loading the snapshot.
-Warning
+#### Warning
 If you are using Persistence Query, query results may be missing deleted messages in a journal, depending on how deletions are implemented in the journal plugin. Unless you use a plugin which still shows deleted messages in persistence query results, you have to design your application so that it is not affected by missing messages.
 The result of the deleteMessages request is signaled to the persistent actor with a DeleteMessagesSuccess message if the delete was successful or a DeleteMessagesFailure message if it failed.
 Message deletion doesn’t affect the highest sequence number of the journal, even if all messages were deleted from it after deleteMessages invocation.
@@ -409,14 +409,14 @@ Persisting, deleting, and replaying messages can either succeed or fail.
 
 The most important operations (persist and recovery) have failure handlers modelled as explicit callbacks which the user can override in the PersistentActor. The default implementations of these handlers emit a log message (error for persist/recovery failures, and warning for others), logging the failure cause and information about which message caused the failure.
 For critical failures, such as recovery or persisting events failing, the persistent actor will be stopped after the failure handler is invoked. This is because if the underlying journal implementation is signalling persistence failures it is most likely either failing completely or overloaded and restarting right-away and trying to persist the event again will most likely not help the journal recover – as it would likely cause a Thundering herd problem, as many persistent actors would restart and try to persist their events again. Instead, using a BackoffSupervisor (as described in Failures) which implements an exponential-backoff strategy which allows for more breathing room for the journal to recover between restarts of the persistent actor.
-Note
+#### Note
 Journal implementations may choose to implement a retry mechanism, e.g. such that only after a write fails N number of times a persistence failure is signalled back to the user. In other words, once a journal returns a failure, it is considered fatal by Akka Persistence, and the persistent actor which caused the failure will be stopped.
 Check the documentation of the journal implementation you are using for details if/how it is using this technique.
 
 ## Safely shutting down persistent actors
 Special care should be given when shutting down persistent actors from the outside. With normal Actors it is often acceptable to use the special PoisonPill message to signal to an Actor that it should stop itself once it receives this message – in fact this message is handled automatically by Akka, leaving the target actor no way to refuse stopping itself when given a poison pill.
 This can be dangerous when used with PersistentActor due to the fact that incoming commands are stashed while the persistent actor is awaiting confirmation from the Journal that events have been written when persist() was used. Since the incoming commands will be drained from the Actor’s mailbox and put into its internal stash while awaiting the confirmation (thus, before calling the persist handlers) the Actor may receive and (auto)handle the PoisonPill before it processes the other messages which have been put into its stash, causing a pre-mature shutdown of the Actor.
-Warning
+#### Warning
 Consider using explicit shut-down messages instead of PoisonPill when working with persistent actors.
 The example below highlights how messages arrive in the Actor’s mailbox and how they interact with its internal stashing mechanism when persist() is used. Notice the early stop behaviour that occurs when PoisonPill is used:
 
@@ -533,7 +533,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
   maxTimestamp = System.currentTimeMillis))
 ```
 If not specified, they default to SnapshotSelectionCriteria.Latest which selects the latest (= youngest) snapshot. To disable snapshot-based recovery, applications should use SnapshotSelectionCriteria.None. A recovery where no saved snapshot matches the specified SnapshotSelectionCriteria will replay all journaled messages.
-Note
+#### Note
 In order to use snapshots, a default snapshot-store (akka.persistence.snapshot-store.plugin) must be configured, or the PersistentActor can pick a snapshot store explicitly by overriding def snapshotPluginId: String.
 Since it is acceptable for some applications to not use any snapshotting, it is legal to not configure a snapshot store. However, Akka will log a warning message when this situation is detected and then continue to operate until an actor tries to store a snapshot, at which point the operation will fail (by replying with an SaveSnapshotFailure for example).
 Note that the "persistence mode" of Cluster Sharding makes use of snapshots. If you use that mode, you’ll need to define a snapshot store plugin.
@@ -556,7 +556,7 @@ If failure messages are left unhandled by the actor, a default warning log messa
 # At-Least-Once Delivery
 To send messages with at-least-once delivery semantics to destinations you can mix-in AtLeastOnceDelivery trait to your PersistentActor on the sending side. It takes care of re-sending messages when they have not been confirmed within a configurable timeout.
 The state of the sending actor, including which messages have been sent that have not been confirmed by the recipient must be persistent so that it can survive a crash of the sending actor or JVM. The AtLeastOnceDelivery trait does not persist anything by itself. It is your responsibility to persist the intent that a message is sent and that a confirmation has been received.
-Note
+#### Note
 At-least-once delivery implies that original message sending order is not always preserved, and the destination may receive duplicate messages. Semantics do not match those of a normal ActorRef send operation:
     it is not at-most-once delivery
     message order for the same sender–receiver pair is not preserved due to possible resends
@@ -624,7 +624,7 @@ Event Adapters help in situations where:
     Version Migrations – existing events stored in Version 1 should be "upcasted" to a new Version 2 representation, and the process of doing so involves actual code, not just changes on the serialization layer. For these scenarios the toJournal function is usually an identity function, however the fromJournal is implemented as v1.Event=>v2.Event, performing the necessary mapping inside the fromJournal method. This technique is sometimes referred to as "upcasting" in other CQRS libraries.
     Separating Domain and Data models – thanks to EventAdapters it is possible to completely separate the domain model from the model used to persist data in the Journals. For example one may want to use case classes in the domain model, however persist their protocol-buffer (or any other binary serialization format) counter-parts to the Journal. A simple toJournal:MyModel=>MyDataModel and fromJournal:MyDataModel=>MyModel adapter can be used to implement this feature.
     Journal Specialized Data Types – exposing data types understood by the underlying Journal, for example for data stores which understand JSON it is possible to write an EventAdapter toJournal:Any=>JSON such that the Journal can directly store the json instead of serializing the object to its binary representation.
-Implementing an EventAdapter is rather stright forward:
+Implementing an EventAdapter is rather straight forward:
 ```scala
 class MyEventAdapter(system: ExtendedActorSystem) extends EventAdapter {
   override def manifest(event: Any): String =
@@ -656,7 +656,7 @@ akka.persistence.journal {
 }
 ```
 It is possible to bind multiple adapters to one class for recovery, in which case the fromJournal methods of all bound adapters will be applied to a given matching event (in order of definition in the configuration). Since each adapter may return from 0 to n adapted events (called as EventSeq), each adapter can investigate the event and if it should indeed adapt it return the adapted event(s) for it. Other adapters which do not have anything to contribute during this adaptation simply return EventSeq.empty. The adapted events are then delivered in-order to the PersistentActor during replay.
-Note
+#### Note
 For more advanced schema evolution techniques refer to the Persistence - Schema Evolution documentation.
 
 # Persistent FSM
@@ -689,7 +689,7 @@ case object Paid extends UserState {
 }
 ```
 LookingAround customer is browsing the site, but hasn’t added anything to the shopping cart Shopping customer has recently added items to the shopping cart Inactive customer has items in the shopping cart, but hasn’t added anything recently Paid customer has purchased the items
-Note
+#### Note
 PersistentFSM states must inherit from trait PersistentFSM.FSMState and implement the def identifier: String method. This is required in order to simplify the serialization of FSM states. String identifiers should be unique!
 Customer’s actions are "recorded" as a sequence of "domain events" which are persisted. Those events are replayed on an actor’s start in order to restore the latest customer’s state:
 ```scala
@@ -763,7 +763,7 @@ when(Paid) {
     stay replying data
 }
 ```
-Note
+#### Note
 State data can only be modified directly on initialization. Later it’s modified only as a result of applying domain events. Override the applyEvent method to define how state data is affected by domain events, see the example below
 ```scala
 override def applyEvent(event: DomainEvent, cartBeforeEvent: ShoppingCart): ShoppingCart = {
@@ -797,7 +797,7 @@ You can enable periodical saveStateSnapshot() calls in PersistentFSM if you turn
 akka.persistence.fsm.snapshot-after = 1000
 ```
 this means saveStateSnapshot() is called after the sequence number reaches multiple of 1000.
-Note
+#### Note
 saveStateSnapshot() might not be called exactly at sequence numbers being multiple of the snapshot-after configuration value. This is because PersistentFSM works in a sort of "batch" mode when processing and persisting events, and saveStateSnapshot() is called only at the end of the "batch". For example, if you set akka.persistence.fsm.snapshot-after = 1000, it is possible that saveStateSnapshot() is called at lastSequenceNr = 1005, 2003, ... A single batch might persist state transition, also there could be multiple domain events to be persisted if you pass them to applying method in the PersistFSM DSL.
 
 # Storage plugins
@@ -1185,9 +1185,9 @@ akka.persistence.journal.leveldb.compaction-intervals {
 
 ## Shared LevelDB journal
 A LevelDB instance can also be shared by multiple actor systems (on the same or on different nodes). This, for example, allows persistent actors to failover to a backup node and continue using the shared journal instance from the backup node.
-Warning
+#### Warning
 A shared LevelDB instance is a single point of failure and should therefore only be used for testing purposes. Highly-available, replicated journals are available as Community plugins.
-Note
+#### Note
 This plugin has been supplanted by Persistence Plugin Proxy.
 A shared LevelDB instance is started by instantiating the SharedLeveldbStore actor.
 ```scala
@@ -1232,12 +1232,12 @@ Note that it is not mandatory to specify a snapshot store plugin. If you don’t
 
 ## Persistence Plugin Proxy
 A persistence plugin proxy allows sharing of journals and snapshot stores across multiple actor systems (on the same or on different nodes). This, for example, allows persistent actors to failover to a backup node and continue using the shared journal instance from the backup node. The proxy works by forwarding all the journal/snapshot store messages to a single, shared, persistence plugin instance, and therefore supports any use case supported by the proxied plugin.
-Warning
+#### Warning
 A shared journal/snapshot store is a single point of failure and should therefore only be used for testing purposes. Highly-available, replicated persistence plugins are available as Community plugins.
 The journal and snapshot store proxies are controlled via the akka.persistence.journal.proxy and akka.persistence.snapshot-store.proxy configuration entries, respectively. Set the target-journal-plugin or target-snapshot-store-plugin keys to the underlying plugin you wish to use (for example: akka.persistence.journal.leveldb). The start-target-journal and start-target-snapshot-store keys should be set to on in exactly one actor system - this is the system that will instantiate the shared persistence plugin. Next, the proxy needs to be told how to find the shared plugin. This can be done by setting the target-journal-address and target-snapshot-store-address configuration keys, or programmatically by calling the PersistencePluginProxy.setTargetLocation method.
-Note
+#### Note
 Akka starts extensions lazily when they are required, and this includes the proxy. This means that in order for the proxy to work, the persistence plugin on the target node must be instantiated. This can be done by instantiating the PersistencePluginProxyExtension extension, or by calling the PersistencePluginProxy.start method.
-Note
+#### Note
 The proxied persistence plugin can (and should) be configured using its original configuration keys.
 
 # Custom serialization
@@ -1274,7 +1274,7 @@ Also note that for the LevelDB Java port, you will need the following dependenci
 ```sbtshell
 "org.iq80.leveldb"            % "leveldb"          % "0.9"          % "test"
 ```
-Warning
+#### Warning
 It is not possible to test persistence provided classes (i.e. PersistentActor and AtLeastOnceDelivery) using TestActorRef due to its synchronous nature. These traits need to be able to perform asynchronous tasks in the background in order to handle internal persistence related events.
 When testing Persistence based projects always rely on asynchronous messaging using the TestKit.
 
