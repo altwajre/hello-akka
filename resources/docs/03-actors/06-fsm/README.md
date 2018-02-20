@@ -485,9 +485,22 @@ whenUnhandled {
     - This modifier sends a reply to the currently processed message:
     - and otherwise does not modify the state transition.
 - All modifiers can be chained to achieve a nice and concise description:
-
-
-
+```scala
+when(SomeState) {
+  case Event(msg, _) ⇒
+    goto(Processing) using (newData) forMax (5 seconds) replying (WillDo)
+}
+```
+- The parentheses are not actually needed in all cases, 
+- but they visually distinguish between modifiers and their arguments,
+- and therefore make the code even more pleasant to read.
+  
+#### Note
+- The return statement may not be used in `when` blocks or similar; 
+- this is a Scala restriction. 
+- Either refactor your code using `if () ... else ...`,
+- or move it into a method definition.
+##
 
 
 
