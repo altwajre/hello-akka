@@ -288,8 +288,15 @@ Persistence(context.system).defaultInternalStashOverflowStrategy
 - You can use bounded stash instead of it.
 
 ## Relaxed local consistency requirements and high throughput use-cases
-- If faced with relaxed local consistency requirements and high throughput demands sometimes PersistentActor and its persist may not be enough in terms of consuming incoming Commands at a high rate, because it has to wait until all Events related to a given Command are processed in order to start processing the next Command.
-- While this abstraction is very useful for most cases, sometimes you may be faced with relaxed requirements about consistency – for example you may want to process commands as fast as you can, assuming that the Event will eventually be persisted and handled properly in the background, retroactively reacting to persistence failures if needed.
+- If faced with relaxed local consistency requirements and high throughput demands 
+    - sometimes PersistentActor and its persist may not be enough in terms of consuming incoming Commands at a high rate, 
+    - because it has to wait until all Events related to a given Command are processed 
+    - in order to start processing the next Command.
+- While this abstraction is very useful for most cases, 
+    - sometimes you may be faced with relaxed requirements about consistency - 
+    - for example you may want to process commands as fast as you can, 
+    - assuming that the Event will eventually be persisted and handled properly in the background, 
+    - retroactively reacting to persistence failures if needed.
 - The persistAsync method provides a tool for implementing high-throughput persistent actors.
 - It will not stash incoming Commands while the Journal is still working on persisting and/or user code is executing event callbacks.
 - In the below example, the event callbacks may be called "at any time", even after the next Command has been processed.
@@ -324,14 +331,21 @@ persistentActor ! "b"
 // evt-b-1
 // evt-b-2
 ```
+
 #### Note
-- In order to implement the pattern known as "command sourcing" simply call persistAsync(cmd)(...) right away on all incoming messages and handle them in the callback.
+- In order to implement the pattern known as "command sourcing" 
+    - simply call persistAsync(cmd)(...) right away on all incoming messages and handle them in the callback.
+
 #### Warning
-- The callback will not be invoked if the actor is restarted (or stopped) in between the call to persistAsync and the journal has confirmed the write.
+- The callback will not be invoked if the actor is restarted (or stopped)
+    - in between the call to persistAsync and the journal has confirmed the write.
 
 ## Deferring actions until preceding persist handlers have executed
-- Sometimes when working with persistAsync or persist you may find that it would be nice to define some actions in terms of ‘‘happens-after the previous persistAsync/persist handlers have been invoked’’.
-- PersistentActor provides an utility method called deferAsync, which works similarly to persistAsync yet does not persist the passed in event.
+- Sometimes when working with persistAsync or persist 
+    - you may find that it would be nice to define some actions 
+    - in terms of "happens-after the previous persistAsync/persist handlers have been invoked".
+- PersistentActor provides an utility method called deferAsync, 
+    - which works similarly to persistAsync yet does not persist the passed in event.
 - It is recommended to use it for read operations, and actions which do not have corresponding events in your domain model.
 - Using this method is very similar to the persist family of methods, yet it does not persist the passed in event.
 - It will be kept in memory and used when invoking the handler.
@@ -354,7 +368,8 @@ class MyPersistentActor extends PersistentActor {
   }
 }
 ```
-- Notice that the sender() is safe to access in the handler callback, and will be pointing to the original sender of the command for which this deferAsync handler was called.
+- Notice that the sender() is safe to access in the handler callback, 
+    - and will be pointing to the original sender of the command for which this deferAsync handler was called.
 - The calling side will get the responses in this (guaranteed) order:
 ```scala
 persistentActor ! "a"
@@ -390,12 +405,17 @@ class MyPersistentActor extends PersistentActor {
   }
 }
 ```
+
 #### Warning
-- The callback will not be invoked if the actor is restarted (or stopped) in between the call to deferAsync and the journal has processed and confirmed all preceding writes.
+- The callback will not be invoked if the actor is restarted (or stopped) 
+    - in between the call to deferAsync and the journal has processed and confirmed all preceding writes.
 
 ## Nested persist calls
-- It is possible to call persist and persistAsync inside their respective callback blocks and they will properly retain both the thread safety (including the right value of sender()) as well as stashing guarantees.
-- In general it is encouraged to create command handlers which do not need to resort to nested event persisting, however there are situations where it may be useful.
+- It is possible to call persist and persistAsync inside their respective callback blocks  
+    - and they will properly retain both the thread safety (including the right value of sender())  
+    - as well as stashing guarantees.
+- In general it is encouraged to create command handlers which do not need to resort to nested event persisting,  
+    - however there are situations where it may be useful.
 - It is important to understand the ordering of callback execution in those situations, as well as their implication on the stashing behaviour (that persist() enforces).
 - In the following example two persist calls are issued, and each of them issues another persist inside its callback:
 ```scala
@@ -536,7 +556,7 @@ context.actorOf(props, name = "mySupervisor")
 - The most important operations (persist and recovery) have failure handlers modelled as explicit callbacks which the user can override in the PersistentActor.
 - The default implementations of these handlers emit a log message (error for persist/recovery failures, and warning for others), logging the failure cause and information about which message caused the failure.
 - For critical failures, such as recovery or persisting events failing, the persistent actor will be stopped after the failure handler is invoked.
-- This is because if the underlying journal implementation is signalling persistence failures it is most likely either failing completely or overloaded and restarting right-away and trying to persist the event again will most likely not help the journal recover – as it would likely cause a Thundering herd problem, as many persistent actors would restart and try to persist their events again.
+- This is because if the underlying journal implementation is signalling persistence failures it is most likely either failing completely or overloaded and restarting right-away and trying to persist the event again will most likely not help the journal recover - as it would likely cause a Thundering herd problem, as many persistent actors would restart and try to persist their events again.
 - Instead, using a BackoffSupervisor (as described in Failures) which implements an exponential-backoff strategy which allows for more breathing room for the journal to recover between restarts of the persistent actor.
 
 #### Note
@@ -546,7 +566,7 @@ Check the documentation of the journal implementation you are using for details 
 
 ## Safely shutting down persistent actors
 - Special care should be given when shutting down persistent actors from the outside.
-- With normal Actors it is often acceptable to use the special PoisonPill message to signal to an Actor that it should stop itself once it receives this message – in fact this message is handled automatically by Akka, leaving the target actor no way to refuse stopping itself when given a poison pill.
+- With normal Actors it is often acceptable to use the special PoisonPill message to signal to an Actor that it should stop itself once it receives this message - in fact this message is handled automatically by Akka, leaving the target actor no way to refuse stopping itself when given a poison pill.
 - This can be dangerous when used with PersistentActor due to the fact that incoming commands are stashed while the persistent actor is awaiting confirmation from the Journal that events have been written when persist() was used.
 - Since the incoming commands will be drained from the Actor’s mailbox and put into its internal stash while awaiting the confirmation (thus, before calling the persist handlers) the Actor may receive and (auto)handle the PoisonPill before it processes the other messages which have been put into its stash, causing a pre-mature shutdown of the Actor.
 
@@ -688,7 +708,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - To bulk-delete a range of snapshots matching SnapshotSelectionCriteria, persistent actors should use the deleteSnapshots method.
 
 ## Snapshot status handling
-- Saving or deleting snapshots can either succeed or fail – this information is reported back to the persistent actor via status messages as illustrated in the following table.
+- Saving or deleting snapshots can either succeed or fail - this information is reported back to the persistent actor via status messages as illustrated in the following table.
 
 | Method                                     | Success                | Failure message        |
 |:-------------------------------------------|:-----------------------|:-----------------------|
@@ -709,7 +729,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - At-least-once delivery implies that original message sending order is not always preserved, and the destination may receive duplicate messages.
 - Semantics do not match those of a normal ActorRef send operation:
     - it is not at-most-once delivery
-    - message order for the same sender–receiver pair is not preserved due to possible resends
+    - message order for the same sender-receiver pair is not preserved due to possible resends
     - after a crash and restart of the destination messages are still delivered to the new actor incarnation
 - These semantics are similar to what an ActorPath represents (see Actor Lifecycle), therefore you need to supply a path and not a reference when delivering messages.
 - The messages are sent to the path with an actor selection.
@@ -805,13 +825,13 @@ class MyDestination extends Actor {
 # Event Adapters
 - In long running projects using event sourcing sometimes the need arises to detach the data model from the domain model completely.
 - Event Adapters help in situations where:
-    - Version Migrations – existing events stored in Version 1 should be "upcasted" to a new Version 2 representation, and the process of doing so involves actual code, not just changes on the serialization layer.
+    - Version Migrations - existing events stored in Version 1 should be "upcasted" to a new Version 2 representation, and the process of doing so involves actual code, not just changes on the serialization layer.
 - For these scenarios the toJournal function is usually an identity function, however the fromJournal is implemented as v1.Event=>v2.Event, performing the necessary mapping inside the fromJournal method.
 - This technique is sometimes referred to as "upcasting" in other CQRS libraries.
-    - Separating Domain and Data models – thanks to EventAdapters it is possible to completely separate the domain model from the model used to persist data in the Journals.
+    - Separating Domain and Data models - thanks to EventAdapters it is possible to completely separate the domain model from the model used to persist data in the Journals.
 - For example one may want to use case classes in the domain model, however persist their protocol-buffer (or any other binary serialization format) counter-parts to the Journal.
 - A simple toJournal:MyModel=>MyDataModel and fromJournal:MyDataModel=>MyModel adapter can be used to implement this feature.
-    - Journal Specialized Data Types – exposing data types understood by the underlying Journal, for example for data stores which understand JSON it is possible to write an EventAdapter toJournal:Any=>JSON such that the Journal can directly store the json instead of serializing the object to its binary representation.
+    - Journal Specialized Data Types - exposing data types understood by the underlying Journal, for example for data stores which understand JSON it is possible to write an EventAdapter toJournal:Any=>JSON such that the Journal can directly store the json instead of serializing the object to its binary representation.
 - Implementing an EventAdapter is rather straight forward:
 ```scala
 class MyEventAdapter(system: ExtendedActorSystem) extends EventAdapter {
