@@ -1708,7 +1708,7 @@ akka.persistence.journal.leveldb-shared.store.native = off
 - The LevelDB Java port is for testing purposes only.
 - Also note that for the LevelDB Java port, you will need the following dependencies:
 ```sbtshell
-"org.iq80.leveldb"            % "leveldb"          % "0.9"          % "test"
+"org.iq80.leveldb" % "leveldb" % "0.9" % "test"
 ```
 
 #### Warning
