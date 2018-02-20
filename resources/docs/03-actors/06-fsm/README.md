@@ -419,14 +419,13 @@ when(Active, stateTimeout = 1 second) {
     - is parameterized with the data type held by the FSM for convenient pattern matching.
 
 #### Warning
-- It is required that you define handlers for each of the possible FSM states:
+- It is required that you define handlers for each of the possible FSM states.
 - Otherwise there will be failures when trying to switch to undeclared states.
-##
-- It is recommended practice:
-- To declare the states as objects extending a sealed trait:
-- And then verify that there is a when clause for each of the states. 
-- If you want to leave the handling of a state “unhandled”:
-- It still needs to be declared like this:
+
+#### Recommended practive
+- Declare the states as objects extending a sealed trait.
+- Verify that there is a `when` clause for each of the states. 
+- If you want to leave the handling of a state “unhandled” it still needs to be declared like this:
 ```scala
 when(SomeState)(FSM.NullFunction)
 ```
