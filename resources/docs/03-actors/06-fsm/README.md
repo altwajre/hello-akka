@@ -465,22 +465,23 @@ whenUnhandled {
     - The **current state**, as described by the `stay` directive.
     - Or it is a **different state** as given by `goto(state)`. 
 - The resulting object allows further qualification by way of the modifiers described in the following:
-    - **`forMax(duration)`**: 
-        - This modifier sets a state timeout on the next state. 
-        - This means that a timer is started which upon expiry sends a `StateTimeout` message to the FSM. 
-        - This timer is canceled upon reception of any other message.
-        - You can rely on the fact that the `StateTimeout` message will not be processed after an intervening message. 
-        - This modifier can also be used to override any default timeout:
-        - Which is specified for the target state. 
-        - If you want to cancel the default timeout, 
-        - use `Duration.Inf`.
-    - **`using(data)`**: 
-        - This modifier replaces the old state data with the new data given. 
-        - If you follow the advice above, 
-        - this is the only place where internal state data are ever modified.
-    - **`replying(msg)`**: 
-        - This modifier sends a reply to the currently processed message:
-        - and otherwise does not modify the state transition.
+#### `forMax(duration)`: 
+- This modifier sets a state timeout on the next state. 
+- This means that a timer is started which upon expiry sends a `StateTimeout` message to the FSM. 
+- This timer is canceled upon reception of any other message.
+- You can rely on the fact that the `StateTimeout` message will not be processed after an intervening message. 
+- This modifier can also be used to override any default timeout:
+- Which is specified for the target state. 
+- If you want to cancel the default timeout, 
+- use `Duration.Inf`.
+#### `using(data)`: 
+- This modifier replaces the old state data with the new data given. 
+- If you follow the advice above, 
+- this is the only place where internal state data are ever modified.
+#### `replying(msg)`: 
+- This modifier sends a reply to the currently processed message:
+- and otherwise does not modify the state transition.
+##
 - All modifiers can be chained to achieve a nice and concise description:
 ```scala
 when(SomeState) {
