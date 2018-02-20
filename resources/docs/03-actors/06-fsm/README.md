@@ -454,16 +454,16 @@ whenUnhandled {
 - Within this handler the state of the FSM may be queried using the `stateName` method.
 
 #### Important
-- This handler is not stacked:
-- Meaning that each invocation of `whenUnhandled` replaces the previously installed handler.
+- This handler is not stacked.
+- Each invocation of `whenUnhandled` replaces the previously installed handler.
 
 ## Initiating Transitions
-- The result of any `stateFunction` must be a definition of the next state:
-- Unless terminating the FSM.
-- See [Termination from Inside](#termination-from-inside). 
-- The state definition can either be the current state:
-- As described by the stay directive:
-- Or it is a different state as given by `goto(state)`. 
+- The result of any `stateFunction` must be a definition of the next state.
+    - Unless terminating the FSM.
+    - See [Termination from Inside](#termination-from-inside). 
+- The state definition can either be:
+    - The current state, as described by the `stay` directive.
+    - Or it is a different state as given by `goto(state)`. 
 - The resulting object allows further qualification by way of the modifiers described in the following:
 - **`forMax(duration)`**: 
     - This modifier sets a state timeout on the next state. 
