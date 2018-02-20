@@ -545,10 +545,11 @@ To bulk-delete a range of snapshots matching SnapshotSelectionCriteria, persiste
 ## Snapshot status handling
 Saving or deleting snapshots can either succeed or fail – this information is reported back to the persistent actor via status messages as illustrated in the following table.
 
-Method 	Success 	Failure message
-saveSnapshot(Any) 	SaveSnapshotSuccess 	SaveSnapshotFailure
-deleteSnapshot(Long) 	DeleteSnapshotSuccess 	DeleteSnapshotFailure
-deleteSnapshots(SnapshotSelectionCriteria) 	DeleteSnapshotsSuccess 	DeleteSnapshotsFailure
+| Method                                     | Success                | Failure message        |
+|--------------------------------------------|------------------------|------------------------|
+| saveSnapshot(Any)                          | SaveSnapshotSuccess    | SaveSnapshotFailure    |
+| deleteSnapshot(Long)                       | DeleteSnapshotSuccess  | DeleteSnapshotFailure  |
+| deleteSnapshots(SnapshotSelectionCriteria) | DeleteSnapshotsSuccess | DeleteSnapshotsFailure |
 
 If failure messages are left unhandled by the actor, a default warning log message will be logged for each incoming failure message. No default action is performed on the success messages, however you’re free to handle them e.g. in order to delete an in memory representation of the snapshot, or in the case of failure to attempt save the snapshot again.
 
