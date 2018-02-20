@@ -365,10 +365,21 @@ class Buncher extends FSM[State, Data] {
 ```
 
 #### Note
-- The FSM trait defines a receive method which handles internal messages and passes everything else through to the FSM logic (according to the current state). When overriding the receive method, keep in mind that e.g. state timeout handling depends on actually passing the messages through the FSM logic.
+- The `FSM` trait defines a `receive` method.
+- Which handles internal messages and passes everything else through to the FSM logic.
+    - According to the current state. 
+- When overriding the `receive` method:
+    - State timeout handling depends on actually passing the messages through the FSM logic.
 ##
-- The FSM trait takes two type parameters:
+- The `FSM` trait takes two type parameters:
+    - The supertype of all state names, usually a sealed trait with case objects extending it.
+    - The type of the state data which are tracked by the `FSM` module itself.
 
+#### Note
+- The state data together with the state name describe the internal state of the state machine.
+- If you stick to this scheme and do not add mutable fields to the `FSM` class:
+- You have the advantage of making all changes of the internal state explicit in a few well-known places.
+##
 
 ## The FSM Trait and Object
 
