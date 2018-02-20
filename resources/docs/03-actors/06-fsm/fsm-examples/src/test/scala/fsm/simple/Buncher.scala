@@ -1,8 +1,9 @@
 package fsm.simple
 
-import akka.actor.FSM
-import fsm.simple.Protocol._
+import akka.actor.{ActorRef, FSM}
+import fsm.simple.Buncher._
 
+import scala.collection.immutable
 import scala.concurrent.duration._
 
 class Buncher extends FSM[State, Data] {
@@ -38,6 +39,27 @@ class Buncher extends FSM[State, Data] {
   }
 
   initialize()
+
+}
+
+object Buncher {
+
+  // received events
+  final case class SetTarget(ref: ActorRef)
+  final case class Queue(obj: Any)
+  case object Flush
+
+  // sent events
+  final case class Batch(obj: immutable.Seq[Any])
+
+  // states
+  sealed trait State
+  case object Idle extends State
+  case object Active extends State
+
+  sealed trait Data
+  case object Uninitialized extends Data
+  final case class Todo(target: ActorRef, queue: immutable.Seq[Any]) extends Data
 
 }
 

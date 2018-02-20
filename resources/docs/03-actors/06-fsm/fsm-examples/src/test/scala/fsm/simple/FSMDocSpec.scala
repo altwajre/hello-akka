@@ -2,7 +2,7 @@ package fsm.simple
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
-import fsm.simple.Protocol._
+import fsm.simple.Buncher._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.collection.immutable
