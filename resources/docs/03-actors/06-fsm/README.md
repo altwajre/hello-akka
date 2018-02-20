@@ -422,7 +422,7 @@ when(Active, stateTimeout = 1 second) {
 - It is required that you define handlers for each of the possible FSM states.
 - Otherwise there will be failures when trying to switch to undeclared states.
 
-#### Recommended practive
+#### Recommended practice
 - Declare the states as objects extending a sealed trait.
 - Verify that there is a `when` clause for each of the states. 
 - If you want to leave the handling of a state “unhandled” it still needs to be declared like this:
@@ -439,9 +439,8 @@ startWith(state, data[, timeout])
 - If you want to cancel a default timeout, use `None`.
 
 ## Unhandled Events
-- If a state doesn’t handle a received event a warning is logged. 
-- If you want to do something else in this case:
-- You can specify that with `whenUnhandled(stateFunction)`:
+- If a state doesn’t handle a received event, a warning is logged. 
+- If you want to do something else in this case, you can specify that with `whenUnhandled(stateFunction)`:
 ```scala
 whenUnhandled {
   case Event(x: X, data) ⇒

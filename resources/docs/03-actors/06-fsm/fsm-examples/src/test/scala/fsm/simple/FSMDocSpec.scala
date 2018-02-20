@@ -1,6 +1,6 @@
 package fsm.simple
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{ActorSystem, FSM, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import fsm.simple.Buncher._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -17,6 +17,13 @@ class FSMDocSpec(_system: ActorSystem) extends TestKit(_system)
   }
 
   "simple finite state machine" must {
+
+    "demonstrate NullFunction" in {
+      class A extends FSM[Int, Null] {
+        val SomeState = 0
+        when(SomeState)(FSM.NullFunction)
+      }
+    }
 
     "batch correctly" in {
       val buncher = system.actorOf(Props(classOf[Buncher]))
