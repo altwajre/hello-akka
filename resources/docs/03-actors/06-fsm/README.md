@@ -157,7 +157,7 @@ onTransition {
     - `goto(S)` will emit an event `S->S` that can be handled by `onTransition`.
     - Whereas `stay()` will not.
 
-## Example 1
+##  
 - To verify that this buncher actually works:
     - It is quite easy to write a test using the [Testing Actor Systems](../11-testing-actor-systems).
     - Which is conveniently bundled with _ScalaTest_ traits into `AkkaSpec`:
