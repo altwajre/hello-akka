@@ -1003,10 +1003,10 @@ case object Buy extends Command
 case object Leave extends Command
 case object GetCurrentCart extends Command
 ```
-- **AddItem**: sent when the customer adds an item to a shopping cart
-- **Buy**: when the customer finishes the purchase
-- **Leave**: when the customer leaves the store without purchasing anything
-- **GetCurrentCart**: allows to query the current state of customer’s shopping cart
+- **AddItem**: sent when the customer adds an item to a shopping cart.
+- **Buy**: when the customer finishes the purchase.
+- **Leave**: when the customer leaves the store without purchasing anything.
+- **GetCurrentCart**: allows to query the current state of customer’s shopping cart.
 ##
 - The customer can be in one of the following states:
 ```scala
@@ -1024,7 +1024,10 @@ case object Paid extends UserState {
   override def identifier: String = "Paid"
 }
 ```
-- LookingAround customer is browsing the site, but hasn’t added anything to the shopping cart Shopping customer has recently added items to the shopping cart Inactive customer has items in the shopping cart, but hasn’t added anything recently Paid customer has purchased the items
+- LookingAround customer is browsing the site, but hasn’t added anything to the shopping cart.
+- Shopping customer has recently added items to the shopping cart.
+- Inactive customer has items in the shopping cart, but hasn’t added anything recently.
+- Paid customer has purchased the items.
 
 #### Note
 - PersistentFSM states must inherit from trait PersistentFSM.FSMState and implement the def identifier: String method.
@@ -1117,7 +1120,8 @@ override def applyEvent(event: DomainEvent, cartBeforeEvent: ShoppingCart): Shop
   }
 }
 ```
-- andThen can be used to define actions which will be executed following event’s persistence - convenient for "side effects" like sending a message or logging.
+- andThen can be used to define actions which will be executed following event’s persistence 
+    - convenient for "side effects" like sending a message or logging.
 - Notice that actions defined in andThen block are not executed on recovery:
 ```scala
 goto(Paid) applying OrderExecuted andThen {
@@ -1133,7 +1137,8 @@ stop applying OrderDiscarded andThen {
     saveStateSnapshot()
 }
 ```
-- On recovery state data is initialized according to the latest available snapshot, then the remaining domain events are replayed, triggering the applyEvent method.
+- On recovery state data is initialized according to the latest available snapshot,  
+    - then the remaining domain events are replayed, triggering the applyEvent method.
 
 # Periodical snapshot by snapshot-after
 - You can enable periodical saveStateSnapshot() calls in PersistentFSM if you turn the following flag on in reference.conf
@@ -1143,21 +1148,30 @@ akka.persistence.fsm.snapshot-after = 1000
 - this means saveStateSnapshot() is called after the sequence number reaches multiple of 1000.
 #### Note
 - saveStateSnapshot() might not be called exactly at sequence numbers being multiple of the snapshot-after configuration value.
-- This is because PersistentFSM works in a sort of "batch" mode when processing and persisting events, and saveStateSnapshot() is called only at the end of the "batch".
-- For example, if you set akka.persistence.fsm.snapshot-after = 1000, it is possible that saveStateSnapshot() is called at lastSequenceNr = 1005, 2003, ... A single batch might persist state transition, also there could be multiple domain events to be persisted if you pass them to applying method in the PersistFSM DSL.
+- This is because PersistentFSM works in a sort of "batch" mode when processing and persisting events,  
+    - and saveStateSnapshot() is called only at the end of the "batch".
+- For example, if you set akka.persistence.fsm.snapshot-after = 1000,  
+    - it is possible that saveStateSnapshot() is called at `lastSequenceNr = 1005, 2003, ...`
+- A single batch might persist state transition,  
+    - also there could be multiple domain events to be persisted if you pass them to applying method in the PersistFSM DSL.
 
 # Storage plugins
 - Storage backends for journals and snapshot stores are pluggable in the Akka persistence extension.
-- A directory of persistence journal and snapshot store plugins is available at the Akka Community Projects page, see Community plugins
-- Plugins can be selected either by "default" for all persistent actors, or "individually", when a persistent actor defines its own set of plugins.
-- When a persistent actor does NOT override the journalPluginId and snapshotPluginId methods, the persistence extension will use the "default" journal and snapshot-store plugins configured in reference.conf:
+- A directory of persistence journal and snapshot store plugins is available at the Akka Community Projects page,  
+    - see Community plugins
+- Plugins can be selected either by "default" for all persistent actors, or "individually",  
+    - when a persistent actor defines its own set of plugins.
+- When a persistent actor does NOT override the journalPluginId and snapshotPluginId methods,  
+    - the persistence extension will use the "default" journal and snapshot-store plugins configured in reference.conf:
 ```hocon
 akka.persistence.journal.plugin = ""
 akka.persistence.snapshot-store.plugin = ""
 ```
-- However, these entries are provided as empty "", and require explicit user configuration via override in the user application.conf.
+- However, these entries are provided as empty "", and require explicit user configuration via override  
+    - in the user application.conf.
 - For an example of a journal plugin which writes messages to LevelDB see Local LevelDB journal.
-- For an example of a snapshot store plugin which writes snapshots as individual files to the local filesystem see Local snapshot store.
+- For an example of a snapshot store plugin which writes snapshots as individual files to the local filesystem  
+    - see Local snapshot store.
 - Applications can provide their own plugins by implementing a plugin API and activating them by configuration.
 - Plugin development requires the following imports:
 ```scala
@@ -1170,8 +1184,11 @@ import akka.persistence.snapshot._
 - By default, persistence plugins are started on-demand, as they are used.
 - In some case, however, it might be beneficial to start a certain plugin eagerly.
 - In order to do that, you should first add akka.persistence.Persistence under the akka.extensions key.
-- Then, specify the IDs of plugins you wish to start automatically under akka.persistence.journal.auto-start-journals and akka.persistence.snapshot-store.auto-start-snapshot-stores.
-- For example, if you want eager initialization for the leveldb journal plugin and the local snapshot store plugin, your configuration should look like this: 
+- Then, specify the IDs of plugins you wish to start automatically  
+    - under akka.persistence.journal.auto-start-journals  
+    - and akka.persistence.snapshot-store.auto-start-snapshot-stores.
+- For example, if you want eager initialization for the leveldb journal plugin and the local snapshot store plugin,  
+    - your configuration should look like this: 
 ```hocon
 akka {
 
@@ -1364,7 +1381,8 @@ my-journal {
   plugin-dispatcher = "akka.actor.default-dispatcher"
 }
 ```
-- The journal plugin instance is an actor so the methods corresponding to requests from persistent actors are executed sequentially.
+- The journal plugin instance is an actor  
+    - so the methods corresponding to requests from persistent actors are executed sequentially.
 - It may delegate to asynchronous libraries, spawn futures, or delegate to other actors to achieve parallelism.
 - The journal plugin class must have a constructor with one of these signatures:
     - constructor with one com.typesafe.config.Config parameter and a String parameter for the config path
@@ -1444,7 +1462,8 @@ my-snapshot-store {
   plugin-dispatcher = "akka.persistence.dispatchers.default-plugin-dispatcher"
 }
 ```
-- The snapshot store instance is an actor so the methods corresponding to requests from persistent actors are executed sequentially.
+- The snapshot store instance is an actor  
+    - so the methods corresponding to requests from persistent actors are executed sequentially.
 - It may delegate to asynchronous libraries, spawn futures, or delegate to other actors to achive parallelism.
 - The snapshot store plugin class must have a constructor with one of these signatures:
     - constructor with one com.typesafe.config.Config parameter and a String parameter for the config path
@@ -1457,7 +1476,8 @@ my-snapshot-store {
 - Don’t run snapshot store tasks/futures on the system default dispatcher, since that might starve other tasks.
 
 ## Plugin TCK
-- In order to help developers build correct and high quality storage plugins, we provide a Technology Compatibility Kit (TCK for short).
+- In order to help developers build correct and high quality storage plugins,  
+    - we provide a Technology Compatibility Kit (TCK for short).
 - The TCK is usable from Java as well as Scala projects.
 - To test your implementation (independently of language) you need to include the akka-persistence-tck dependency:
 ```sbtshell
@@ -1473,10 +1493,13 @@ class MyJournalSpec extends JournalSpec(
     false // or CapabilityFlag.off
 }
 ```
-- Please note that some of the tests are optional, and by overriding the supports... methods you give the TCK the needed information about which tests to run.
+- Please note that some of the tests are optional, and by overriding the supports... methods  
+    - you give the TCK the needed information about which tests to run.
 - You can implement these methods using boolean values or the provided CapabilityFlag.on / CapabilityFlag.off values.
-- We also provide a simple benchmarking class JournalPerfSpec which includes all the tests that JournalSpec has, and also performs some longer operations on the Journal while printing its performance stats.
-- While it is NOT aimed to provide a proper benchmarking environment it can be used to get a rough feel about your journal’s performance in the most typical scenarios.
+- We also provide a simple benchmarking class JournalPerfSpec which includes all the tests that JournalSpec has,  
+    - and also performs some longer operations on the Journal while printing its performance stats.
+- While it is NOT aimed to provide a proper benchmarking environment  
+    - it can be used to get a rough feel about your journal’s performance in the most typical scenarios.
 - In order to include the SnapshotStore TCK tests in your test suite simply extend the SnapshotStoreSpec:
 ```scala
 class MySnapshotStoreSpec extends SnapshotStoreSpec(
@@ -1485,7 +1508,8 @@ class MySnapshotStoreSpec extends SnapshotStoreSpec(
     akka.persistence.snapshot-store.plugin = "my.snapshot-store.plugin"
     """))
 ```
-- In case your plugin requires some setting up (starting a mock database, removing temporary files etc.) you can override the beforeAll and afterAll methods to hook into the tests lifecycle:
+- In case your plugin requires some setting up (starting a mock database, removing temporary files etc.)  
+    - you can override the beforeAll and afterAll methods to hook into the tests lifecycle:
 ```scala
 class MyJournalSpec extends JournalSpec(
   config = ConfigFactory.parseString(
@@ -1512,7 +1536,9 @@ class MyJournalSpec extends JournalSpec(
 
 }
 ```
-- We highly recommend including these specifications in your test suite, as they cover a broad range of cases you might have otherwise forgotten to test for when writing a plugin from scratch.
+- We highly recommend including these specifications in your test suite,  
+    - as they cover a broad range of cases you might have otherwise forgotten to test for  
+    - when writing a plugin from scratch.
 
 # Pre-packaged plugins
 
@@ -1534,8 +1560,10 @@ akka.persistence.journal.plugin = "akka.persistence.journal.leveldb"
 akka.persistence.journal.leveldb.dir = "target/journal"
 ```
 - With this plugin, each actor system runs its own private LevelDB instance.
-- One peculiarity of LevelDB is that the deletion operation does not remove messages from the journal, but adds a "tombstone" for each deleted message instead.
-- In the case of heavy journal usage, especially one including frequent deletes, this may be an issue as users may find themselves dealing with continuously increasing journal sizes.
+- One peculiarity of LevelDB is that the deletion operation does not remove messages from the journal,  
+    - but adds a "tombstone" for each deleted message instead.
+- In the case of heavy journal usage, especially one including frequent deletes,  
+    - this may be an issue as users may find themselves dealing with continuously increasing journal sizes.
 - To this end, LevelDB offers a special journal compaction function that is exposed via the following configuration:
 ```hocon
 # Number of deleted messages per persistence id that will trigger journal compaction
@@ -1551,7 +1579,8 @@ akka.persistence.journal.leveldb.compaction-intervals {
 
 ## Shared LevelDB journal
 - A LevelDB instance can also be shared by multiple actor systems (on the same or on different nodes).
-- This, for example, allows persistent actors to failover to a backup node and continue using the shared journal instance from the backup node.
+- This, for example, allows persistent actors to failover to a backup node  
+    - and continue using the shared journal instance from the backup node.
 
 #### Warning
 - A shared LevelDB instance is a single point of failure and should therefore only be used for testing purposes.
@@ -1610,25 +1639,34 @@ akka.persistence.snapshot-store.local.dir = "target/snapshots"
 - If you don’t use snapshots you don’t have to configure it.
 
 ## Persistence Plugin Proxy
-- A persistence plugin proxy allows sharing of journals and snapshot stores across multiple actor systems (on the same or on different nodes).
-- This, for example, allows persistent actors to failover to a backup node and continue using the shared journal instance from the backup node.
-- The proxy works by forwarding all the journal/snapshot store messages to a single, shared, persistence plugin instance, and therefore supports any use case supported by the proxied plugin.
+- A persistence plugin proxy allows sharing of journals and snapshot stores across multiple actor systems  
+    - (on the same or on different nodes).
+- This, for example, allows persistent actors to failover to a backup node  
+    - and continue using the shared journal instance from the backup node.
+- The proxy works by forwarding all the journal/snapshot store messages to a single, shared, persistence plugin instance,  
+    - and therefore supports any use case supported by the proxied plugin.
 
 #### Warning
 - A shared journal/snapshot store is a single point of failure and should therefore only be used for testing purposes.
 - Highly-available, replicated persistence plugins are available as Community plugins.
 ##
 
-- The journal and snapshot store proxies are controlled via the akka.persistence.journal.proxy and akka.persistence.snapshot-store.proxy configuration entries, respectively.
-- Set the target-journal-plugin or target-snapshot-store-plugin keys to the underlying plugin you wish to use (for example: akka.persistence.journal.leveldb).
-- The start-target-journal and start-target-snapshot-store keys should be set to on in exactly one actor system - this is the system that will instantiate the shared persistence plugin.
+- The journal and snapshot store proxies are controlled via  
+    - the akka.persistence.journal.proxy  
+    - and akka.persistence.snapshot-store.proxy configuration entries, respectively.
+- Set the target-journal-plugin or target-snapshot-store-plugin keys to the underlying plugin you wish to use  
+    - (for example: akka.persistence.journal.leveldb).
+- The start-target-journal and start-target-snapshot-store keys should be set to on in exactly one actor system 
+    - this is the system that will instantiate the shared persistence plugin.
 - Next, the proxy needs to be told how to find the shared plugin.
-- This can be done by setting the target-journal-address and target-snapshot-store-address configuration keys, or programmatically by calling the PersistencePluginProxy.setTargetLocation method.
+- This can be done by setting the target-journal-address and target-snapshot-store-address configuration keys,  
+    - or programmatically by calling the PersistencePluginProxy.setTargetLocation method.
 
 #### Note
 - Akka starts extensions lazily when they are required, and this includes the proxy.
 - This means that in order for the proxy to work, the persistence plugin on the target node must be instantiated.
-- This can be done by instantiating the PersistencePluginProxyExtension extension, or by calling the PersistencePluginProxy.start method.
+- This can be done by instantiating the PersistencePluginProxyExtension extension,  
+    - or by calling the PersistencePluginProxy.start method.
 
 #### Note
 - The proxied persistence plugin can (and should) be configured using its original configuration keys.
@@ -1674,15 +1712,18 @@ akka.persistence.journal.leveldb-shared.store.native = off
 ```
 
 #### Warning
-- It is not possible to test persistence provided classes (i.e. PersistentActor and AtLeastOnceDelivery) using TestActorRef due to its synchronous nature.
-- These traits need to be able to perform asynchronous tasks in the background in order to handle internal persistence related events.
+- It is not possible to test persistence provided classes (i.e. PersistentActor and AtLeastOnceDelivery) using TestActorRef  
+    - due to its synchronous nature.
+- These traits need to be able to perform asynchronous tasks in the background  
+    - in order to handle internal persistence related events.
 - When testing Persistence based projects always rely on asynchronous messaging using the TestKit.
 
 # Configuration
 - There are several configuration properties for the persistence module, please refer to the reference configuration.
 
 # Multiple persistence plugin configurations
-- By default, a persistent actor will use the "default" journal and snapshot store plugins configured in the following sections of the reference.conf configuration resource:
+- By default, a persistent actor will use the "default" journal and snapshot store plugins  
+    - configured in the following sections of the reference.conf configuration resource:
 ```hocon
 # Absolute path to the default journal plugin configuration entry.
 akka.persistence.journal.plugin = "akka.persistence.journal.inmem"
@@ -1695,7 +1736,8 @@ trait ActorWithDefaultPlugins extends PersistentActor {
   override def persistenceId = "123"
 }
 ```
-- When the persistent actor overrides the journalPluginId and snapshotPluginId methods, the actor will be serviced by these specific persistence plugins instead of the defaults:
+- When the persistent actor overrides the journalPluginId and snapshotPluginId methods,  
+    - the actor will be serviced by these specific persistence plugins instead of the defaults:
 ```scala
 trait ActorWithOverridePlugins extends PersistentActor {
   override def persistenceId = "123"
@@ -1705,7 +1747,8 @@ trait ActorWithOverridePlugins extends PersistentActor {
   override def snapshotPluginId = "akka.persistence.chronicle.snapshot-store"
 }
 ```
-- Note that journalPluginId and snapshotPluginId must refer to properly configured reference.conf plugin entries with a standard class property as well as settings which are specific for those plugins, i.e.:
+- Note that journalPluginId and snapshotPluginId must refer to properly configured reference.conf plugin entries  
+    - with a standard class property as well as settings which are specific for those plugins, i.e.:
 ```hocon
 # Configuration entry for the custom journal plugin, see `journalPluginId`.
 akka.persistence.chronicle.journal {
