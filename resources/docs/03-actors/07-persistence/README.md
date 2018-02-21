@@ -296,13 +296,13 @@ Persistence(context.system).defaultInternalStashOverflowStrategy
     - because it has to wait until all _Events_ related to a given _Command_ are processed 
     - in order to start processing the next _Command_.
 - While this abstraction is very useful for most cases, 
-    - sometimes you may be faced with relaxed requirements about consistency - 
+    - sometimes you may be faced with relaxed requirements about consistency 
     - for example you may want to process commands as fast as you can, 
     - assuming that the _Event_ will eventually be persisted and handled properly in the background, 
     - retroactively reacting to persistence failures if needed.
 - The `persistAsync` method provides a tool for implementing high-throughput persistent actors.
 - It will not stash incoming _Commands_ while the _Journal_ is still working on persisting and/or user code is executing event callbacks.
-- In the below example, the event callbacks may be called "at any time", even after the next _Command_ has been processed.
+- In the below example, the **event callbacks may be called "at any time"**, even after the next _Command_ has been processed.
 - The ordering between events is still guaranteed (`evt-b-1` will be sent after `evt-a-2`, which will be sent after `evt-a-1` etc.).
 ```scala
 class MyPersistentActor extends PersistentActor {
