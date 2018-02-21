@@ -598,8 +598,8 @@ context.actorOf(props, name = "mySupervisor")
 |:---------------------------|:------------------------|
 | `persist` / `persistAsync` | Persist handler invoked |
 | `onPersistRejected`        | No automatic actions    |
-| `recovery`                 | RecoveryCompleted       |
-| `deleteMessages`           | DeleteMessagesSuccess   |
+| `recovery`                 | `RecoveryCompleted`     |
+| `deleteMessages`           | `DeleteMessagesSuccess` |
 
 - The most important operations (`persist` and `recovery`) have failure handlers modelled as explicit callbacks  
     - which the user can override in the `PersistentActor`.
