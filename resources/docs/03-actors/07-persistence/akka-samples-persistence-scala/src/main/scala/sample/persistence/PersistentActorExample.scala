@@ -41,6 +41,8 @@ class ExamplePersistentActor extends PersistentActor {
     case "print" ⇒ println(state)
   }
 
+
+
 }
 
 object PersistentActorExample extends App {

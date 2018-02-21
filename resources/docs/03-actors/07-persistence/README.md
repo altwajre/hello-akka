@@ -154,83 +154,81 @@ class ExamplePersistentActor extends PersistentActor {
     - `onPersistRejected` will be invoked 
     - (logging a warning by default) 
     - and the actor continues with the next message.
-- The easiest way to run this example yourself is to 
-    - download the ready to run [Akka Persistence Sample](./akka-samples-persistence-scala) together with the tutorial. 
-- It contains instructions on how to run the PersistentActorExample.
-- The source code of this sample can be found in the Akka Samples Repository.
+- See [Akka Persistence Sample](./akka-samples-persistence-scala). 
 
 #### Note
-- It’s also possible to switch between different command handlers during normal processing and recovery
-    - with context.become() and context.unbecome().
+- It is possible to switch between different command handlers during normal processing and recovery
+    - using `context.become()` and `context.unbecome()`.
 - To get the actor into the same state after recovery 
     - you need to take special care to perform the same state transitions
-    - with become and unbecome in the receiveRecover method 
+    - with `become` and `unbecome` in the `receiveRecover` method 
     - as you would have done in the command handler.
-- Note that when using become from receiveRecover it will still only use the receiveRecover behavior when replaying the events.
+- Note that when using `become` from `receiveRecover` it will still only use the `receiveRecover` behavior when replaying the events.
 - When replay is completed it will use the new behavior.
 
 ## Identifiers
 - A persistent actor must have an identifier that doesn’t change across different actor incarnations.
-- The identifier must be defined with the persistenceId method.
+- The identifier must be defined with the `persistenceId` method.
 ```scala
 override def persistenceId = "my-stable-persistence-id"
 ```
+
 #### Note
-- persistenceId must be unique to a given entity in the journal (database table/keyspace).
-- When replaying messages persisted to the journal, you query messages with a persistenceId.
-- So, if two different entities share the same persistenceId, message-replaying behavior is corrupted.
+- `persistenceId` must be unique to a given entity in the journal (database table/keyspace).
+- When replaying messages persisted to the journal, you query messages with a `persistenceId`.
+- So, if two different entities share the same `persistenceId`, message-replaying behavior is corrupted.
 
 ## Recovery
 - By default, a persistent actor is automatically recovered on start and on restart by replaying journaled messages.
 - New messages sent to a persistent actor during recovery do not interfere with replayed messages.
 - They are stashed and received by a persistent actor after recovery phase completes.
 - The number of concurrent recoveries that can be in progress at the same time is limited 
-    - to not overload the system and the backend data store.
+    - to avoid overloading the system and the backend data store.
 - When exceeding the limit the actors will wait until other recoveries have been completed.
 - This is configured by:
 ```hocon
 akka.persistence.max-concurrent-recoveries = 50
 ```
+
 #### Note
-- Accessing the sender() for replayed messages will always result in a deadLetters reference, 
+- Accessing the `sender()` for replayed messages will always result in a `deadLetters` reference, 
     - as the original sender is presumed to be long gone.
 - If you indeed have to notify an actor during recovery in the future, 
-    - store its ActorPath explicitly in your persisted events.
+    - store its `ActorPath` explicitly in your persisted events.
 
 ### Recovery customization
-- Applications may also customise how recovery is performed by returning a customised Recovery object 
-    - in the recovery method of a PersistentActor,
-- To skip loading snapshots and replay all events you can use SnapshotSelectionCriteria.None.
+- Applications may also customise how recovery is performed by returning a customised `Recovery` object 
+    - in the `recovery` method of a `PersistentActor`,
+- To skip loading snapshots and replay all events you can use `SnapshotSelectionCriteria.None`.
 - This can be useful if snapshot serialization format has changed in an incompatible way.
 - It should typically not be used when events have been deleted.
 ```scala
-override def recovery =
-  Recovery(fromSnapshot = SnapshotSelectionCriteria.None)
+override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria.None)
 ```
 - Another possible recovery customization, which can be useful for debugging, 
     - is setting an upper bound on the replay, 
     - causing the actor to be replayed only up to a certain point "in the past" 
     - (instead of being replayed to its most up to date state).
 - Note that after that it is a bad idea to persist new events 
-    - because a later recovery will probably be confused by the new events 
-    - that follow the events that were previously skipped.
+    - because a later recovery will probably be confused by the new events that follow the events 
+    - that were previously skipped.
 ```scala
 override def recovery = Recovery(toSequenceNr = 457L)
 ```
-- Recovery can be disabled by returning Recovery.none() in the recovery method of a PersistentActor:
+- Recovery can be disabled by returning `Recovery.none()` in the `recovery` method of a `PersistentActor`:
 ```scala
 override def recovery = Recovery.none
 ```
 
 ### Recovery status
-- A persistent actor can query its own recovery status via the methods
+- A persistent actor can query its own recovery status via the methods:
 ```scala
 def recoveryRunning: Boolean
 def recoveryFinished: Boolean
 ```
 - Sometimes there is a need for performing additional initialization when the recovery has completed 
     - before processing any other message sent to the persistent actor.
-- The persistent actor will receive a special RecoveryCompleted message 
+- The persistent actor will receive a special `RecoveryCompleted` message 
     - right after recovery and before any other received messages.
 ```scala
 override def receiveRecover: Receive = {
@@ -244,15 +242,17 @@ override def receiveCommand: Receive = {
   case msg ⇒ //...
 }
 ```
-- The actor will always receive a RecoveryCompleted message, 
+- The actor will always receive a `RecoveryCompleted` message, 
     - even if there are no events in the journal and the snapshot store is empty, 
-    - or if it’s a new persistent actor with a previously unused persistenceId.
-- If there is a problem with recovering the state of the actor from the journal, 
-    - onRecoveryFailure is called (logging the error by default) and the actor will be stopped.
+    - or if it’s a new persistent actor with a previously unused `persistenceId`.
+- If there is a problem with recovering the state of the actor from the journal:
+    - `onRecoveryFailure` is called  
+    - (logging the error by default)  
+    - and the actor will be stopped.
 
 ## Internal stash
-- The persistent actor has a private stash for internally caching incoming messages 
-    - during recovery or the persist\persistAll method persisting events.
+- The persistent actor has a private [stash](../../03-actors#stash) for internally caching incoming messages 
+    - during [recovery](#recovery) or the `persist`\\`persistAll` method persisting events.
 - You can still use/inherit from the Stash interface.
 - The internal stash cooperates with the normal stash by hooking into unstashAll method 
     - and making sure messages are unstashed properly to the internal stash to maintain ordering guarantees.
