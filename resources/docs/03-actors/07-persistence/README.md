@@ -347,16 +347,14 @@ persistentActor ! "b"
     - and before the journal has confirmed the write.
 
 ## Deferring actions until preceding persist handlers have executed
-- Sometimes when working with `persistAsync` or `persist` 
-    - you may find that it would be nice to define some actions 
-    - in terms of "happens-after the previous `persistAsync` / `persist` handlers have been invoked".
-- `PersistentActor` provides an utility method called `deferAsync`, 
-    - which works similarly to `persistAsync` yet does not persist the passed in event.
+- Sometimes when working with `persistAsync` or `persist` you may find that it would be nice to define some actions in terms of:
+    - "happens-after the previous `persistAsync` / `persist` handlers have been invoked".
+- `PersistentActor` provides an utility method called `deferAsync`:
+    - It works similarly to `persistAsync` yet **does not persist the passed in event**.
+    - Events will be kept in memory and used when invoking the handler.
 - It is recommended to use it for:
     - **read operations**, 
     - and actions which **do not have corresponding events** in your domain model.
-- Using this method is very similar to the persist family of methods, yet **it does not persist the passed in event**.
-- It will be kept in memory and used when invoking the handler.
 ```scala
 class MyPersistentActor extends PersistentActor {
 
@@ -376,8 +374,8 @@ class MyPersistentActor extends PersistentActor {
   }
 }
 ```
-- Notice that the sender() is safe to access in the handler callback, 
-    - and will be pointing to the original sender of the command for which this deferAsync handler was called.
+- Notice that the `sender()` is **safe to access in the handler callback**, 
+    - and will be pointing to the original sender of the command for which this `deferAsync` handler was called.
 - The calling side will get the responses in this (guaranteed) order:
 ```scala
 persistentActor ! "a"

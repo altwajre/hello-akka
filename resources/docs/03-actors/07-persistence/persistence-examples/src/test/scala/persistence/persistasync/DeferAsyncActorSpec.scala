@@ -26,12 +26,16 @@ class DeferAsyncActorSpec(_system: ActorSystem) extends TestKit(_system)
       persistentActor ! s"A - $date"
       persistentActor ! s"B - $date"
 
-      // We'll receive exactly 8 messages
-      (1 to 8).foreach { _ =>
-        expectMsgPF() {
-          case msg ⇒ println(s"Received $msg")
-        }
-      }
+      // Expect guaranteed order of received messages:
+      expectMsg(s"A - $date")
+      expectMsg(s"B - $date")
+      expectMsg(s"evt-A - $date-1")
+      expectMsg(s"evt-A - $date-2")
+      expectMsg(s"evt-A - $date-3")
+      expectMsg(s"evt-B - $date-1")
+      expectMsg(s"evt-B - $date-2")
+      expectMsg(s"evt-B - $date-3")
+
       expectNoMessage(1.second)
 
     }

@@ -26,7 +26,7 @@ class PersistAsyncActorSpec(_system: ActorSystem) extends TestKit(_system)
       persistentActor ! s"A - $date"
       persistentActor ! s"B - $date"
 
-      // We'll receive exactly 6 messages
+      // Print possible order of received messages:
       (1 to 6).foreach { _ =>
         expectMsgPF() {
           case msg ⇒ println(s"Received $msg")
