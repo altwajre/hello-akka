@@ -275,35 +275,35 @@ akka.actor.default-mailbox.stash-capacity=10000
     - causing actor restart if the default supervision strategy is used.
 - You can override the `internalStashOverflowStrategy` method 
     - to return `DiscardToDeadLetterStrategy` or `ReplyToStrategy` for any "individual" persistent actor, 
-    - or define the "default" for all persistent actors by providing FQCN, 
+    - or define the "default" for all persistent actors by providing a FQCN, 
     - which must be a subclass of `StashOverflowStrategyConfigurator`, in the persistence configuration:
 ```hocon
-akka.persistence.internal-stash-overflow-strategy=
-  "akka.persistence.ThrowExceptionConfigurator"
+akka.persistence.internal-stash-overflow-strategy="akka.persistence.ThrowExceptionConfigurator"
 ```
-- The DiscardToDeadLetterStrategy strategy also has a pre-packaged companion configurator akka.persistence.DiscardConfigurator.
+- The `DiscardToDeadLetterStrategy` strategy also has a pre-packaged companion configurator `akka.persistence.DiscardConfigurator`.
 - You can also query the default strategy via the Akka persistence extension singleton: 
 ```scala
 Persistence(context.system).defaultInternalStashOverflowStrategy
 ```
-#### Note
-- The bounded mailbox should be avoided in the persistent actor, by which the messages come from storage backends may be discarded.
-- You can use bounded stash instead of it.
+
+#### Important
+- The bounded mailbox should be avoided in the persistent actor,  because the messages coming from storage backends may be discarded.
+- Use a bounded stash instead.
 
 ## Relaxed local consistency requirements and high throughput use-cases
 - If faced with relaxed local consistency requirements and high throughput demands 
-    - sometimes PersistentActor and its persist may not be enough in terms of consuming incoming Commands at a high rate, 
-    - because it has to wait until all Events related to a given Command are processed 
-    - in order to start processing the next Command.
+    - sometimes `PersistentActor` and its `persist` may not be enough in terms of consuming incoming _Commands_ at a high rate, 
+    - because it has to wait until all _Events_ related to a given _Command_ are processed 
+    - in order to start processing the next _Command_.
 - While this abstraction is very useful for most cases, 
     - sometimes you may be faced with relaxed requirements about consistency - 
     - for example you may want to process commands as fast as you can, 
-    - assuming that the Event will eventually be persisted and handled properly in the background, 
+    - assuming that the _Event_ will eventually be persisted and handled properly in the background, 
     - retroactively reacting to persistence failures if needed.
-- The persistAsync method provides a tool for implementing high-throughput persistent actors.
-- It will not stash incoming Commands while the Journal is still working on persisting and/or user code is executing event callbacks.
-- In the below example, the event callbacks may be called "at any time", even after the next Command has been processed.
-- The ordering between events is still guaranteed ("evt-b-1" will be sent after "evt-a-2", which will be sent after "evt-a-1" etc.).
+- The `persistAsync` method provides a tool for implementing high-throughput persistent actors.
+- It will not stash incoming _Commands_ while the _Journal_ is still working on persisting and/or user code is executing event callbacks.
+- In the below example, the event callbacks may be called "at any time", even after the next _Command_ has been processed.
+- The ordering between events is still guaranteed (`evt-b-1` will be sent after `evt-a-2`, which will be sent after `evt-a-1` etc.).
 ```scala
 class MyPersistentActor extends PersistentActor {
 
