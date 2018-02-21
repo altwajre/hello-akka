@@ -8,26 +8,26 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
 
-class MyPersistentActorSpec(_system: ActorSystem) extends TestKit(_system)
+class DeferAsyncActorSpec(_system: ActorSystem) extends TestKit(_system)
   with ImplicitSender with WordSpecLike with Matchers with BeforeAndAfterAll {
 
-  def this() = this(ActorSystem("MyPersistentActorSpec"))
+  def this() = this(ActorSystem("DeferAsyncActorSpec"))
 
   override def afterAll {
     TestKit.shutdownActorSystem(system)
   }
 
-  "persistAsync" must {
+  "deferAsync" must {
     "work" in {
-      val persistentActor = system.actorOf(Props[MyPersistentActor], "MyPersistentActor")
+      val persistentActor = system.actorOf(Props[DeferAsyncActor], "DeferAsyncActor")
 
       val date = new Date().toString
 
       persistentActor ! s"A - $date"
       persistentActor ! s"B - $date"
 
-      // We'll receive exactly 6 messages
-      (1 to 6).foreach { _ =>
+      // We'll receive exactly 8 messages
+      (1 to 8).foreach { _ =>
         expectMsgPF() {
           case msg ⇒ println(s"Received $msg")
         }

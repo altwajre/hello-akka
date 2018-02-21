@@ -304,7 +304,7 @@ Persistence(context.system).defaultInternalStashOverflowStrategy
 - It will not stash incoming _Commands_ while the _Journal_ is still working on persisting and/or user code is executing event callbacks.
 - In the below example, the **event callbacks may be called "at any time"**, even after the next _Command_ has been processed.
 - The ordering between events is still guaranteed (`evt-b-1` will be sent after `evt-a-2`, which will be sent after `evt-a-1` etc.).
-- See [Test Code](./persistence-examples/src/test/scala/persistence/persistasync/MyPersistentActorSpec.scala)
+- See the [Test Code](./persistence-examples/src/test/scala/persistence/persistasync/PersistentAsyncActorSpec.scala)
 ```scala
 class MyPersistentActor extends PersistentActor {
 
@@ -337,21 +337,25 @@ persistentActor ! "b"
 ```
 
 #### Note
-- In order to implement the pattern known as "command sourcing" 
-    - simply call persistAsync(cmd)(...) right away on all incoming messages and handle them in the callback.
+- In order to implement the pattern known as "command sourcing":
+- Simply call persistAsync(cmd)(...) right away on all incoming messages and handle them in the callback.
 
 #### Warning
-- The callback will not be invoked if the actor is restarted (or stopped)
-    - in between the call to persistAsync and the journal has confirmed the write.
+- The callback will not be invoked if:
+    - the actor is restarted (or stopped) 
+    - after the call to persistAsync 
+    - and before the journal has confirmed the write.
 
 ## Deferring actions until preceding persist handlers have executed
-- Sometimes when working with persistAsync or persist 
+- Sometimes when working with `persistAsync` or `persist` 
     - you may find that it would be nice to define some actions 
-    - in terms of "happens-after the previous persistAsync/persist handlers have been invoked".
-- PersistentActor provides an utility method called deferAsync, 
-    - which works similarly to persistAsync yet does not persist the passed in event.
-- It is recommended to use it for read operations, and actions which do not have corresponding events in your domain model.
-- Using this method is very similar to the persist family of methods, yet it does not persist the passed in event.
+    - in terms of "happens-after the previous `persistAsync` / `persist` handlers have been invoked".
+- `PersistentActor` provides an utility method called `deferAsync`, 
+    - which works similarly to `persistAsync` yet does not persist the passed in event.
+- It is recommended to use it for:
+    - **read operations**, 
+    - and actions which **do not have corresponding events** in your domain model.
+- Using this method is very similar to the persist family of methods, yet **it does not persist the passed in event**.
 - It will be kept in memory and used when invoking the handler.
 ```scala
 class MyPersistentActor extends PersistentActor {
