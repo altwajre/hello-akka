@@ -253,12 +253,12 @@ override def receiveCommand: Receive = {
 ## Internal stash
 - The persistent actor has a private [stash](../../03-actors#stash) for internally caching incoming messages 
     - during [recovery](#recovery) or the `persist` \ `persistAll` method persisting events.
-- You can still use/inherit from the Stash interface.
-- The internal stash cooperates with the normal stash by hooking into unstashAll method 
+- You can still use (or inherit from) the Stash interface.
+- The internal stash cooperates with the normal stash by hooking into `unstashAll` method 
     - and making sure messages are unstashed properly to the internal stash to maintain ordering guarantees.
 - You should be careful to not send more messages to a persistent actor than it can keep up with, 
     - otherwise the number of stashed messages will grow without bounds.
-- It can be wise to protect against OutOfMemoryError by defining a maximum stash capacity in the mailbox configuration:
+- It can be wise to protect against `OutOfMemoryError` by defining a maximum stash capacity in the mailbox configuration:
 ```hocon
 akka.actor.default-mailbox.stash-capacity=10000
 ```
@@ -266,14 +266,17 @@ akka.actor.default-mailbox.stash-capacity=10000
 - If you have many persistent actors, e.g. when using cluster sharding, 
     - you may need to define a small stash capacity 
     - to ensure that the total number of stashed messages in the system doesn’t consume too much memory.
-- Additionally, the persistent actor defines three strategies to handle failure when the internal stash capacity is exceeded.
-- The default overflow strategy is the ThrowOverflowExceptionStrategy, 
-    - which discards the current received message and throws a StashOverflowException, 
+- Additionally, the persistent actor defines three strategies to handle failure when the internal stash capacity is exceeded:
+    - `ThrowOverflowExceptionStrategy`
+    - `DiscardToDeadLetterStrategy`
+    - `ReplyToStrategy`
+- The default overflow strategy is the `ThrowOverflowExceptionStrategy`, 
+    - which discards the current received message and throws a `StashOverflowException`, 
     - causing actor restart if the default supervision strategy is used.
-- You can override the internalStashOverflowStrategy method 
-    - to return DiscardToDeadLetterStrategy or ReplyToStrategy for any "individual" persistent actor, 
+- You can override the `internalStashOverflowStrategy` method 
+    - to return `DiscardToDeadLetterStrategy` or `ReplyToStrategy` for any "individual" persistent actor, 
     - or define the "default" for all persistent actors by providing FQCN, 
-    - which must be a subclass of StashOverflowStrategyConfigurator, in the persistence configuration:
+    - which must be a subclass of `StashOverflowStrategyConfigurator`, in the persistence configuration:
 ```hocon
 akka.persistence.internal-stash-overflow-strategy=
   "akka.persistence.ThrowExceptionConfigurator"
