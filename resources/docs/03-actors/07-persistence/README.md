@@ -594,12 +594,12 @@ context.actorOf(props, name = "mySupervisor")
 ## Persistence status handling
 - Persisting, deleting, and replaying messages can either succeed or fail.
 
-| Method                 | Success                 |
-|:-----------------------|:------------------------|
-| persist / persistAsync | persist handler invoked |
-| onPersistRejected      | No automatic actions.   |
-| recovery               | RecoveryCompleted       |
-| deleteMessages         | DeleteMessagesSuccess   |
+| Method                     | Success                 |
+|:---------------------------|:------------------------|
+| `persist` / `persistAsync` | Persist handler invoked |
+| `onPersistRejected`        | No automatic actions    |
+| `recovery`                 | RecoveryCompleted       |
+| `deleteMessages`           | DeleteMessagesSuccess   |
 
 - The most important operations (`persist` and `recovery`) have failure handlers modelled as explicit callbacks  
     - which the user can override in the `PersistentActor`.
