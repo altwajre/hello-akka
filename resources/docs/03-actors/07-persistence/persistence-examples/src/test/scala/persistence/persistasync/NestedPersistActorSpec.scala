@@ -15,7 +15,7 @@ class NestedPersistActorSpec(_system: ActorSystem) extends TestKit(_system)
     TestKit.shutdownActorSystem(system)
   }
 
-  "nestedPersist" must {
+  "Nested persist" must {
     "work" in {
       val persistentActor = system.actorOf(Props[NestedPersistActor], "NestedPersistActor")
 

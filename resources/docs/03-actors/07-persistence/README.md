@@ -468,11 +468,10 @@ persistentActor ! "b"
 ```
 - First the "outer layer" of persist calls is issued and their callbacks are applied.
 - After these have successfully completed,  
-    - the inner callbacks will be invoked  
+    - the _inner_ callbacks will be invoked  
     - (once the events they are persisting have been confirmed to be persisted by the journal).
 - Only after all these handlers have been successfully invoked will the next command be delivered to the persistent Actor.
-- In other words, the stashing of incoming commands  
-    - that is guaranteed by initially calling `persist()` on the outer layer  
+- In other words, the stashing of incoming commands that is guaranteed by initially calling `persist()` on the _outer_ layer  
     - is extended until all nested `persist` callbacks have been handled.
 - It is also possible to nest `persistAsync` calls, using the same pattern:
 ```scala
@@ -511,7 +510,7 @@ persistentActor ! "b"
 // b -> b-outer-1 -> b-outer-2 -> b-inner-1 -> b-inner-2
 ```
 - While it is possible to nest mixed `persist` and `persistAsync` with keeping their respective semantics  
-    - it is not a recommended practice, as it may lead to overly complex nesting.
+    - **it is not a recommended practice**, as it may lead to overly complex nesting.
     
 #### Warning
 - While it is possible to nest `persist` calls within one another,  
@@ -524,8 +523,8 @@ persistentActor ! "b"
 ## Failures
 - If persistence of an event fails, `onPersistFailure` will be invoked (logging the error by default),  
     - and the actor will unconditionally be stopped.
-- The reason that it cannot resume when persist fails  
-    - is that it is unknown if the event was actually persisted or not,  
+- The reason that it cannot resume when persist fails, is that:
+    - it is unknown if the event was actually persisted or not,  
     - and therefore it is in an inconsistent state.
 - Restarting on persistent failures will most likely fail anyway since the journal is probably unavailable.
 - It is better to stop the actor and after a back-off timeout start it again.
@@ -545,16 +544,18 @@ context.actorOf(props, name = "mySupervisor")
     - `onPersistRejected` will be invoked (logging a warning by default), and the actor continues with next message.
 - If there is a problem with recovering the state of the actor from the journal when the actor is started,  
     - `onRecoveryFailure` is called (logging the error by default), and the actor will be stopped.
-- Note that failure to load snapshot is also treated like this,  
+- Note that failure to load a snapshot is also treated like this,  
     - but you can disable loading of snapshots  
     - if you for example know that serialization format has changed in an incompatible way,  
-    - see Recovery customization.
+    - see [Recovery customization](#recovery-customization).
 
 ## Atomic writes
 - Each event is of course stored atomically, but it is also possible to store several events atomically  
     - by using the `persistAll` or `persistAllAsync` method.
-- That means that all events passed to that method are stored or none of them are stored if there is an error.
-- The recovery of a persistent actor will therefore never be done partially with only a subset of events persisted by persistAll.
+- That means:
+    - all events passed to that method are stored 
+    - or none of them are stored if there is an error.
+- The recovery of a persistent actor will therefore never be done partially with only a subset of events persisted by `persistAll`.
 - Some journals may not support atomic writes of several events and they will then reject the `persistAll` command,  
     - i.e. `onPersistRejected` is called with an exception (typically `UnsupportedOperationException`).
 
@@ -568,19 +569,22 @@ context.actorOf(props, name = "mySupervisor")
 - Batch writes are never timer-based which keeps latencies at a minimum.
 
 ## Message deletion
-- It is possible to delete all messages (journaled by a single persistent actor) up to a specified sequence number;  
+- It is possible to delete all messages (journaled by a single persistent actor) up to a specified sequence number. 
     - Persistent actors may call the `deleteMessages` method to this end.
 - Deleting messages in event sourcing based applications is typically either  
-    - not used at all, or used in conjunction with snapshotting,  
+    - not used at all, or used in conjunction with [snapshotting](#snapshots),  
     - i.e. after a snapshot has been successfully stored,  
     - a `deleteMessages(toSequenceNr)` up until the sequence number of the data held by that snapshot can be issued  
     - to safely delete the previous events while still having access to the accumulated state during replays 
     - by loading the snapshot.
+    
 #### Warning
-- If you are using Persistence Query, query results may be missing deleted messages in a journal,  
+- If you are using [Persistence Query](../09-persistence-query), query results may be missing deleted messages in a journal,  
     - depending on how deletions are implemented in the journal plugin.
 - Unless you use a plugin which still shows deleted messages in persistence query results,  
     - you have to design your application so that it is not affected by missing messages.
+##
+
 - The result of the `deleteMessages` request is signaled to the persistent actor  
     - with a `DeleteMessagesSuccess` message if the delete was successful  
     - or a `DeleteMessagesFailure` message if it failed.
@@ -607,9 +611,9 @@ context.actorOf(props, name = "mySupervisor")
 - This is because if the underlying journal implementation is signalling persistence failures  
     - it is most likely either failing completely or overloaded  
     - and restarting right-away and trying to persist the event again will most likely not help the journal recover 
-    - as it would likely cause a Thundering herd problem,  
+    - as it would likely cause a [Thundering herd problem](TODO),  
     - as many persistent actors would restart and try to persist their events again.
-- Instead, use a `BackoffSupervisor` (as described in Failures)  
+- Instead, use a `BackoffSupervisor` (as described in [Failures](TODO))  
     - which implements an exponential-backoff strategy  
     - and allows for more breathing room for the journal to recover  
     - between restarts of the persistent actor.
@@ -623,7 +627,7 @@ context.actorOf(props, name = "mySupervisor")
 
 ## Safely shutting down persistent actors
 - Special care should be given when shutting down persistent actors from the outside.
-- With normal Actors it is often acceptable to use the special PoisonPill message  
+- With normal Actors it is often acceptable to use the special [PoisonPill](TODO) message  
     - to signal to an Actor that it should stop itself once it receives this message 
     - in fact this message is handled automatically by Akka,  
     - leaving the target actor no way to refuse stopping itself when given a poison pill.
@@ -781,7 +785,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - However, Akka will log a warning message when this situation is detected  
     - and then continue to operate until an actor tries to store a snapshot,  
     - at which point the operation will fail (by replying with an `SaveSnapshotFailure` for example).
-- Note that the "persistence mode" of Cluster Sharding makes use of snapshots.
+- Note that the "persistence mode" of [Cluster Sharding](TODO) makes use of snapshots.
 - If you use that mode, you’ll need to define a snapshot store plugin.
 
 ## Snapshot deletion
@@ -824,8 +828,9 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
     - it is not at-most-once delivery
     - message order for the same sender-receiver pair is not preserved due to possible resends
     - after a crash and restart of the destination messages are still delivered to the new actor incarnation
-- These semantics are similar to what an `ActorPath` represents (see Actor Lifecycle),  
+- These semantics are similar to what an `ActorPath` represents,  
     - therefore you need to supply a path and not a reference when delivering messages.
+    - see [Actor Lifecycle](TODO)
 - The messages are sent to the path with an actor selection.
 ##
 
@@ -1000,7 +1005,7 @@ akka.persistence.journal {
 - The adapted events are then delivered in-order to the `PersistentActor` during replay.
 
 #### Note
-- For more advanced schema evolution techniques refer to the Persistence - Schema Evolution documentation.
+- For more advanced schema evolution techniques refer to the [Persistence - Schema Evolution](TODO) documentation.
 
 # Persistent FSM
 - `PersistentFSM` handles the incoming messages in an FSM like fashion.
@@ -1176,7 +1181,7 @@ akka.persistence.fsm.snapshot-after = 1000
 # Storage plugins
 - Storage backends for journals and snapshot stores are pluggable in the Akka persistence extension.
 - A directory of persistence journal and snapshot store plugins is available at the Akka Community Projects page,  
-    - see Community plugins
+    - see [Community plugins](TODO)
 - Plugins can be selected either by "default" for all persistent actors, or "individually",  
     - when a persistent actor defines its own set of plugins.
 - When a persistent actor does NOT override the `journalPluginId` and `snapshotPluginId` methods,  
@@ -1187,9 +1192,10 @@ akka.persistence.snapshot-store.plugin = ""
 ```
 - However, these entries are provided as empty "", and require explicit user configuration via override  
     - in the user `application.conf`.
-- For an example of a journal plugin which writes messages to LevelDB see Local LevelDB journal.
-- For an example of a snapshot store plugin which writes snapshots as individual files to the local filesystem  
-    - see Local snapshot store.
+- For an example of a journal plugin which writes messages to LevelDB:
+    - see [Local LevelDB journal](TODO).
+- For an example of a snapshot store plugin which writes snapshots as individual files to the local filesystem:  
+    - see [Local snapshot store](TODO).
 - Applications can provide their own plugins by implementing a plugin API and activating them by configuration.
 - Plugin development requires the following imports:
 ```scala
@@ -1495,7 +1501,7 @@ my-snapshot-store {
 
 ## Plugin TCK
 - In order to help developers build correct and high quality storage plugins,  
-    - we provide a Technology Compatibility Kit (TCK for short).
+    - we provide a [Technology Compatibility Kit](http://en.wikipedia.org/wiki/Technology_Compatibility_Kit) (TCK for short).
 - The TCK is usable from Java as well as Scala projects.
 - To test your implementation (independently of language) you need to include the akka-persistence-tck dependency:
 ```sbtshell
@@ -1602,10 +1608,10 @@ akka.persistence.journal.leveldb.compaction-intervals {
 
 #### Warning
 - A shared LevelDB instance is a single point of failure and should therefore only be used for testing purposes.
-- Highly-available, replicated journals are available as Community plugins.
+- Highly-available, replicated journals are available as [Community plugins](TODO).
 
 #### Note
-- This plugin has been supplanted by Persistence Plugin Proxy.
+- This plugin has been supplanted by [Persistence Plugin Proxy](TODO).
 ##
 
 - A shared LevelDB instance is started by instantiating the `SharedLeveldbStore` actor.
@@ -1666,7 +1672,7 @@ akka.persistence.snapshot-store.local.dir = "target/snapshots"
 
 #### Warning
 - A shared journal/snapshot store is a single point of failure and should therefore only be used for testing purposes.
-- Highly-available, replicated persistence plugins are available as Community plugins.
+- Highly-available, replicated persistence plugins are available as [Community plugins](TODO).
 ##
 
 - The journal and snapshot store proxies are controlled via  
@@ -1683,14 +1689,14 @@ akka.persistence.snapshot-store.local.dir = "target/snapshots"
 #### Note
 - Akka starts extensions lazily when they are required, and this includes the proxy.
 - This means that in order for the proxy to work, the persistence plugin on the target node must be instantiated.
-- This can be done by instantiating the `PersistencePluginProxyExtension` extension,  
+- This can be done by instantiating the `PersistencePluginProxyExtension` [extension](TODO),  
     - or by calling the `PersistencePluginProxy.start` method.
 
 #### Note
 - The proxied persistence plugin can (and should) be configured using its original configuration keys.
 
 # Custom serialization
-- Serialization of snapshots and payloads of `Persistent` messages is configurable with Akka’s Serialization infrastructure.
+- Serialization of snapshots and payloads of `Persistent` messages is configurable with Akka’s [Serialization](TODO) infrastructure.
 - For example, if an application wants to serialize
     - payloads of type `MyPayload` with a custom `MyPayloadSerializer` and
     - snapshots of type `MySnapshot` with a custom `MySnapshotSerializer`
@@ -1709,7 +1715,7 @@ akka.actor {
 ```
 - to the application configuration.
 - If not specified, a default serializer is used.
-- For more advanced schema evolution techniques refer to the Persistence - Schema Evolution documentation.
+- For more advanced schema evolution techniques refer to the [Persistence - Schema Evolution](TODO) documentation.
 
 # Testing
 - When running tests with LevelDB default settings in `sbt`, make sure to set `fork := true` in your sbt project.
@@ -1730,14 +1736,14 @@ akka.persistence.journal.leveldb-shared.store.native = off
 ```
 
 #### Warning
-- It is not possible to test persistence provided classes (i.e. PersistentActor and AtLeastOnceDelivery) using `TestActorRef`  
+- It is not possible to test persistence provided classes (i.e. [PersistentActor](TODO) and [AtLeastOnceDelivery](TODO)) using `TestActorRef`  
     - due to its synchronous nature.
 - These traits need to be able to perform asynchronous tasks in the background  
     - in order to handle internal persistence related events.
-- When testing Persistence based projects always rely on asynchronous messaging using the TestKit.
+- When testing Persistence based projects always rely on [asynchronous messaging using the TestKit](TODO).
 
 # Configuration
-- There are several configuration properties for the persistence module, please refer to the reference configuration.
+- There are several configuration properties for the persistence module, please refer to the [reference configuration](TODO).
 
 # Multiple persistence plugin configurations
 - By default, a persistent actor will use the "default" journal and snapshot store plugins  
