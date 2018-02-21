@@ -252,7 +252,7 @@ override def receiveCommand: Receive = {
 
 ## Internal stash
 - The persistent actor has a private [stash](../../03-actors#stash) for internally caching incoming messages 
-    - during [recovery](#recovery) or the `persist`\\`persistAll` method persisting events.
+    - during [recovery](#recovery) or the `persist` \ `persistAll` method persisting events.
 - You can still use/inherit from the Stash interface.
 - The internal stash cooperates with the normal stash by hooking into unstashAll method 
     - and making sure messages are unstashed properly to the internal stash to maintain ordering guarantees.
