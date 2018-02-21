@@ -45,10 +45,10 @@
 ### `AsyncWriteJournal`:  
 - A journal stores the sequence of messages sent to a persistent actor.  
 - An application can control which messages are journaled and which are received by the persistent actor without being journaled.  
-- Journal maintains highestSequenceNr that is increased on each message.  
+- Journal maintains `highestSequenceNr` that is increased on each message.  
 - The storage backend of a journal is pluggable.  
-- The persistence extension comes with a "leveldb" journal plugin, which writes to the local filesystem.  
-- Replicated journals are available as Community plugins.
+- The persistence extension comes with a LevelDB journal plugin, which writes to the local filesystem.  
+- Replicated journals are available as [Community plugins](http://akka.io/community/?_ga=2.251477376.745399318.1519143948-542223074.1518507267).
 
 ### Snapshot store:   
 - A snapshot store persists snapshots of a persistent actor’s internal state.  
@@ -57,29 +57,27 @@
 - The persistence extension comes with a "local" snapshot storage plugin, which writes to the local filesystem.
 
 ### Event sourcing: 
-- Based on the building blocks described above:
-- Akka persistence provides abstractions for the development of event sourced applications (see section Event sourcing).
-- Replicated snapshot stores are available as Community plugins.
+- Akka persistence provides abstractions for the development of event sourced applications.
+- Replicated snapshot stores are available as [Community plugins](https://index.scala-lang.org/search?topics=akka-persistence).
+- See [Introduction to Event Sourcing](https://msdn.microsoft.com/en-us/library/jj591559.aspx)
 
 # Event sourcing
-- The basic idea behind Event Sourcing is quite simple.  
+- See [Events As First-Class Citizens](https://hackernoon.com/events-as-first-class-citizens-8633e8479493).
 - A persistent actor receives a (non-persistent) command:
     - which is first validated if it can be applied to the current state.  
 - Here validation can mean anything:
     - from simple inspection of a command message’s fields 
-    - up to a conversation with several external services, for example.  
+    - up to a conversation with several external services.  
 - If validation succeeds, events are generated from the command, representing the effect of the command.  
 - These events are then persisted and, after successful persistence, used to change the actor’s state.
 - When the persistent actor needs to be recovered:
-    - only the persisted events are replayed of which we know that they can be successfully applied.
-- In other words, events cannot fail when being replayed to a persistent actor, in contrast to commands.
+    - Only the persisted events are replayed of which we know that they can be successfully applied.
+    - In other words, events cannot fail when being replayed to a persistent actor, in contrast to commands.
 - Event sourced actors may of course also process commands that do not change application state:
     - such as query commands for example.
-- Another excellent article about "thinking in Events" is Events As First-Class Citizens by Randy Shoup.
-- It is a short and recommended read if you’re starting developing Events based applications.
-- Akka persistence supports event sourcing with the PersistentActor trait.
-- An actor that extends this trait uses the persist method to persist and handle events.
-- The behavior of a PersistentActor is defined by implementing receiveRecover and receiveCommand.
+- Akka persistence supports event sourcing with the `PersistentActor` trait.
+- An actor that extends this trait uses the `persist` method to persist and handle events.
+- The behavior of a `PersistentActor` is defined by implementing `receiveRecover` and `receiveCommand`.
 - This is demonstrated in the following example.
 ```scala
 import akka.actor._
