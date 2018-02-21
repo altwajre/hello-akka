@@ -79,6 +79,7 @@
 - An actor that extends this trait uses the `persist` method to persist and handle events.
 - The behavior of a `PersistentActor` is defined by implementing `receiveRecover` and `receiveCommand`.
 - This is demonstrated in the following example.
+- See [Example 1](./persistence-examples/src/main/scala/persistence/example1)
 ```scala
 import akka.actor._
 import akka.persistence._
