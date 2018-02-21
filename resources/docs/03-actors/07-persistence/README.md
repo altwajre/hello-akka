@@ -123,19 +123,19 @@ class ExamplePersistentActor extends PersistentActor {
 
 }
 ```
-- The example defines two data types, Cmd and Evt to represent commands and events, respectively.
-- The state of the ExamplePersistentActor is a list of persisted event data contained in ExampleState.
-- The persistent actor’s receiveRecover method defines how state is updated during recovery:
-    - by handling Evt and SnapshotOffer messages.
-- The persistent actor’s receiveCommand method is a command handler.
+- The example defines two data types, `Cmd` and `Evt` to represent commands and events, respectively.
+- The state of the `ExamplePersistentActor` is a list of persisted event data contained in `ExampleState`.
+- The persistent actor’s `receiveRecover` method defines how state is updated during recovery:
+    - by handling `Evt` and `SnapshotOffer` messages.
+- The persistent actor’s `receiveCommand` method is a command handler.
 - In this example, a command is handled by generating an event which is then persisted and handled.
-- Events are persisted by calling persist with:
-    - an event (or a sequence of events) as first argument 
-    - and an event handler as second argument.
-- The persist method persists events asynchronously and the event handler is executed for successfully persisted events.
+- Events are persisted by calling `persist` with:
+    - **an event** (or a sequence of events) as first argument 
+    - and an **event handler** as second argument.
+- The `persist` method persists events asynchronously and the event handler is executed for successfully persisted events.
 - Successfully persisted events are internally sent back to the persistent actor:
     - as individual messages that trigger event handler executions.
-- An event handler may close over persistent actor state and mutate it.
+- **An event handler may close over persistent actor state and mutate it**.
 - The sender of a persisted event is the sender of the corresponding command.
 - This allows event handlers to reply to the sender of a command (not shown).
 - The main responsibility of an event handler is:
