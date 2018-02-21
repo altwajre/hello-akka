@@ -141,20 +141,21 @@ class ExamplePersistentActor extends PersistentActor {
 - The main responsibility of an event handler is:
     - changing persistent actor state using event data 
     - and notifying others about successful state changes by publishing events.
-- When persisting events with persist it is guaranteed that:
+- When persisting events with `persist` it is guaranteed that:
     - the persistent actor will not receive further commands
-    - between the persist call and the execution(s) of the associated event handler.
-- This also holds for multiple persist calls in context of a single command.
-- Incoming messages are stashed until the persist is completed.
-- If persistence of an event fails, onPersistFailure will be invoked 
+    - between the `persist` call and the execution(s) of the associated event handler.
+- This also holds for multiple `persist` calls in context of a single command.
+- Incoming messages are [stashed](#internal-stash) until the `persist` is completed.
+- If persistence of an event fails, `onPersistFailure` will be invoked 
     - (logging the error by default), 
     - and the actor will unconditionally be stopped.
 - If persistence of an event is rejected before it is stored, 
     - e.g. due to serialization error, 
-    - onPersistRejected will be invoked (logging a warning by default) 
+    - `onPersistRejected` will be invoked 
+    - (logging a warning by default) 
     - and the actor continues with the next message.
 - The easiest way to run this example yourself is to 
-    - download the ready to run Akka Persistence Sample with Scala together with the tutorial. 
+    - download the ready to run [Akka Persistence Sample](./akka-samples-persistence-scala) together with the tutorial. 
 - It contains instructions on how to run the PersistentActorExample.
 - The source code of this sample can be found in the Akka Samples Repository.
 
