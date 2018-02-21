@@ -304,6 +304,7 @@ Persistence(context.system).defaultInternalStashOverflowStrategy
 - It will not stash incoming _Commands_ while the _Journal_ is still working on persisting and/or user code is executing event callbacks.
 - In the below example, the **event callbacks may be called "at any time"**, even after the next _Command_ has been processed.
 - The ordering between events is still guaranteed (`evt-b-1` will be sent after `evt-a-2`, which will be sent after `evt-a-1` etc.).
+- See [Test Code](./persistence-examples/src/test/scala/persistence/persistasync/MyPersistentActorSpec.scala)
 ```scala
 class MyPersistentActor extends PersistentActor {
 
