@@ -11,7 +11,7 @@ class MyPersistentActor extends PersistentActor {
   }
 
   override def receiveCommand: Receive = {
-    case c: String ⇒ {
+    case c: String ⇒
       persistAsync(s"evt-$c-1") { e ⇒
         println(s"Persisted $e")
         sender() ! e
@@ -21,6 +21,5 @@ class MyPersistentActor extends PersistentActor {
         sender() ! e
       }
       sender() ! c
-    }
   }
 }
