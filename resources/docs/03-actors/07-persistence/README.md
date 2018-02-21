@@ -343,7 +343,7 @@ persistentActor ! "b"
 #### Warning
 - The callback will not be invoked if:
     - the actor is restarted (or stopped) 
-    - after the call to persistAsync 
+    - after the call to `persistAsync` 
     - and before the journal has confirmed the write.
 
 ## Deferring actions until preceding persist handlers have executed
@@ -355,6 +355,7 @@ persistentActor ! "b"
 - It is recommended to use it for:
     - **read operations**, 
     - and actions which **do not have corresponding events** in your domain model.
+- See the [Test Code](./persistence-examples/src/test/scala/persistence/persistasync/DeferAsyncActorSpec.scala)
 ```scala
 class MyPersistentActor extends PersistentActor {
 
@@ -391,7 +392,7 @@ persistentActor ! "b"
 // evt-b-2
 // evt-b-3
 ```
-- You can also call deferAsync with persist.
+- You can also call `deferAsync` with `persist`.
 ```scala
 class MyPersistentActor extends PersistentActor {
 
@@ -413,18 +414,20 @@ class MyPersistentActor extends PersistentActor {
 ```
 
 #### Warning
-- The callback will not be invoked if the actor is restarted (or stopped) 
-    - in between the call to deferAsync and the journal has processed and confirmed all preceding writes.
+- The callback will not be invoked if:
+    - the actor is restarted (or stopped) 
+    - after the call to `deferAsync` 
+    - and before the journal has processed and confirmed all preceding writes.
 
 ## Nested persist calls
-- It is possible to call persist and persistAsync inside their respective callback blocks  
-    - and they will properly retain both the thread safety (including the right value of sender())  
+- It is possible to call `persist` and `persistAsync` inside their respective callback blocks  
+    - and they will properly retain both the thread safety (including the right value of `sender()`)  
     - as well as stashing guarantees.
 - In general it is encouraged to create command handlers which do not need to resort to nested event persisting,  
     - however there are situations where it may be useful.
 - It is important to understand the ordering of callback execution in those situations,  
-    - as well as their implication on the stashing behaviour (that persist() enforces).
-- In the following example two persist calls are issued, and each of them issues another persist inside its callback:
+    - as well as their implication on the stashing behaviour (that `persist()` enforces).
+- In the following example two `persist` calls are issued, and each of them issues another persist inside its callback:
 ```scala
 override def receiveCommand: Receive = {
   case c: String ⇒
@@ -445,7 +448,7 @@ override def receiveCommand: Receive = {
     }
 }
 ```
-- When sending two commands to this PersistentActor, the persist handlers will be executed in the following order:
+- When sending two commands to this `PersistentActor`, the persist handlers will be executed in the following order:
 ```scala
 persistentActor ! "a"
 persistentActor ! "b"
@@ -469,9 +472,9 @@ persistentActor ! "b"
     - (once the events they are persisting have been confirmed to be persisted by the journal).
 - Only after all these handlers have been successfully invoked will the next command be delivered to the persistent Actor.
 - In other words, the stashing of incoming commands  
-    - that is guaranteed by initially calling persist() on the outer layer  
-    - is extended until all nested persist callbacks have been handled.
-- It is also possible to nest persistAsync calls, using the same pattern:
+    - that is guaranteed by initially calling `persist()` on the outer layer  
+    - is extended until all nested `persist` callbacks have been handled.
+- It is also possible to nest `persistAsync` calls, using the same pattern:
 ```scala
 override def receiveCommand: Receive = {
   case c: String ⇒
@@ -507,26 +510,26 @@ persistentActor ! "b"
 // a -> a-outer-1 -> a-outer-2 -> a-inner-1 -> a-inner-2
 // b -> b-outer-1 -> b-outer-2 -> b-inner-1 -> b-inner-2
 ```
-- While it is possible to nest mixed persist and persistAsync with keeping their respective semantics  
+- While it is possible to nest mixed `persist` and `persistAsync` with keeping their respective semantics  
     - it is not a recommended practice, as it may lead to overly complex nesting.
     
 #### Warning
-- While it is possible to nest persist calls within one another,  
-    - it is not legal to call persist from any other Thread than the Actors message processing Thread.
-- For example, **it is not legal to call persist from Futures**. 
-- Doing so will break the guarantees that the persist methods aim to provide.
-- Always call persist and persistAsync from within the Actor’s receive block  
+- While it is possible to nest `persist` calls within one another,  
+    - it is not legal to call `persist` from any other Thread than the Actors message processing Thread.
+- For example, **it is not legal to call `persist` from Futures**. 
+- Doing so will break the guarantees that the `persist` methods aim to provide.
+- Always call `persist` and `persistAsync` from within the Actor’s receive block  
     - (or methods synchronously invoked from there).
 
 ## Failures
-- If persistence of an event fails, onPersistFailure will be invoked (logging the error by default),  
+- If persistence of an event fails, `onPersistFailure` will be invoked (logging the error by default),  
     - and the actor will unconditionally be stopped.
 - The reason that it cannot resume when persist fails  
     - is that it is unknown if the event was actually persisted or not,  
     - and therefore it is in an inconsistent state.
 - Restarting on persistent failures will most likely fail anyway since the journal is probably unavailable.
 - It is better to stop the actor and after a back-off timeout start it again.
-- The akka.pattern.BackoffSupervisor actor is provided to support such restarts.
+- The `akka.pattern.BackoffSupervisor` actor is provided to support such restarts.
 ```scala
 val childProps = Props[MyPersistentActor]
 val props = BackoffSupervisor.props(
@@ -539,9 +542,9 @@ val props = BackoffSupervisor.props(
 context.actorOf(props, name = "mySupervisor")
 ```
 - If persistence of an event is rejected before it is stored, e.g. due to serialization error,  
-    - onPersistRejected will be invoked (logging a warning by default), and the actor continues with next message.
+    - `onPersistRejected` will be invoked (logging a warning by default), and the actor continues with next message.
 - If there is a problem with recovering the state of the actor from the journal when the actor is started,  
-    - onRecoveryFailure is called (logging the error by default), and the actor will be stopped.
+    - `onRecoveryFailure` is called (logging the error by default), and the actor will be stopped.
 - Note that failure to load snapshot is also treated like this,  
     - but you can disable loading of snapshots  
     - if you for example know that serialization format has changed in an incompatible way,  
@@ -549,14 +552,14 @@ context.actorOf(props, name = "mySupervisor")
 
 ## Atomic writes
 - Each event is of course stored atomically, but it is also possible to store several events atomically  
-    - by using the persistAll or persistAllAsync method.
+    - by using the `persistAll` or `persistAllAsync` method.
 - That means that all events passed to that method are stored or none of them are stored if there is an error.
 - The recovery of a persistent actor will therefore never be done partially with only a subset of events persisted by persistAll.
-- Some journals may not support atomic writes of several events and they will then reject the persistAll command,  
-    - i.e. onPersistRejected is called with an exception (typically UnsupportedOperationException).
+- Some journals may not support atomic writes of several events and they will then reject the `persistAll` command,  
+    - i.e. `onPersistRejected` is called with an exception (typically `UnsupportedOperationException`).
 
 ## Batch writes
-- In order to optimize throughput when using persistAsync,  
+- In order to optimize throughput when using `persistAsync`,  
     - a persistent actor internally batches events to be stored under high load  
     - before writing them to the journal (as a single batch).
 - The batch size is dynamically determined by how many events are emitted during the time of a journal round-trip:  
@@ -566,11 +569,11 @@ context.actorOf(props, name = "mySupervisor")
 
 ## Message deletion
 - It is possible to delete all messages (journaled by a single persistent actor) up to a specified sequence number;  
-    - Persistent actors may call the deleteMessages method to this end.
+    - Persistent actors may call the `deleteMessages` method to this end.
 - Deleting messages in event sourcing based applications is typically either  
     - not used at all, or used in conjunction with snapshotting,  
     - i.e. after a snapshot has been successfully stored,  
-    - a deleteMessages(toSequenceNr) up until the sequence number of the data held by that snapshot can be issued  
+    - a `deleteMessages(toSequenceNr)` up until the sequence number of the data held by that snapshot can be issued  
     - to safely delete the previous events while still having access to the accumulated state during replays 
     - by loading the snapshot.
 #### Warning
@@ -578,11 +581,11 @@ context.actorOf(props, name = "mySupervisor")
     - depending on how deletions are implemented in the journal plugin.
 - Unless you use a plugin which still shows deleted messages in persistence query results,  
     - you have to design your application so that it is not affected by missing messages.
-- The result of the deleteMessages request is signaled to the persistent actor  
-    - with a DeleteMessagesSuccess message if the delete was successful  
-    - or a DeleteMessagesFailure message if it failed.
+- The result of the `deleteMessages` request is signaled to the persistent actor  
+    - with a `DeleteMessagesSuccess` message if the delete was successful  
+    - or a `DeleteMessagesFailure` message if it failed.
 - Message deletion doesn’t affect the highest sequence number of the journal,  
-    - even if all messages were deleted from it after deleteMessages invocation.
+    - even if all messages were deleted from it after `deleteMessages` invocation.
 
 ## Persistence status handling
 - Persisting, deleting, and replaying messages can either succeed or fail.
@@ -594,10 +597,10 @@ context.actorOf(props, name = "mySupervisor")
 | recovery               | RecoveryCompleted       |
 | deleteMessages         | DeleteMessagesSuccess   |
 
-- The most important operations (persist and recovery) have failure handlers modelled as explicit callbacks  
-    - which the user can override in the PersistentActor.
+- The most important operations (`persist` and `recovery`) have failure handlers modelled as explicit callbacks  
+    - which the user can override in the `PersistentActor`.
 - The default implementations of these handlers emit a log message  
-    - (error for persist/recovery failures, and warning for others),  
+    - (`error` for persist/recovery failures, and `warning` for others),  
     - logging the failure cause and information about which message caused the failure.
 - For critical failures, such as recovery or persisting events failing,  
     - the persistent actor will be stopped after the failure handler is invoked.
@@ -606,7 +609,7 @@ context.actorOf(props, name = "mySupervisor")
     - and restarting right-away and trying to persist the event again will most likely not help the journal recover 
     - as it would likely cause a Thundering herd problem,  
     - as many persistent actors would restart and try to persist their events again.
-- Instead, use a BackoffSupervisor (as described in Failures)  
+- Instead, use a `BackoffSupervisor` (as described in Failures)  
     - which implements an exponential-backoff strategy  
     - and allows for more breathing room for the journal to recover  
     - between restarts of the persistent actor.
@@ -614,7 +617,7 @@ context.actorOf(props, name = "mySupervisor")
 #### Note
 - Journal implementations may choose to implement a retry mechanism,  
     - e.g. such that only after a write fails N number of times a persistence failure is signalled back to the user.
-- In other words, once a journal returns a failure, it is considered fatal by Akka Persistence,  
+- In other words, once a journal returns a failure, it is considered **fatal** by Akka Persistence,  
     - and the persistent actor which caused the failure will be stopped.
 - Check the documentation of the journal implementation you are using for details if/how it is using this technique.
 
@@ -624,19 +627,21 @@ context.actorOf(props, name = "mySupervisor")
     - to signal to an Actor that it should stop itself once it receives this message 
     - in fact this message is handled automatically by Akka,  
     - leaving the target actor no way to refuse stopping itself when given a poison pill.
-- This can be dangerous when used with PersistentActor due to the fact that incoming commands are stashed  
+- This can be dangerous when used with `PersistentActor` due to the fact that incoming commands are stashed  
     - while the persistent actor is awaiting confirmation from the Journal  
-    - that events have been written when persist() was used.
+    - that events have been written when `persist()` was used.
 - Since the incoming commands will be drained from the Actor’s mailbox and put into its internal stash  
     - while awaiting the confirmation (thus, before calling the persist handlers)  
-    - the Actor may receive and (auto)handle the PoisonPill before it processes the other messages  
-    - which have been put into its stash, causing a pre-mature shutdown of the Actor.
+    - the Actor may receive and **(auto)handle** the `PoisonPill` before it processes the other messages  
+    - which have been put into its stash, causing a **pre-mature shutdown** of the Actor.
 
 #### Warning
-- Consider using explicit shut-down messages instead of PoisonPill when working with persistent actors.
+- Consider using explicit shut-down messages instead of `PoisonPill` when working with persistent actors.
+##
+
 - The example below highlights how messages arrive in the Actor’s mailbox  
-    - and how they interact with its internal stashing mechanism when persist() is used.
-- Notice the early stop behaviour that occurs when PoisonPill is used:
+    - and how they interact with its internal stashing mechanism when `persist()` is used.
+- Notice the early stop behaviour that occurs when `PoisonPill` is used:
 
 ```scala
 /** Explicit shutdown message */
@@ -693,8 +698,8 @@ persistentActor ! Shutdown
     - and multiple writers (i.e. multiple persistent actor instances)  
     - journaled different messages with the same sequence number.
 - In such a case, you can configure how you filter replayed messages from multiple writers, upon recovery.
-- In your configuration, under the akka.persistence.journal.xxx.replay-filter section  
-    - (where xxx is your journal plugin id),  
+- In your configuration, under the `akka.persistence.journal.xxx.replay-filter` section  
+    - (where `xxx` is your journal plugin id),  
     - you can select the replay filter mode from one of the following values:
         - repair-by-discard-old
         - fail
@@ -722,9 +727,9 @@ akka.persistence.journal.leveldb.replay-filter {
     - and experiencing long recovery times.
 - Sometimes, the right approach may be to split out into a set of shorter lived actors.
 - However, when this is not an option, you can use snapshots to reduce recovery times drastically.
-- Persistent actors can save snapshots of internal state by calling the saveSnapshot method.
-- If saving of a snapshot succeeds, the persistent actor receives a SaveSnapshotSuccess message,  
-    - otherwise a SaveSnapshotFailure message
+- Persistent actors can save snapshots of internal state by calling the `saveSnapshot` method.
+- If saving of a snapshot succeeds, the persistent actor receives a `SaveSnapshotSuccess` message,  
+    - otherwise a `SaveSnapshotFailure` message
 ```scala
 var state: Any = _
 
@@ -740,11 +745,11 @@ override def receiveCommand: Receive = {
     }
 }
 ```
-- where metadata is of type SnapshotMetadata:
+- where `metadata` is of type `SnapshotMetadata`:
 ```scala
 final case class SnapshotMetadata(persistenceId: String, sequenceNr: Long, timestamp: Long = 0L)
 ```
-- During recovery, the persistent actor is offered a previously saved snapshot via a SnapshotOffer message  
+- During recovery, the persistent actor is offered a previously saved snapshot via a `SnapshotOffer` message  
     - from which it can initialize internal state.
 ```scala
 var state: Any = _
@@ -755,34 +760,34 @@ override def receiveRecover: Receive = {
   case event                                    ⇒ // ...
 }
 ```
-- The replayed messages that follow the SnapshotOffer message, if any, are younger than the offered snapshot.
+- The replayed messages that follow the `SnapshotOffer` message, if any, are younger than the offered snapshot.
 - They finally recover the persistent actor to its current (i.e. latest) state.
 - In general, a persistent actor is only offered a snapshot if that persistent actor  
     - has previously saved one or more snapshots  
-    - and at least one of these snapshots matches the SnapshotSelectionCriteria that can be specified for recovery.
+    - and at least one of these snapshots matches the `SnapshotSelectionCriteria` that can be specified for recovery.
 ```scala
 override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
   maxSequenceNr = 457L,
   maxTimestamp = System.currentTimeMillis))
 ```
-- If not specified, they default to SnapshotSelectionCriteria.Latest which selects the latest (= youngest) snapshot.
-- To disable snapshot-based recovery, applications should use SnapshotSelectionCriteria.None.
-- A recovery where no saved snapshot matches the specified SnapshotSelectionCriteria will replay all journaled messages.
+- If not specified, they default to `SnapshotSelectionCriteria.Latest` which selects the latest (= youngest) snapshot.
+- To disable snapshot-based recovery, applications should use `SnapshotSelectionCriteria.None`.
+- A recovery where no saved snapshot matches the specified `SnapshotSelectionCriteria` will replay all journaled messages.
 
 #### Note
-- In order to use snapshots, a default snapshot-store (akka.persistence.snapshot-store.plugin) must be configured,  
-    - or the PersistentActor can pick a snapshot store explicitly by overriding def snapshotPluginId: String.
+- In order to use snapshots, a default snapshot-store (`akka.persistence.snapshot-store.plugin`) must be configured,  
+    - or the `PersistentActor` can pick a snapshot store explicitly by overriding `def snapshotPluginId: String`.
 - Since it is acceptable for some applications to not use any snapshotting, it is legal to not configure a snapshot store.
 - However, Akka will log a warning message when this situation is detected  
     - and then continue to operate until an actor tries to store a snapshot,  
-    - at which point the operation will fail (by replying with an SaveSnapshotFailure for example).
+    - at which point the operation will fail (by replying with an `SaveSnapshotFailure` for example).
 - Note that the "persistence mode" of Cluster Sharding makes use of snapshots.
 - If you use that mode, you’ll need to define a snapshot store plugin.
 
 ## Snapshot deletion
-- A persistent actor can delete individual snapshots by calling the deleteSnapshot method  
+- A persistent actor can delete individual snapshots by calling the `deleteSnapshot` method  
     - with the sequence number of when the snapshot was taken.
-- To bulk-delete a range of snapshots matching SnapshotSelectionCriteria, persistent actors should use the deleteSnapshots method.
+- To bulk-delete a range of snapshots matching `SnapshotSelectionCriteria`, persistent actors should use the `deleteSnapshots` method.
 
 ## Snapshot status handling
 - Saving or deleting snapshots can either succeed or fail 
@@ -804,42 +809,45 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 
 # At-Least-Once Delivery
 - To send messages with at-least-once delivery semantics to destinations  
-    - you can mix-in AtLeastOnceDelivery trait to your PersistentActor on the sending side.
+    - you can mix-in `AtLeastOnceDelivery` trait to your `PersistentActor` on the sending side.
 - It takes care of re-sending messages when they have not been confirmed within a configurable timeout.
 - The state of the sending actor,  
     - including which messages have been sent that have not been confirmed by the recipient  
     - must be persistent so that it can survive a crash of the sending actor or JVM.
-- The AtLeastOnceDelivery trait does not persist anything by itself.
+- The `AtLeastOnceDelivery` trait does not persist anything by itself.
 - It is your responsibility to persist the intent that a message is sent and that a confirmation has been received.
+
 #### Note
 - At-least-once delivery implies that original message sending order is not always preserved,  
     - and the destination may receive duplicate messages.
-- Semantics do not match those of a normal ActorRef send operation:
+- Semantics do not match those of a normal `ActorRef` send operation:
     - it is not at-most-once delivery
     - message order for the same sender-receiver pair is not preserved due to possible resends
     - after a crash and restart of the destination messages are still delivered to the new actor incarnation
-- These semantics are similar to what an ActorPath represents (see Actor Lifecycle),  
+- These semantics are similar to what an `ActorPath` represents (see Actor Lifecycle),  
     - therefore you need to supply a path and not a reference when delivering messages.
 - The messages are sent to the path with an actor selection.
-- Use the deliver method to send a message to a destination.
-- Call the confirmDelivery method when the destination has replied with a confirmation message.
+##
 
-## Relationship between deliver and confirmDelivery
-- To send messages to the destination path, use the deliver method after you have persisted the intent to send the message.
+- Use the `deliver` method to send a message to a destination.
+- Call the `confirmDelivery` method when the destination has replied with a confirmation message.
+
+## Relationship between `deliver` and `confirmDelivery`
+- To send messages to the destination path, use the `deliver` method after you have persisted the intent to send the message.
 - The destination actor must send back a confirmation message.
 - When the sending actor receives this confirmation message  
-    - you should persist the fact that the message was delivered successfully and then call the confirmDelivery method.
-- If the persistent actor is not currently recovering, the deliver method will send the message to the destination actor.
-- When recovering, messages will be buffered until they have been confirmed using confirmDelivery.
+    - you should persist the fact that the message was delivered successfully and then call the `confirmDelivery` method.
+- If the persistent actor is not currently recovering, the `deliver` method will send the message to the destination actor.
+- When recovering, messages will be buffered until they have been confirmed using `confirmDelivery`.
 - Once recovery has completed,  
     - if there are outstanding messages that have not been confirmed (during the message replay),  
     - the persistent actor will resend these before sending any other messages.
-- Deliver requires a deliveryIdToMessage function to pass the provided deliveryId into the message  
-    - so that the correlation between deliver and confirmDelivery is possible.
-- The deliveryId must do the round trip.
+- Deliver requires a `deliveryIdToMessage` function to pass the provided deliveryId into the message  
+    - so that the correlation between `deliver` and `confirmDelivery` is possible.
+- The `deliveryId` must do the round trip.
 - Upon receipt of the message,  
-    - the destination actor will send the samedeliveryId wrapped in a confirmation message back to the sender.
-- The sender will then use it to call confirmDelivery method to complete the delivery routine.
+    - the destination actor will send the same `deliveryId` wrapped in a confirmation message back to the sender.
+- The sender will then use it to call `confirmDelivery` method to complete the delivery routine.
 ```scala
 import akka.actor.{ Actor, ActorSelection }
 import akka.persistence.AtLeastOnceDelivery

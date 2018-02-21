@@ -1,7 +1,5 @@
 package persistence.persistasync
 
-import java.util.Date
-
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -21,10 +19,8 @@ class PersistAsyncActorSpec(_system: ActorSystem) extends TestKit(_system)
     "work" in {
       val persistentActor = system.actorOf(Props[PersistAsyncActor], "PersistAsyncActor")
 
-      val date = new Date().toString
-
-      persistentActor ! s"A - $date"
-      persistentActor ! s"B - $date"
+      persistentActor ! "a"
+      persistentActor ! "b"
 
       // Print possible order of received messages:
       (1 to 6).foreach { _ =>
@@ -32,6 +28,7 @@ class PersistAsyncActorSpec(_system: ActorSystem) extends TestKit(_system)
           case msg ⇒ println(s"Received $msg")
         }
       }
+
       expectNoMessage(1.second)
 
     }
