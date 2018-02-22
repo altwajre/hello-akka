@@ -1,8 +1,9 @@
-package persistence.persistasync
+package persistence.shutdown
 
 import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+
 import scala.concurrent.duration._
 
 class SafePersistentActorSpec(_system: ActorSystem) extends TestKit(_system)

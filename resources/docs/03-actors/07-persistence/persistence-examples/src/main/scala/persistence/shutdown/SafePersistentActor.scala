@@ -1,4 +1,4 @@
-package persistence.persistasync
+package persistence.shutdown
 
 import akka.persistence.PersistentActor
 

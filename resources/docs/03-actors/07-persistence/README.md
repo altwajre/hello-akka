@@ -644,6 +644,7 @@ context.actorOf(props, name = "mySupervisor")
 
 - The example below highlights how messages arrive in the Actor’s mailbox  
     - and how they interact with its internal stashing mechanism when `persist()` is used.
+    - See [test Code](./persistence-examples/src/test/scala/persistence/)
 - Notice the early stop behaviour that occurs when `PoisonPill` is used:
 
 ```scala
