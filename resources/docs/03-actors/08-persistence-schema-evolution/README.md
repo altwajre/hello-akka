@@ -36,16 +36,23 @@ The system needs to be able to continue to work in the presence of “old” eve
 - This allows the business logic layer to focus on solving business problems instead of having to explicitly deal with different schemas.
 
 In summary, schema evolution in event sourced systems exposes the following characteristics:
-- Allow the system to continue operating without large scale migrations to be applied,
-- Allow the system to read “old” events from the underlying storage, 
-    - however present them in a “new” view to the application logic,
+- Allow the system to continue operating without large scale migrations to be applied.
+- Allow the system to read “old” events from the underlying storage,
+    - however present them in a “new” view to the application logic.
 - Transparently promote events to the latest versions during recovery (or queries) 
-    - such that the business logic need not consider multiple versions of events
+    - such that the business logic need not consider multiple versions of events.
 
 ## Types of schema evolution
-Before we explain the various techniques that can be used to safely evolve the schema of your persistent events over time, we first need to define what the actual problem is, and what the typical styles of changes are.
+Before we explain the various techniques that can be used to safely evolve the schema of your persistent events over time, 
+- we first need to define what the actual problem is, and what the typical styles of changes are.
 
-Since events are never deleted, we need to have a way to be able to replay (read) old events, in such way that does not force the PersistentActor to be aware of all possible versions of an event that it may have persisted in the past. Instead, we want the Actors to work on some form of “latest” version of the event and provide some means of either converting old “versions” of stored events into this “latest” event type, or constantly evolve the event definition - in a backwards compatible way - such that the new deserialization code can still read old events.
+Since events are never deleted, we need to have a way to be able to replay (read) old events, 
+- in such way that does not force the PersistentActor to be aware of all possible versions of an event 
+- that it may have persisted in the past. 
+- Instead, we want the Actors to work on some form of “latest” version of the event 
+- and provide some means of either converting old “versions” of stored events into this “latest” event type, 
+- or constantly evolve the event definition - in a backwards compatible way 
+- such that the new deserialization code can still read old events.
 
 The most common schema changes you will likely are:
 - adding a field to an event type,
@@ -56,31 +63,62 @@ The most common schema changes you will likely are:
 The following sections will explain some patterns which can be used to safely evolve your schema when facing those changes.
 
 # Picking the right serialization format
-Picking the serialization format is a very important decision you will have to make while building your application. It affects which kind of evolutions are simple (or hard) to do, how much work is required to add a new datatype, and, last but not least, serialization performance.
+Picking the serialization format is a very important decision you will have to make while building your application. 
+- It affects which kind of evolutions are simple (or hard) to do, 
+- how much work is required to add a new datatype, 
+- and serialization performance.
 
-If you find yourself realising you have picked “the wrong” serialization format, it is always possible to change the format used for storing new events, however you would have to keep the old deserialization code in order to be able to replay events that were persisted using the old serialization scheme. It is possible to “rebuild” an event-log from one serialization format to another one, however it may be a more involved process if you need to perform this on a live system.
+If you find yourself realising you have picked “the wrong” serialization format, 
+- it is always possible to change the format used for storing new events, 
+- however you would have to keep the old deserialization code in order to be able to replay events 
+- that were persisted using the old serialization scheme. 
+- It is possible to “rebuild” an event-log from one serialization format to another one, 
+- however it may be a more involved process if you need to perform this on a live system.
 
-Binary serialization formats that we have seen work well for long-lived applications include the very flexible IDL based: Google Protobuf, Apache Thrift or Apache Avro. Avro schema evolution is more “entire schema” based, instead of single fields focused like in protobuf or thrift, and usually requires using some kind of schema registry.
+Binary serialization formats that we have seen work well for long-lived applications include the very flexible IDL based: 
+- Google Protobuf, 
+- Apache Thrift
+- or Apache Avro. 
 
-Users who want their data to be human-readable directly in the write-side datastore may opt to use plain-old JSON as the storage format, though that comes at a cost of lacking support for schema evolution and relatively large marshalling latency.
+Avro schema evolution is more “entire schema” based, instead of single fields focused like in protobuf or thrift, 
+- and usually requires using some kind of schema registry.
 
-There are plenty excellent blog posts explaining the various trade-offs between popular serialization formats, one post we would like to highlight is the very well illustrated Schema evolution in Avro, Protocol Buffers and Thrift by Martin Kleppmann.
+Users who want their data to be human-readable directly in the write-side datastore
+-  may opt to use plain-old JSON as the storage format, 
+- though that comes at a cost of lacking support for schema evolution and relatively large marshalling latency.
+
+There are plenty excellent blog posts explaining the various trade-offs between popular serialization formats, 
+- one post we would like to highlight is the very well illustrated Schema evolution in Avro, Protocol Buffers and Thrift by Martin Kleppmann.
 
 ## Provided default serializers
-Akka Persistence provides Google Protocol Buffers based serializers (using Akka Serialization) for it’s own message types such as PersistentRepr, AtomicWrite and snapshots. Journal plugin implementations may choose to use those provided serializers, or pick a serializer which suits the underlying database better.
+Akka Persistence provides Google Protocol Buffers based serializers 
+- (using Akka Serialization) for it’s own message types such as 
+- PersistentRepr, AtomicWrite and snapshots. 
+- Journal plugin implementations may choose to use those provided serializers, 
+- or pick a serializer which suits the underlying database better.
 
 #### Note
-Serialization is NOT handled automatically by Akka Persistence itself. Instead, it only provides the above described serializers, and in case a AsyncWriteJournal plugin implementation chooses to use them directly, the above serialization scheme will be used.
+Serialization is NOT handled automatically by Akka Persistence itself. 
+- Instead, it only provides the above described serializers, 
+- and in case a AsyncWriteJournal plugin implementation chooses to use them directly, 
+- the above serialization scheme will be used.
 
 Please refer to your write journal’s documentation to learn more about how it handles serialization!
 
-For example, some journals may choose to not use Akka Serialization at all and instead store the data in a format that is more “native” for the underlying datastore, e.g. using JSON or some other kind of format that the target datastore understands directly.
+For example, some journals may choose to not use Akka Serialization at all 
+- and instead store the data in a format that is more “native” for the underlying datastore, 
+- e.g. using JSON or some other kind of format that the target datastore understands directly.
 ##
 
-The below figure explains how the default serialization scheme works, and how it fits together with serializing the user provided message itself, which we will from here on refer to as the payload (highlighted in yellow):
+The below figure explains how the default serialization scheme works, 
+- and how it fits together with serializing the user provided message itself, 
+- which we will from here on refer to as the payload (highlighted in yellow):
 ![persistent-message-envelope.png](https://doc.akka.io/docs/akka/current/images/persistent-message-envelope.png)
 
-Akka Persistence provided serializers wrap the user payload in an envelope containing all persistence-relevant information. If the Journal uses provided Protobuf serializers for the wrapper types (e.g. PersistentRepr), then the payload will be serialized using the user configured serializer, and if none is provided explicitly, Java serialization will be used for it.
+Akka Persistence provided serializers wrap the user payload in an envelope containing all persistence-relevant information. 
+- If the Journal uses provided Protobuf serializers for the wrapper types (e.g. PersistentRepr), 
+- then the payload will be serialized using the user configured serializer, 
+- and if none is provided explicitly, Java serialization will be used for it.
 
 The blue colored regions of the PersistentMessage indicate what is serialized using the generated protocol buffers serializers, and the yellow payload indicates the user provided event (by calling persist(payload)(...)). As you can see, the PersistentMessage acts as an envelope around the payload, adding various fields related to the origin of the event (persistenceId, sequenceNr and more).
 
