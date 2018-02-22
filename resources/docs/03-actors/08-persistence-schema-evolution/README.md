@@ -7,6 +7,7 @@ When working on long running projects using Persistence, or any kind of Event So
 In fact, if a project matures to the point where you need to evolve its schema to adapt to changing business requirements
 - you can view this as first signs of its success 
 - if you wouldn’t need to adapt anything over an apps lifecycle that could mean that no-one is really using it actively.
+
 In this chapter we will investigate various schema evolution strategies and techniques 
 - from which you can pick and choose the ones that match your domain and challenge at hand.
 
