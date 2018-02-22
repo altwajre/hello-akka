@@ -678,7 +678,7 @@ The EventAdapter splits the incoming event into smaller more fine grained events
 
 During recovery however, we now need to convert the old `V1` model into the `V2` representation of the change. 
 - Depending if the old event contains a name change, we either emit the `UserNameChanged` or we don’t, 
-- and the address change is handled similarily:
+- and the address change is handled similarly:
 ```scala
 trait V1
 trait V2
