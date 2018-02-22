@@ -1,6 +1,6 @@
 # Schema Evolution - Overview
 
-When working on long running projects using [Persistence](TODO), or any kind of [Event Sourcing](TODO) architectures, 
+When working on long running projects using [Persistence](../07-persistence), or any kind of [Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) architectures, 
 - schema evolution becomes one of the more important technical aspects of developing your application. 
 - The requirements as well as our own understanding of the business domain may (and will) change in time.
 
@@ -24,15 +24,15 @@ Sometimes, based on the capabilities of your serialization formats,
 In recent years we have observed a tremendous move towards immutable append-only datastores, 
 - with event-sourcing being the prime technique successfully being used in these settings. 
 - For an excellent overview why and how immutable data makes scalability and systems design much simpler 
-- you may want to read Pat Helland’s excellent [Immutability Changes Everything](TODO) whitepaper.
+- you may want to read Pat Helland’s excellent [Immutability Changes Everything](http://www.cidrdb.org/cidr2015/Papers/CIDR15_Paper16.pdf) whitepaper.
 
-Since with [Event Sourcing](TODO) the events are immutable and usually never deleted 
+Since with [Event Sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) the events are immutable and usually never deleted 
 - the way schema evolution is handled differs from how one would go about it in a mutable database setting 
 - (e.g. in typical CRUD database applications).
 
 The system needs to be able to continue to work in the presence of "old" events which were stored under the "old" schema. 
 - We also want to limit complexity in the business logic layer, 
-- exposing a consistent view over all of the events of a given type to PersistentActor s and [persistence queries](TODO). 
+- exposing a consistent view over all of the events of a given type to PersistentActor s and [persistence queries](../09-persistence-query). 
 - This allows the business logic layer to focus on solving business problems instead of having to explicitly deal with different schemas.
 
 In summary, schema evolution in event sourced systems exposes the following characteristics:
@@ -55,10 +55,10 @@ Since events are never deleted, we need to have a way to be able to replay (read
 - such that the new deserialization code can still read old events.
 
 The most common schema changes you will likely are:
-- [adding a field to an event type](TODO),
-- [remove or rename field in event type](TODO),
-- [remove event type](TODO),
-- [split event into multiple smaller events](TODO).
+- [adding a field to an event type](#add-fields),
+- [remove or rename field in event type](#rename-fields),
+- [remove event type](#remove-event-class-and-ignore-events),
+- [split event into multiple smaller events](#split-large-event-into-fine-grained-events).
 
 The following sections will explain some patterns which can be used to safely evolve your schema when facing those changes.
 
@@ -76,9 +76,9 @@ If you find yourself realising you have picked "the wrong" serialization format,
 - however it may be a more involved process if you need to perform this on a live system.
 
 Binary serialization formats that we have seen work well for long-lived applications include the very flexible IDL based: 
-- [Google Protobuf](TODO),
-- [Apache Thrift](TODO),
-- [or Apache Avro](TODO). 
+- [Google Protobuf](https://developers.google.com/protocol-buffers),
+- [Apache Thrift](https://thrift.apache.org/),
+- [Apache Avro](https://avro.apache.org/). 
 
 Avro schema evolution is more "entire schema" based, instead of single fields focused like in protobuf or thrift, 
 - and usually requires using some kind of schema registry.
@@ -89,11 +89,11 @@ Users who want their data to be human-readable directly in the write-side datast
 
 There are plenty excellent blog posts explaining the various trade-offs between popular serialization formats, 
 - one post we would like to highlight is the very well illustrated:
-- [Schema evolution in Avro, Protocol Buffers and Thrift by Martin Kleppmann](TODO).
+- [Schema evolution in Avro, Protocol Buffers and Thrift by Martin Kleppmann](http://martin.kleppmann.com/2012/12/05/schema-evolution-in-avro-protocol-buffers-thrift.html).
 
 ## Provided default serializers
-Akka Persistence provides [Google Protocol Buffers](TODO) based serializers 
-- (using [Akka Serialization](TODO)) for it’s own message types such as 
+Akka Persistence provides [Google Protocol Buffers](https://developers.google.com/protocol-buffers) based serializers 
+- (using [Akka Serialization](../../07-networking/03-serialization)) for it’s own message types such as 
 - PersistentRepr, AtomicWrite and snapshots. 
 - Journal plugin implementations may choose to use those provided serializers, 
 - or pick a serializer which suits the underlying database better.
@@ -127,7 +127,7 @@ The blue colored regions of the PersistentMessage indicate what is serialized us
 - As you can see, the PersistentMessage acts as an envelope around the payload, 
 - adding various fields related to the origin of the event (persistenceId, sequenceNr and more).
 
-More advanced techniques (e.g. [Remove event class and ignore events](TODO)) 
+More advanced techniques (e.g. [Remove event class and ignore events](#remove-event-class-and-ignore-events)) 
 - will dive into using the manifests for increasing the flexibility of the persisted vs. exposed types even more. 
 - However for now we will focus on the simpler evolution techniques, concerning simply configuring the payload serializers.
 
@@ -144,12 +144,12 @@ Do not rely on Java serialization
 - and its performance is also not very high (it never was designed for high-throughput scenarios).
 
 ## Configuring payload serializers
-This section aims to highlight the complete basics on how to define custom serializers using [Akka Serialization](TODO). 
+This section aims to highlight the complete basics on how to define custom serializers using [Akka Serialization](../../07-networking/03-serialization). 
 - Many journal plugin implementations use Akka Serialization, 
 - thus it is tremendously important to understand how to configure it to work with your event classes.
 
 #### Note
-Read the [Akka Serialization](TODO) docs to learn more about defining custom serializers, 
+Read the [Akka Serialization](../../07-networking/03-serialization) docs to learn more about defining custom serializers, 
 - to improve performance and maintainability of your system. Do not depend on Java serialization for production deployments.
 ##
 
@@ -222,7 +222,7 @@ akka {
 Deserialization will be performed by the same serializer which serialized the message initially 
 - because of the identifier being stored together with the message.
 
-Please refer to the [Akka Serialization](TODO) documentation for more advanced use of serializers, 
+Please refer to the [Akka Serialization](../../07-networking/03-serialization) documentation for more advanced use of serializers, 
 - especially the [Serializer with String Manifest](TODO) section 
 - since it is very useful for Persistence based applications dealing with schema evolutions, 
 - as we will see in some of the examples below.
@@ -242,7 +242,7 @@ You need to add a field to an existing message type.
 Adding fields is the most common change you’ll need to apply to your messages 
 - so make sure the serialization format you picked for your payloads can handle it apropriately, 
 - i.e. such changes should be binary compatible. This is easily achieved using the right serializer toolkit 
-- we recommend something like [Google Protocol Buffers](TODO) or [Apache Thrift](TODO) however other tools may fit your needs just as well 
+- we recommend something like [Google Protocol Buffers](https://developers.google.com/protocol-buffers) or [Apache Thrift](https://thrift.apache.org/) however other tools may fit your needs just as well 
 - picking a serializer backend is something you should research before picking one to run with. 
 - In the following examples we will be using protobuf, mostly because we are familiar with it, 
 - it does its job well and Akka is using it internally as well.
@@ -390,7 +390,7 @@ This approach is popular when your serialization format is something like JSON,
 - where renames can not be performed automatically by the serializer. 
 - You can do these kinds of "promotions" either manually 
 - (as shown in the example below) 
-- or using a library like [Stamina](TODO) which helps to create those V1->V2->V3->...->Vn promotion chains without much boilerplate.
+- or using a library like [Stamina](https://github.com/scalapenos/stamina) which helps to create those V1->V2->V3->...->Vn promotion chains without much boilerplate.
 
 ![persistence-manual-rename.png](https://doc.akka.io/docs/akka/current/images/persistence-manual-rename.png)
 
@@ -449,7 +449,7 @@ The problem of removing an event type from the domain model is not as much its r
 - as the implications for the recovery mechanisms that this entails. 
 - For example: 
 - A naive way of filtering out certain kinds of events from being delivered to a recovering PersistentActor is pretty simple, 
-- as one can simply filter them out in an [EventAdapter](TODO):
+- as one can simply filter them out in an [EventAdapter](../07-persistence#event-adapters):
 
 ![persistence-drop-event.png](https://doc.akka.io/docs/akka/current/images/persistence-drop-event.png)
 
@@ -543,7 +543,7 @@ You want to separate
 
 Another situation where this technique may be useful 
 - is when your serialization tool of choice requires generated classes to be used for serialization and deserialization of objects, 
-- like for example [Google Protocol Buffers](TODO) do, 
+- like for example [Google Protocol Buffers](https://developers.google.com/protocol-buffers) do, 
 - yet you do not want to leak this implementation detail into the domain model itself, 
 - which you’d like to model as plain Scala case classes.
 
@@ -605,7 +605,7 @@ The same technique could also be used directly in the Serializer if the end resu
 You want to keep your persisted events in a human-readable format, for example JSON.
 
 ### Solution: 
-This is a special case of the [Detach domain model from data model](TODO) pattern, 
+This is a special case of the [Detach domain model from data model](#detach-domain-model-from-data-model) pattern, 
 - and thus requires some co-operation from the Journal implementation to achieve this.
 
 An example of a Journal which may implement this pattern is MongoDB, 
@@ -638,7 +638,7 @@ class JsonDataModelAdapter extends EventAdapter {
 This technique only applies if the Akka Persistence plugin you are using provides this capability. 
 - Check the documentation of your favourite plugin to see if it supports this style of persistence.
 
-If it doesn’t, you may want to skim the [list of existing journal plugins](TODO), 
+If it doesn’t, you may want to skim the [list of existing journal plugins](http://akka.io/community/?_ga=2.93258013.1460082199.1519288472-542223074.1518507267#journal-plugins), 
 - just in case some other plugin for your favourite datastore does provide this capability.
 #
 
@@ -650,7 +650,7 @@ In fact, an AsyncWriteJournal implementation could natively decide to not use bi
 
 #### Note
 If in need of human-readable events on the write-side of your application 
-- reconsider whether preparing materialized views using [Persistence Query](TODO) would not be an efficient way to go about this, 
+- reconsider whether preparing materialized views using [Persistence Query](../09-persistence-query) would not be an efficient way to go about this, 
 - without compromising the write-side’s throughput characteristics.
 
 If indeed you want to use a human-readable representation on the write-side, 
