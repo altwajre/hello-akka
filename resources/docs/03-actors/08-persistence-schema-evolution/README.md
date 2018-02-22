@@ -564,9 +564,9 @@ In order to detach:
 
 Domain events (**A**) are adapted to the data model events (**D**) by the `EventAdapter`. 
 - The data model can be a format natively understood by the journal, 
-- such that it can store it more efficiently 
+- such that it can store it more efficiently, 
 - or include additional data for the event 
-- (e.g. tags to simplify querying).
+    - (e.g. tags to simplify querying).
 
 We will use the following domain and data models to showcase how the separation can be implemented by the adapter:
 ```scala
@@ -661,7 +661,8 @@ If in need of human-readable events on the write-side of your application
 - without compromising the write-side’s throughput characteristics.
 
 If indeed you want to use a human-readable representation on the write-side, 
-- pick a Persistence plugin that provides that functionality, or - implement one yourself.
+- pick a Persistence plugin that provides that functionality, 
+- or implement one yourself.
 
 ## Split large event into fine-grained events
 ### Situation: 
