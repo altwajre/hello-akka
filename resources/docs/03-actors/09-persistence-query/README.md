@@ -139,9 +139,11 @@ class MyTaggingEventAdapter extends WriteEventAdapter {
 
 
 #### Note
-A very important thing to keep in mind when using queries spanning multiple persistenceIds, (such as `EventsByTag`) is that:
+When using queries spanning multiple persistenceIds, 
+- such as `EventsByTag`,
 - the order of events at which the events appear in the stream is not guaranteed 
 - (or stable between materializations).
+
 Journals may choose to opt for strict ordering of the events, 
 - and should then document explicitly what kind of ordering guarantee they provide 
 - for example "ordered by timestamp ascending, independently of persistenceId" is easy to achieve on relational databases, 
