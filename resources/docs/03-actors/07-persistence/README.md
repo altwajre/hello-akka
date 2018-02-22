@@ -1157,10 +1157,10 @@ stop applying OrderDiscarded andThen {
     saveStateSnapshot()
 }
 ```
-- On recovery state data is initialized according to the latest available snapshot,  
+- On recovery, state data is initialized according to the latest available snapshot,  
     - then the remaining domain events are replayed, triggering the `applyEvent` method.
 
-# Periodical snapshot by snapshot-after
+# Periodical snapshot by `snapshot-after`
 - You can enable periodical `saveStateSnapshot()` calls in `PersistentFSM` if you turn the following flag on in `reference.conf`
 ```hocon
 akka.persistence.fsm.snapshot-after = 1000
@@ -1177,8 +1177,7 @@ akka.persistence.fsm.snapshot-after = 1000
 
 # Storage plugins
 - Storage backends for journals and snapshot stores are pluggable in the Akka persistence extension.
-- A directory of persistence journal and snapshot store plugins is available at the Akka Community Projects page,  
-    - see [Community plugins](http://akka.io/community)
+- A directory of persistence journal and snapshot store plugins is available at the [Akka Community Projects page](http://akka.io/community)  
 - Plugins can be selected either by "default" for all persistent actors, or "individually",  
     - when a persistent actor defines its own set of plugins.
 - When a persistent actor does NOT override the `journalPluginId` and `snapshotPluginId` methods,  
@@ -1204,11 +1203,11 @@ import akka.persistence.snapshot._
 ## Eager initialization of persistence plugin
 - By default, persistence plugins are started on-demand, as they are used.
 - In some case, however, it might be beneficial to start a certain plugin eagerly.
-- In order to do that, you should first add `akka.persistence.Persistence` under the `akka.extensions key`.
+- In order to do that, you should first add `akka.persistence.Persistence` under the `akka.extensions` key.
 - Then, specify the IDs of plugins you wish to start automatically  
     - under `akka.persistence.journal.auto-start-journals`  
     - and `akka.persistence.snapshot-store.auto-start-snapshot-stores`.
-- For example, if you want eager initialization for the leveldb journal plugin and the local snapshot store plugin,  
+- For example, if you want eager initialization for the LevelDB journal plugin and the local snapshot store plugin,  
     - your configuration should look like this: 
 ```hocon
 akka {
@@ -1406,9 +1405,9 @@ my-journal {
     - so the methods corresponding to requests from persistent actors are executed sequentially.
 - It may delegate to asynchronous libraries, spawn futures, or delegate to other actors to achieve parallelism.
 - The journal plugin class must have a constructor with one of these signatures:
-    - constructor with one `com.typesafe.config.Config` parameter and a `String` parameter for the config path
-    - constructor with one `com.typesafe.config.Config` parameter
-    - constructor without parameters
+    - Constructor with one `com.typesafe.config.Config` parameter and a `String` parameter for the config path.
+    - Constructor with one `com.typesafe.config.Config` parameter.
+    - Constructor without parameters.
 - The plugin section of the actor system’s config will be passed in the config constructor parameter.
 - The config path of the plugin is passed in the `String` parameter.
 - The `plugin-dispatcher` is the dispatcher used for the plugin actor.
