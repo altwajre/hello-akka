@@ -83,64 +83,64 @@ In these examples, the maximum durations you will find mentioned below are left 
 - which itself defaults to 3 seconds (or they obey the innermost enclosing Within as detailed below)
 - The full signatures are:
 
-### `expectMsg[T](d: Duration, msg: T): T` 
+#### `expectMsg[T](d: Duration, msg: T): T` 
 The given message object must be received within the specified time; the object will be returned.
 
-### `expectMsgPF[T](d: Duration)(pf: PartialFunction[Any, T]): T` 
+#### `expectMsgPF[T](d: Duration)(pf: PartialFunction[Any, T]): T` 
 Within the given time period, a message must be received and the given partial function must be defined for that message;
 - the result from applying the partial function to the received message is returned.
 - The duration may be left unspecified 
 - (empty parentheses are required in this case) 
 - to use the deadline from the innermost enclosing within block instead.
 
-### `expectMsgClass[T](d: Duration, c: Class[T]): T` 
+#### `expectMsgClass[T](d: Duration, c: Class[T]): T` 
 An object which is an instance of the given Class must be received within the allotted time frame; 
 - the object will be returned.
 - Note that this does a conformance check; if you need the class to be equal, 
 - have a look at expectMsgAllClassOf with a single given class argument.
 
-### `expectMsgType[T: Manifest](d: Duration)` 
+#### `expectMsgType[T: Manifest](d: Duration)` 
 An object which is an instance of the given type (after erasure) must be received within the allotted time frame; 
 - the object will be returned
 - This method is approximately equivalent to expectMsgClass(implicitly[ClassTag[T]].runtimeClass).]
 
-### `expectMsgAnyOf[T](d: Duration, obj: T*): T` 
+#### `expectMsgAnyOf[T](d: Duration, obj: T*): T` 
 An object must be received within the given time, and it must be equal ( compared with ==) to at least one of the passed reference objects; the received object will be returned.
 
-### `expectMsgAnyClassOf[T](d: Duration, obj: Class[_ <: T]*): T` 
+#### `expectMsgAnyClassOf[T](d: Duration, obj: Class[_ <: T]*): T` 
 An object must be received within the given time, and it must be an instance of at least one of the supplied Class objects; the received object will be returned
 - Note that this does a conformance check, if you need the class to be equal you need to verify that afterwards.
 
-### `expectMsgAllOf[T](d: Duration, obj: T*): Seq[T]` 
+#### `expectMsgAllOf[T](d: Duration, obj: T*): Seq[T]` 
 A number of objects matching the size of the supplied object array must be received within the given time, and for each of the given objects there must exist at least one among the received ones which equals (compared with ==) it
 - The full sequence of received objects is returned in the order received.
 
-### `expectMsgAllClassOf[T](d: Duration, c: Class[_ <: T]*): Seq[T]` 
+#### `expectMsgAllClassOf[T](d: Duration, c: Class[_ <: T]*): Seq[T]` 
 A number of objects matching the size of the supplied Class array must be received within the given time, and for each of the given classes there must exist at least one among the received objects whose class equals (compared with ==) it (this is not a conformance check)
 - The full sequence of received objects is returned.
 
-### `expectMsgAllConformingOf[T](d: Duration, c: Class[_ <: T]*): Seq[T]` 
+#### `expectMsgAllConformingOf[T](d: Duration, c: Class[_ <: T]*): Seq[T]` 
 A number of objects matching the size of the supplied Class array must be received within the given time, and for each of the given classes there must exist at least one among the received objects which is an instance of this class
 - The full sequence of received objects is returned.
 
-### `expectNoMsg(d: Duration)` 
+#### `expectNoMsg(d: Duration)` 
 No message must be received within the given time
 - This also fails if a message has been received before calling this method which has not been removed from the queue using one of the other methods.
 
-### `receiveN(n: Int, d: Duration): Seq[AnyRef]` 
+#### `receiveN(n: Int, d: Duration): Seq[AnyRef]` 
 n messages must be received within the given time; the received messages are returned.
 
-### `fishForMessage(max: Duration, hint: String)(pf: PartialFunction[Any, Boolean]): Any` 
+#### `fishForMessage(max: Duration, hint: String)(pf: PartialFunction[Any, Boolean]): Any` 
 Keep receiving messages as long as the time is not used up and the partial function matches and returns false
 - Returns the message received for which it returned true or throws an exception, which will include the provided hint for easier debugging.
 
 In addition to message reception assertions there are also methods which help with message flows:
 
-### `receiveOne(d: Duration): AnyRef` 
+#### `receiveOne(d: Duration): AnyRef` 
 Tries to receive one message for at most the given time interval and returns null in case of failure
 - If the given Duration is zero, the call is non-blocking (polling mode).
 
-### `receiveWhile[T](max: Duration, idle: Duration, messages: Int)(pf: PartialFunction[Any, T]): Seq[T]` 
+#### `receiveWhile[T](max: Duration, idle: Duration, messages: Int)(pf: PartialFunction[Any, T]): Seq[T]` 
 Collect messages as long as
         they are matching the given partial function
         the given time interval is not used up
@@ -149,11 +149,11 @@ Collect messages as long as
 - The maximum duration defaults to the time remaining in the innermost enclosing within block and the idle duration defaults to infinity (thereby disabling the idle timeout feature)
 - The number of expected messages defaults to Int.MaxValue, which effectively disables this limit.
 
-### `awaitCond(p: => Boolean, max: Duration, interval: Duration)` 
+#### `awaitCond(p: => Boolean, max: Duration, interval: Duration)` 
 Poll the given condition every interval until it returns true or the max duration is used up
 - The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing within block.
 
-### `awaitAssert(a: => Any, max: Duration, interval: Duration)` 
+#### `awaitAssert(a: => Any, max: Duration, interval: Duration)` 
 Poll the given assert function every interval until it does not throw an exception or the max duration is used up
 - If the timeout expires the last exception is thrown
 - The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing within block
