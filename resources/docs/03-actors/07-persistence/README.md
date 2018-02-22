@@ -896,10 +896,10 @@ class MyDestination extends Actor {
 - However, you can send a custom correlation identifier in the message to the destination.
 - You must then retain a mapping between  
     - the internal `deliveryId` (passed into the `deliveryIdToMessage` function)  
-    - and your custom correlation id (passed into the message).
+    - and your custom correlation ID (passed into the message).
 - You can do this by storing such mapping in a `Map(correlationId -> deliveryId)` 
     - from which you can retrieve the `deliveryId` to be passed into the confirmDelivery method  
-    - once the receiver of your message has replied with your custom correlation id.
+    - once the receiver of your message has replied with your custom correlation ID.
 - The `AtLeastOnceDelivery` trait has a state consisting of unconfirmed messages and a sequence number.
 - It does not store this state itself.
 - You must persist events corresponding to the `deliver` and `confirmDelivery` invocations from your `PersistentActor`  
@@ -910,8 +910,8 @@ class MyDestination extends Actor {
 - Support for snapshots is provided by `getDeliverySnapshot` and `setDeliverySnapshot`.
 - The `AtLeastOnceDeliverySnapshot` contains the full delivery state, including unconfirmed messages.
 - If you need a custom snapshot for other parts of the actor state you must also include the `AtLeastOnceDeliverySnapshot`.
-- It is serialized using protobuf with the ordinary Akka serialization mechanism.
-- It is easiest to include the bytes of the `AtLeastOnceDeliverySnapshot` as a blob in your custom snapshot.
+- It is serialized using _ProtoBuf_ with the ordinary Akka serialization mechanism.
+- It is easiest to include the bytes of the `AtLeastOnceDeliverySnapshot` as a BLOB in your custom snapshot.
 - The interval between redelivery attempts is defined by the `redeliverInterval` method.
 - The default value can be configured with the `akka.persistence.at-least-once-delivery.redeliver-interval` configuration key.
 - The method can be overridden by implementation classes to return non-default values.
@@ -963,11 +963,9 @@ class MyDestination extends Actor {
 - Implementing an `EventAdapter` is rather straight forward:
 ```scala
 class MyEventAdapter(system: ExtendedActorSystem) extends EventAdapter {
-  override def manifest(event: Any): String =
-    "" // when no manifest needed, return ""
+  override def manifest(event: Any): String = "" // when no manifest needed, return ""
 
-  override def toJournal(event: Any): Any =
-    event // identity
+  override def toJournal(event: Any): Any = event // identity
 
   override def fromJournal(event: Any, manifest: String): EventSeq =
     EventSeq.single(event) // identity
@@ -1005,7 +1003,11 @@ akka.persistence.journal {
 # Persistent FSM
 - `PersistentFSM` handles the incoming messages in an FSM like fashion.
 - Its internal state is persisted as a sequence of changes, later referred to as domain events.
-- Relationship between incoming messages, FSM’s states and transitions, persistence of domain events is defined by a DSL.
+- The relationship between:
+    - incoming messages, 
+    - FSM’s states and transitions, 
+    - persistence of domain events 
+    - is defined by a DSL.
 
 ## A Simple Example
 - To demonstrate the features of the `PersistentFSM` trait, consider an actor which represents a Web store customer.
@@ -1039,10 +1041,10 @@ case object Paid extends UserState {
   override def identifier: String = "Paid"
 }
 ```
-- **`LookingAround` customer**: is browsing the site, but hasn’t added anything to the shopping cart.
-- **`Shopping` customer**: has recently added items to the shopping cart.
-- **`Inactive` customer**: has items in the shopping cart, but hasn’t added anything recently.
-- **`Paid` customer**: has purchased the items.
+- **`LookingAround`**: customer is browsing the site, but hasn’t added anything to the shopping cart.
+- **`Shopping`**: customer has recently added items to the shopping cart.
+- **`Inactive`**: customer has items in the shopping cart, but hasn’t added anything recently.
+- **`Paid`**: customer has purchased the items.
 
 #### Note
 - `PersistentFSM` states must inherit from trait `PersistentFSM.FSMState` and implement the `def identifier: String` method.
