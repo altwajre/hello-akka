@@ -1,26 +1,26 @@
 # Persistence Query - Overview
-Akka persistence query complements [Persistence](../07-persistence) by: 
+_Akka Persistence Query_ complements [Persistence](../07-persistence) by: 
 - providing a universal asynchronous stream based query interface 
 - that various journal plugins can implement in order to expose their query capabilities.
 
-The most typical use case of persistence query is implementing the so-called query side 
-- (also known as "read side") in the popular CQRS architecture pattern 
-- in which the writing side of the application (e.g. implemented using akka persistence) 
-- is completely separated from the "query side". 
-- Akka Persistence Query itself is not directly the query side of an application, 
-- however it can help to migrate data from the write side to the query side database. 
-- In very simple scenarios Persistence Query may be powerful enough to fulfill the query needs of your app, 
+The most typical use case of persistence query is implementing the so-called **query side** 
+- (also known as "**read side**") in the popular **CQRS** architecture pattern 
+- in which the writing side of the application (e.g. implemented using _Akka Persistence_) 
+- is completely separated from the "**query side**". 
+- _Akka Persistence Query_ itself is not directly the query side of an application, 
+- however it can help to migrate data from the **write side** to the **query side** database. 
+- In very simple scenarios _Persistence Query_ may be powerful enough to fulfill the query needs of your app, 
 - however we highly recommend splitting up the write/read sides into separate datastores as the need arises.
 
 # Dependencies
-Akka persistence query is a separate jar file. Make sure that you have the following dependency in your project:
+_Akka Persistence Query_ is a separate jar file. Make sure that you have the following dependency in your project:
 
 ```sbtshell
 "com.typesafe.akka" %% "akka-persistence-query" % "2.5.9"
 ```
 
 # Design overview
-Akka persistence query is purposely designed to be a very loosely specified API. 
+_Akka Persistence Query_ is purposely designed to be a very loosely specified API. 
 - This is in order to keep the provided APIs general enough for each journal implementation 
 - to be able to expose its best features, 
 - e.g. a SQL journal can use complex SQL queries 
@@ -62,7 +62,7 @@ Journal implementers are encouraged to put this identifier in a variable known t
 Read journal implementations are available as [Community plugins](https://akka.io/community).
 
 ## Predefined queries
-Akka persistence query comes with a number of query interfaces built in 
+_Akka Persistence Query_ comes with a number of query interfaces built in 
 - and suggests Journal implementors to implement them according to the semantics described below. 
 - It is important to notice that while these query types are very common a journal is not obliged to implement all of them 
 - for example because in a given journal such query would be significantly inefficient.
