@@ -242,9 +242,10 @@ You need to add a field to an existing message type.
 ### Solution: 
 Adding fields is the most common change you’ll need to apply to your messages 
 - so make sure the serialization format you picked for your payloads can handle it appropriately, 
-- i.e. such changes should be binary compatible. This is easily achieved using the right serializer toolkit 
-- we recommend something like [Google Protocol Buffers](https://developers.google.com/protocol-buffers) or [Apache Thrift](https://thrift.apache.org/) however other tools may fit your needs just as well 
-- picking a serializer backend is something you should research before picking one to run with. 
+- i.e. such changes should be binary compatible. 
+- This is easily achieved using the right serializer toolkit. 
+- We recommend something like [Google Protocol Buffers](https://developers.google.com/protocol-buffers) or [Apache Thrift](https://thrift.apache.org/) however other tools may fit your needs just as well.
+- Picking a serializer backend is something you should research before picking one to run with. 
 - In the following examples we will be using protobuf, mostly because we are familiar with it, 
 - it does its job well and Akka is using it internally as well.
 
