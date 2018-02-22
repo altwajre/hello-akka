@@ -26,14 +26,21 @@ In recent years we have observed a tremendous move towards immutable append-only
 - For an excellent overview why and how immutable data makes scalability and systems design much simpler 
 - you may want to read Pat Helland’s excellent Immutability Changes Everything whitepaper.
 
-Since with Event Sourcing the events are immutable and usually never deleted - the way schema evolution is handled differs from how one would go about it in a mutable database setting (e.g. in typical CRUD database applications).
+Since with Event Sourcing the events are immutable and usually never deleted 
+- the way schema evolution is handled differs from how one would go about it in a mutable database setting 
+- (e.g. in typical CRUD database applications).
 
-The system needs to be able to continue to work in the presence of “old” events which were stored under the “old” schema. We also want to limit complexity in the business logic layer, exposing a consistent view over all of the events of a given type to PersistentActor s and persistence queries. This allows the business logic layer to focus on solving business problems instead of having to explicitly deal with different schemas.
+The system needs to be able to continue to work in the presence of “old” events which were stored under the “old” schema. 
+- We also want to limit complexity in the business logic layer, 
+- exposing a consistent view over all of the events of a given type to PersistentActor s and persistence queries. 
+- This allows the business logic layer to focus on solving business problems instead of having to explicitly deal with different schemas.
 
 In summary, schema evolution in event sourced systems exposes the following characteristics:
-    - Allow the system to continue operating without large scale migrations to be applied,
-    - Allow the system to read “old” events from the underlying storage, however present them in a “new” view to the application logic,
-    - Transparently promote events to the latest versions during recovery (or queries) such that the business logic need not consider multiple versions of events
+- Allow the system to continue operating without large scale migrations to be applied,
+- Allow the system to read “old” events from the underlying storage, 
+    - however present them in a “new” view to the application logic,
+- Transparently promote events to the latest versions during recovery (or queries) 
+    - such that the business logic need not consider multiple versions of events
 
 ## Types of schema evolution
 Before we explain the various techniques that can be used to safely evolve the schema of your persistent events over time, we first need to define what the actual problem is, and what the typical styles of changes are.
@@ -41,10 +48,10 @@ Before we explain the various techniques that can be used to safely evolve the s
 Since events are never deleted, we need to have a way to be able to replay (read) old events, in such way that does not force the PersistentActor to be aware of all possible versions of an event that it may have persisted in the past. Instead, we want the Actors to work on some form of “latest” version of the event and provide some means of either converting old “versions” of stored events into this “latest” event type, or constantly evolve the event definition - in a backwards compatible way - such that the new deserialization code can still read old events.
 
 The most common schema changes you will likely are:
-    - adding a field to an event type,
-    - remove or rename field in event type,
-    - remove event type,
-    - split event into multiple smaller events.
+- adding a field to an event type,
+- remove or rename field in event type,
+- remove event type,
+- split event into multiple smaller events.
 
 The following sections will explain some patterns which can be used to safely evolve your schema when facing those changes.
 
