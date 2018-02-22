@@ -4,9 +4,9 @@ _Akka Persistence Query_ complements [Persistence](../07-persistence) by:
 - that various journal plugins can implement in order to expose their query capabilities.
 
 The most typical use case of persistence query is implementing the so-called **query side** 
-- (also known as "**read side**") in the popular **CQRS** architecture pattern 
+- (also known as **read side**) in the popular **CQRS** architecture pattern, 
 - in which the **writing side** of the application (e.g. implemented using _Akka Persistence_) 
-- is completely separated from the "**query side**". 
+- is completely separated from the **query side**. 
 - _Akka Persistence Query_ itself is not directly the **query side** of an application, 
 - however it can help to migrate data from the **write side** to the **query side** database. 
 - In very simple scenarios _Persistence Query_ may be powerful enough to fulfill the query needs of your app, 
