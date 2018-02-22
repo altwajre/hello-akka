@@ -113,6 +113,7 @@ For example, some journals may choose to not use Akka Serialization at all
 The below figure explains how the default serialization scheme works, 
 - and how it fits together with serializing the user provided message itself, 
 - which we will from here on refer to as the payload (highlighted in yellow):
+
 ![persistent-message-envelope.png](https://doc.akka.io/docs/akka/current/images/persistent-message-envelope.png)
 
 Akka Persistence provided serializers wrap the user payload in an envelope containing all persistence-relevant information. 
@@ -297,6 +298,7 @@ Solution 1 - using IDL based serializers: First, we will discuss the most effici
 IDL stands for Interface Description Language, and means that the schema of the messages that will be stored is based on this description. Most IDL based serializers also generate the serializer / deserializer code so that using them is not too hard. Examples of such serializers are protobuf or thrift.
 
 Using these libraries rename operations are “free”, because the field name is never actually stored in the binary representation of the message. This is one of the advantages of schema based serializers, even though that they add the overhead of having to maintain the schema. When using serializers like this, no additional code change (except renaming the field and method used during serialization) is needed to perform such evolution:
+
 ![persistence-serializer-rename.png](https://doc.akka.io/docs/akka/current/images/persistence-serializer-rename.png)
 
 This is how such a rename would look in protobuf:
@@ -323,6 +325,7 @@ Some operations are “free” in certain serialization formats (more often than
 Solution 2 - by manually handling the event versions: Another solution, in case your serialization format does not support renames as easily as the above mentioned formats, is versioning your schema. For example, you could have made your events carry an additional field called _version which was set to 1 (because it was the initial schema), and once you change the schema you bump this number to 2, and write an adapter which can perform the rename.
 
 This approach is popular when your serialization format is something like JSON, where renames can not be performed automatically by the serializer. You can do these kinds of “promotions” either manually (as shown in the example below) or using a library like Stamina which helps to create those V1->V2->V3->...->Vn promotion chains without much boilerplate.
+
 ![persistence-manual-rename.png](https://doc.akka.io/docs/akka/current/images/persistence-manual-rename.png)
 
 The following snippet showcases how one could apply renames if working with plain JSON (using spray.json.JsObject):
@@ -370,6 +373,7 @@ Situation: While investigating app performance you notice that insane amounts of
 Naive solution - drop events in EventAdapter:
 
 The problem of removing an event type from the domain model is not as much its removal, as the implications for the recovery mechanisms that this entails. For example, a naive way of filtering out certain kinds of events from being delivered to a recovering PersistentActor is pretty simple, as one can simply filter them out in an EventAdapter:
+
 ![persistence-drop-event.png](https://doc.akka.io/docs/akka/current/images/persistence-drop-event.png)
 
 The EventAdapter can drop old events (**O**) by emitting an empty EventSeq. Other events can simply be passed through (**E**).
@@ -384,6 +388,7 @@ In the just described technique we have saved the PersistentActor from receiving
 The solution to these problems is to use a serializer that is aware of that event being no longer needed, and can notice this before starting to deserialize the object.
 
 This aproach allows us to remove the original class from our classpath, which makes for less “old” classes lying around in the project. This can for example be implemented by using an SerializerWithStringManifest (documented in depth in Serializer with String Manifest). By looking at the string manifest, the serializer can notice that the type is no longer needed, and skip the deserialization all-together:
+
 ![persistence-drop-event-serializer.png](https://doc.akka.io/docs/akka/current/images/persistence-drop-event-serializer.png)
 
 The serializer is aware of the old event types that need to be skipped (**O**), and can skip deserializing them alltogether by simply returning a “tombstone” (**T**), which the EventAdapter converts into an empty EventSeq. Other events (**E**) can simply be passed through.
@@ -434,6 +439,7 @@ Situation: You want to separate the application model (often called the “domai
 Another situation where this technique may be useful is when your serialization tool of choice requires generated classes to be used for serialization and deserialization of objects, like for example Google Protocol Buffers do, yet you do not want to leak this implementation detail into the domain model itself, which you’d like to model as plain Scala case classes.
 
 Solution: In order to detach the domain model, which is often represented using pure Scala (case) classes, from the data model classes which very often may be less user-friendly yet highly optimised for throughput and schema evolution (like the classes generated by protobuf for example), it is possible to use a simple EventAdapter which maps between these types in a 1:1 style as illustrated below:
+
 ![persistence-detach-models.png](https://doc.akka.io/docs/akka/current/images/persistence-detach-models.png)
 
 Domain events (**A**) are adapted to the data model events (**D**) by the EventAdapter. The data model can be a format natively understood by the journal, such that it can store it more efficiently or include additional data for the event (e.g. tags), for ease of later querying.
@@ -521,6 +527,7 @@ Situation: While refactoring your domain events, you find that one of the events
 Solution: Let us consider a situation where an event represents “user details changed”. After some time we discover that this event is too coarse, and needs to be split into “user name changed” and “user address changed”, because somehow users keep changing their usernames a lot and we’d like to keep this as a separate event.
 
 The write side change is very simple, we simply persist UserNameChanged or UserAddressChanged depending on what the user actually intended to change (instead of the composite UserDetailsChanged that we had in version 1 of our model).
+
 ![persistence-event-adapter-1-n.png](https://doc.akka.io/docs/akka/current/images/persistence-event-adapter-1-n.png)
 
 The EventAdapter splits the incoming event into smaller more fine grained events during recovery.
