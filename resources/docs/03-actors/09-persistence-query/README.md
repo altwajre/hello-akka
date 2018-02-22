@@ -75,9 +75,9 @@ Refer to the documentation of the `ReadJournal` plugin you are using for a speci
 The predefined queries are:
 
 ## `PersistenceIdsQuery` and `CurrentPersistenceIdsQuery`
-`persistenceIds` which is designed to allow users to subscribe to a stream of all persistent ids in the system. 
+`persistenceIds` which is designed to allow users to subscribe to a stream of all persistent IDs in the system. 
 - By default this stream should be assumed to be a "live" stream, 
-- which means that the journal should keep emitting new persistence ids as they come into the system:
+- which means that the journal should keep emitting new persistence IDs as they come into the system:
 
 ```scala
 readJournal.persistenceIds()
@@ -108,12 +108,12 @@ If your usage does not require a live stream, you can use the `currentEventsByPe
 - This query is hard to implement in some journals 
 - or may need some additional preparation of the used data store to be executed efficiently. 
 - The goal of this query is to allow querying for all events which are "tagged" with a specific tag. 
-- That includes the use case to query all domain events of an Aggregate Root type. 
+- That includes the use case to query all domain events of an **Aggregate Root** type. 
 - Please refer to your read journal plugin’s documentation to find out if and how it is supported.
 
-Some journals may support tagging of events via an [Event Adapters](../07-persistence#event-adapters) 
+Some journals may support tagging of events via [Event Adapters](../07-persistence#event-adapters) 
 - that wraps the events in a `akka.persistence.journal.Tagged` with the given `tags`. 
-- The journal may support other ways of doing tagging - again, 
+- The journal may support other ways of doing tagging, 
 - how exactly this is implemented depends on the used journal. 
 - Here is an example of such a tagging event adapter:
 
@@ -139,14 +139,14 @@ class MyTaggingEventAdapter extends WriteEventAdapter {
 
 
 #### Note
-A very important thing to keep in mind when using queries spanning multiple persistenceIds, 
-- such as `EventsByTag` is that the order of events at which the events appear in the stream rarely is guaranteed 
+A very important thing to keep in mind when using queries spanning multiple persistenceIds, (such as `EventsByTag`) is that:
+- the order of events at which the events appear in the stream is not guaranteed 
 - (or stable between materializations).
-
 Journals may choose to opt for strict ordering of the events, 
 - and should then document explicitly what kind of ordering guarantee they provide 
 - for example "ordered by timestamp ascending, independently of persistenceId" is easy to achieve on relational databases, 
 - yet may be hard to implement efficiently on plain key-value datastores.
+##
 
 In the example below we query all events which have been tagged.
 - We assume this was performed by the write-side using an [EventAdapter](../07-persistence#event-adapters), 
