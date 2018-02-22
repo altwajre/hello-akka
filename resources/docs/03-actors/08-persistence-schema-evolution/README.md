@@ -30,15 +30,15 @@ Since with Event Sourcing the events are immutable and usually never deleted
 - the way schema evolution is handled differs from how one would go about it in a mutable database setting 
 - (e.g. in typical CRUD database applications).
 
-The system needs to be able to continue to work in the presence of “old” events which were stored under the “old” schema. 
+The system needs to be able to continue to work in the presence of "old" events which were stored under the "old" schema. 
 - We also want to limit complexity in the business logic layer, 
 - exposing a consistent view over all of the events of a given type to PersistentActor s and persistence queries. 
 - This allows the business logic layer to focus on solving business problems instead of having to explicitly deal with different schemas.
 
 In summary, schema evolution in event sourced systems exposes the following characteristics:
 - Allow the system to continue operating without large scale migrations to be applied.
-- Allow the system to read “old” events from the underlying storage,
-    - however present them in a “new” view to the application logic.
+- Allow the system to read "old" events from the underlying storage,
+    - however present them in a "new" view to the application logic.
 - Transparently promote events to the latest versions during recovery (or queries) 
     - such that the business logic need not consider multiple versions of events.
 
@@ -49,8 +49,8 @@ Before we explain the various techniques that can be used to safely evolve the s
 Since events are never deleted, we need to have a way to be able to replay (read) old events, 
 - in such way that does not force the PersistentActor to be aware of all possible versions of an event 
 - that it may have persisted in the past. 
-- Instead, we want the Actors to work on some form of “latest” version of the event 
-- and provide some means of either converting old “versions” of stored events into this “latest” event type, 
+- Instead, we want the Actors to work on some form of "latest" version of the event 
+- and provide some means of either converting old "versions" of stored events into this "latest" event type, 
 - or constantly evolve the event definition - in a backwards compatible way 
 - such that the new deserialization code can still read old events.
 
@@ -68,11 +68,11 @@ Picking the serialization format is a very important decision you will have to m
 - how much work is required to add a new datatype, 
 - and serialization performance.
 
-If you find yourself realising you have picked “the wrong” serialization format, 
+If you find yourself realising you have picked "the wrong" serialization format, 
 - it is always possible to change the format used for storing new events, 
 - however you would have to keep the old deserialization code in order to be able to replay events 
 - that were persisted using the old serialization scheme. 
-- It is possible to “rebuild” an event-log from one serialization format to another one, 
+- It is possible to "rebuild" an event-log from one serialization format to another one, 
 - however it may be a more involved process if you need to perform this on a live system.
 
 Binary serialization formats that we have seen work well for long-lived applications include the very flexible IDL based: 
@@ -80,7 +80,7 @@ Binary serialization formats that we have seen work well for long-lived applicat
 - Apache Thrift
 - or Apache Avro. 
 
-Avro schema evolution is more “entire schema” based, instead of single fields focused like in protobuf or thrift, 
+Avro schema evolution is more "entire schema" based, instead of single fields focused like in protobuf or thrift, 
 - and usually requires using some kind of schema registry.
 
 Users who want their data to be human-readable directly in the write-side datastore
@@ -106,7 +106,7 @@ Serialization is NOT handled automatically by Akka Persistence itself.
 Please refer to your write journal’s documentation to learn more about how it handles serialization!
 
 For example, some journals may choose to not use Akka Serialization at all 
-- and instead store the data in a format that is more “native” for the underlying datastore, 
+- and instead store the data in a format that is more "native" for the underlying datastore, 
 - e.g. using JSON or some other kind of format that the target datastore understands directly.
 ##
 
@@ -344,7 +344,7 @@ IDL stands for Interface Description Language,
 - Most IDL based serializers also generate the serializer / deserializer code so that using them is not too hard. 
 - Examples of such serializers are protobuf or thrift.
 
-Using these libraries rename operations are “free”, 
+Using these libraries rename operations are "free", 
 - because the field name is never actually stored in the binary representation of the message. 
 - This is one of the advantages of schema based serializers, even though that they add the overhead of having to maintain the schema. 
 - When using serializers like this, 
@@ -371,7 +371,7 @@ It is important to learn about the strengths and limitations of your serializers
 #### Note
 Learn in-depth about the serialization engine you’re using as it will impact how you can aproach schema evolution.
 
-Some operations are “free” in certain serialization formats 
+Some operations are "free" in certain serialization formats 
 - (more often than not: removing/adding optional fields, sometimes renaming fields etc.), 
 - while some other operations are strictly not possible.
 ##
@@ -387,7 +387,7 @@ Another solution,
 
 This approach is popular when your serialization format is something like JSON, 
 - where renames can not be performed automatically by the serializer. 
-- You can do these kinds of “promotions” either manually 
+- You can do these kinds of "promotions" either manually 
 - (as shown in the example below) 
 - or using a library like Stamina which helps to create those V1->V2->V3->...->Vn promotion chains without much boilerplate.
 
@@ -476,13 +476,21 @@ That the deserialization was actually performed, so we spent some of out time bu
 That we are unable to remove the event class from the system 
 - since the serializer still needs to create the actuall instance of it, as it does not know it will not be used.
 
-The solution to these problems is to use a serializer that is aware of that event being no longer needed, and can notice this before starting to deserialize the object.
+The solution to these problems is to use a serializer that is aware of that event being no longer needed, 
+- and can notice this before starting to deserialize the object.
 
-This aproach allows us to remove the original class from our classpath, which makes for less “old” classes lying around in the project. This can for example be implemented by using an SerializerWithStringManifest (documented in depth in Serializer with String Manifest). By looking at the string manifest, the serializer can notice that the type is no longer needed, and skip the deserialization all-together:
+This aproach allows us to remove the original class from our classpath, 
+- which makes for less "old" classes lying around in the project. 
+- This can for example be implemented by using an SerializerWithStringManifest 
+- (documented in depth in Serializer with String Manifest). 
+- By looking at the string manifest, the serializer can notice that the type is no longer needed, 
+- and skip the deserialization all-together:
 
 ![persistence-drop-event-serializer.png](https://doc.akka.io/docs/akka/current/images/persistence-drop-event-serializer.png)
 
-The serializer is aware of the old event types that need to be skipped (**O**), and can skip deserializing them alltogether by simply returning a “tombstone” (**T**), which the EventAdapter converts into an empty EventSeq. Other events (**E**) can simply be passed through.
+The serializer is aware of the old event types that need to be skipped (**O**), 
+- and can skip deserializing them alltogether by simply returning a "tombstone" (**T**), 
+- which the EventAdapter converts into an empty EventSeq. Other events (**E**) can simply be passed through.
 
 The serializer detects that the string manifest points to a removed event type and skips attempting to deserialize it:
 ```scala
@@ -511,7 +519,8 @@ class RemovedEventsAwareSerializer extends SerializerWithStringManifest {
     }
 }
 ```
-The EventAdapter we implemented is aware of EventDeserializationSkipped events (our “Tombstones”), and emits and empty EventSeq whenever such object is encoutered:
+The EventAdapter we implemented is aware of EventDeserializationSkipped events (our "Tombstones"), 
+- and emits and empty EventSeq whenever such object is encoutered:
 ```scala
 class SkippedEventsAwareAdapter extends EventAdapter {
   override def manifest(event: Any) = ""
@@ -525,15 +534,31 @@ class SkippedEventsAwareAdapter extends EventAdapter {
 ```
 
 ## Detach domain model from data model
-### Situation: You want to separate the application model (often called the “domain model”) completely from the models used to persist the corresponding events (the “data model”). For example because the data representation may change independently of the domain model.
+### Situation: 
+You want to separate 
+- the application model (often called the "domain model") completely 
+- from the models used to persist the corresponding events (the "data model"). 
+- For example because the data representation may change independently of the domain model.
 
-Another situation where this technique may be useful is when your serialization tool of choice requires generated classes to be used for serialization and deserialization of objects, like for example Google Protocol Buffers do, yet you do not want to leak this implementation detail into the domain model itself, which you’d like to model as plain Scala case classes.
+Another situation where this technique may be useful 
+- is when your serialization tool of choice requires generated classes to be used for serialization and deserialization of objects, 
+- like for example Google Protocol Buffers do, 
+- yet you do not want to leak this implementation detail into the domain model itself, 
+- which you’d like to model as plain Scala case classes.
 
-### Solution: In order to detach the domain model, which is often represented using pure Scala (case) classes, from the data model classes which very often may be less user-friendly yet highly optimised for throughput and schema evolution (like the classes generated by protobuf for example), it is possible to use a simple EventAdapter which maps between these types in a 1:1 style as illustrated below:
+### Solution: 
+In order to detach the domain model, 
+- which is often represented using pure Scala (case) classes, 
+- from the data model classes which very often may be less user-friendly yet highly optimised for throughput 
+- and schema evolution (like the classes generated by protobuf for example), 
+- it is possible to use a simple EventAdapter which maps between these types in a 1:1 style as illustrated below:
 
 ![persistence-detach-models.png](https://doc.akka.io/docs/akka/current/images/persistence-detach-models.png)
 
-Domain events (**A**) are adapted to the data model events (**D**) by the EventAdapter. The data model can be a format natively understood by the journal, such that it can store it more efficiently or include additional data for the event (e.g. tags), for ease of later querying.
+Domain events (**A**) are adapted to the data model events (**D**) by the EventAdapter. 
+- The data model can be a format natively understood by the journal, 
+- such that it can store it more efficiently or include additional data for the event (e.g. tags), 
+- for ease of later querying.
 
 We will use the following domain and data models to showcase how the separation can be implemented by the adapter:
 ```scala
@@ -553,7 +578,9 @@ object DataModel {
 }
 ```
 
-The EventAdapter takes care of converting from one model to the other one (in both directions), alowing the models to be completely detached from each other, such that they can be optimised independently as long as the mapping logic is able to convert between them:
+The EventAdapter takes care of converting from one model to the other one (in both directions), 
+- allowing the models to be completely detached from each other, 
+- such that they can be optimised independently as long as the mapping logic is able to convert between them:
 ```scala
 class DetachedModelsAdapter extends EventAdapter {
   override def manifest(event: Any): String = ""
@@ -569,16 +596,24 @@ class DetachedModelsAdapter extends EventAdapter {
 }
 ```
 
-The same technique could also be used directly in the Serializer if the end result of marshalling is bytes. Then the serializer can simply convert the bytes do the domain object by using the generated protobuf builders.
+The same technique could also be used directly in the Serializer if the end result of marshalling is bytes. 
+- Then the serializer can simply convert the bytes do the domain object by using the generated protobuf builders.
 
 ## Store events as human-readable data model
-### Situation: You want to keep your persisted events in a human-readable format, for example JSON.
+### Situation: 
+You want to keep your persisted events in a human-readable format, for example JSON.
 
-### Solution: This is a special case of the Detach domain model from data model pattern, and thus requires some co-operation from the Journal implementation to achieve this.
+### Solution: 
+This is a special case of the Detach domain model from data model pattern, 
+- and thus requires some co-operation from the Journal implementation to achieve this.
 
-An example of a Journal which may implement this pattern is MongoDB, however other databases such as PostgreSQL and Cassandra could also do it because of their built-in JSON capabilities.
+An example of a Journal which may implement this pattern is MongoDB, 
+- however other databases such as PostgreSQL and Cassandra could also do it because of their built-in JSON capabilities.
 
-In this aproach, the EventAdapter is used as the marshalling layer: it serializes the events to/from JSON. The journal plugin notices that the incoming event type is JSON (for example by performing a match on the incoming event) and stores the incoming object directly.
+In this aproach, the EventAdapter is used as the marshalling layer: it serializes the events to/from JSON. 
+- The journal plugin notices that the incoming event type is JSON 
+- (for example by performing a match on the incoming event) 
+- and stores the incoming object directly.
 ```scala
 class JsonDataModelAdapter extends EventAdapter {
   override def manifest(event: Any): String = ""
@@ -599,31 +634,50 @@ class JsonDataModelAdapter extends EventAdapter {
 ```
 
 #### Note
-This technique only applies if the Akka Persistence plugin you are using provides this capability. Check the documentation of your favourite plugin to see if it supports this style of persistence.
+This technique only applies if the Akka Persistence plugin you are using provides this capability. 
+- Check the documentation of your favourite plugin to see if it supports this style of persistence.
 
-If it doesn’t, you may want to skim the list of existing journal plugins, just in case some other plugin for your favourite datastore does provide this capability.
+If it doesn’t, you may want to skim the list of existing journal plugins, 
+- just in case some other plugin for your favourite datastore does provide this capability.
 #
 
-Alternative solution:
-In fact, an AsyncWriteJournal implementation could natively decide to not use binary serialization at all, and always serialize the incoming messages as JSON - in which case the toJournal implementation of the EventAdapter would be an identity function, and the fromJournal would need to de-serialize messages from JSON.
+### Alternative solution:
+In fact, an AsyncWriteJournal implementation could natively decide to not use binary serialization at all, 
+- and always serialize the incoming messages as JSON 
+- in which case the toJournal implementation of the EventAdapter would be an identity function, 
+- and the fromJournal would need to de-serialize messages from JSON.
 
 #### Note
-If in need of human-readable events on the write-side of your application reconsider whether preparing materialized views using Persistence Query would not be an efficient way to go about this, without compromising the write-side’s throughput characteristics.
+If in need of human-readable events on the write-side of your application 
+- reconsider whether preparing materialized views using Persistence Query would not be an efficient way to go about this, 
+- without compromising the write-side’s throughput characteristics.
 
-If indeed you want to use a human-readable representation on the write-side, pick a Persistence plugin that provides that functionality, or - implement one yourself.
+If indeed you want to use a human-readable representation on the write-side, 
+- pick a Persistence plugin that provides that functionality, or - implement one yourself.
 
 ## Split large event into fine-grained events
-### Situation: While refactoring your domain events, you find that one of the events has become too large (coarse-grained) and needs to be split up into multiple fine-grained events.
+### Situation: 
+While refactoring your domain events, 
+- you find that one of the events has become too large (coarse-grained) 
+- and needs to be split up into multiple fine-grained events.
 
-### Solution: Let us consider a situation where an event represents “user details changed”. After some time we discover that this event is too coarse, and needs to be split into “user name changed” and “user address changed”, because somehow users keep changing their usernames a lot and we’d like to keep this as a separate event.
+### Solution: 
+Let us consider a situation where an event represents "user details changed". 
+- After some time we discover that this event is too coarse, 
+- and needs to be split into "user name changed" and "user address changed", 
+- because somehow users keep changing their usernames a lot and we’d like to keep this as a separate event.
 
-The write side change is very simple, we simply persist UserNameChanged or UserAddressChanged depending on what the user actually intended to change (instead of the composite UserDetailsChanged that we had in version 1 of our model).
+The write side change is very simple, 
+- we simply persist UserNameChanged or UserAddressChanged depending on what the user actually intended to change 
+- (instead of the composite UserDetailsChanged that we had in version 1 of our model).
 
 ![persistence-event-adapter-1-n.png](https://doc.akka.io/docs/akka/current/images/persistence-event-adapter-1-n.png)
 
 The EventAdapter splits the incoming event into smaller more fine grained events during recovery.
 
-During recovery however, we now need to convert the old V1 model into the V2 representation of the change. Depending if the old event contains a name change, we either emit the UserNameChanged or we don’t, and the address change is handled similarily:
+During recovery however, we now need to convert the old V1 model into the V2 representation of the change. 
+- Depending if the old event contains a name change, we either emit the UserNameChanged or we don’t, 
+- and the address change is handled similarily:
 ```scala
 trait V1
 trait V2
@@ -653,4 +707,5 @@ class UserEventsAdapter extends EventAdapter {
 }
 ```
 
-By returning an EventSeq from the event adapter, the recovered event can be converted to multiple events before being delivered to the persistent actor.
+By returning an EventSeq from the event adapter, 
+- the recovered event can be converted to multiple events before being delivered to the persistent actor.
