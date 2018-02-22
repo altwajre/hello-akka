@@ -7,11 +7,11 @@ This document describes the design concepts of the clustering.
 Akka Cluster provides a fault-tolerant decentralized peer-to-peer based cluster membership service with no single point of failure or single point of bottleneck. It does this using gossip protocols and an automatic failure detector.
 # Terms
 
-node
+### node
     A logical member of a cluster. There could be multiple nodes on a physical machine. Defined by a hostname:port:uid tuple.
-cluster
+### cluster
     A set of nodes joined together through the membership service.
-leader
+### leader
     A single node in the cluster that acts as the leader. Managing cluster convergence and membership state transitions.
 
 # Membership
@@ -21,20 +21,24 @@ A cluster is made up of a set of member nodes. The identifier for each node is a
 The node identifier internally also contains a UID that uniquely identifies this actor system instance at that hostname:port. Akka uses the UID to be able to reliably trigger remote death watch. This means that the same actor system can never join a cluster again once it’s been removed from that cluster. To re-join an actor system with the same hostname:port to a cluster you have to stop the actor system and start a new one with the same hostname:port which will then receive a different UID.
 
 The cluster membership state is a specialized CRDT, which means that it has a monotonic merge function. When concurrent changes occur on different nodes the updates can always be merged and converge to the same end result.
-Gossip
+
+## Gossip
 
 The cluster membership used in Akka is based on Amazon’s Dynamo system and particularly the approach taken in Basho’s’ Riak distributed database. Cluster membership is communicated using a Gossip Protocol, where the current state of the cluster is gossiped randomly through the cluster, with preference to members that have not seen the latest version.
-Vector Clocks
+
+### Vector Clocks
 
 Vector clocks are a type of data structure and algorithm for generating a partial ordering of events in a distributed system and detecting causality violations.
 
 We use vector clocks to reconcile and merge differences in cluster state during gossiping. A vector clock is a set of (node, counter) pairs. Each update to the cluster state has an accompanying update to the vector clock.
-Gossip Convergence
+
+### Gossip Convergence
 
 Information about the cluster converges locally at a node at certain points in time. This is when a node can prove that the cluster state he is observing has been observed by all other nodes in the cluster. Convergence is implemented by passing a set of nodes that have seen current state version during gossip. This information is referred to as the seen set in the gossip overview. When all nodes are included in the seen set there is convergence.
 
 Gossip convergence cannot occur while any nodes are unreachable. The nodes need to become reachable again, or moved to the down and removed states (see the Membership Lifecycle section below). This only blocks the leader from performing its cluster membership management and does not influence the application running on top of the cluster. For example this means that during a network partition it is not possible to add more nodes to the cluster. The nodes can join, but they will not be moved to the up state until the partition has healed or the unreachable nodes have been downed.
-Failure Detector
+
+### Failure Detector
 
 The failure detector is responsible for trying to detect if a node is unreachable from the rest of the cluster. For this we are using an implementation of The Phi Accrual Failure Detector by Hayashibara et al.
 
@@ -51,19 +55,22 @@ Heartbeats are sent out every second and every heartbeat is performed in a reque
 The failure detector will also detect if the node becomes reachable again. When all nodes that monitored the unreachable node detects it as reachable again the cluster, after gossip dissemination, will consider it as reachable.
 
 If system messages cannot be delivered to a node it will be quarantined and then it cannot come back from unreachable. This can happen if the there are too many unacknowledged system messages (e.g. watch, Terminated, remote actor deployment, failures of actors supervised by remote parent). Then the node needs to be moved to the down or removed states (see the Membership Lifecycle section below) and the actor system must be restarted before it can join the cluster again.
-Leader
+
+### Leader
 
 After gossip convergence a leader for the cluster can be determined. There is no leader election process, the leader can always be recognised deterministically by any node whenever there is gossip convergence. The leader is just a role, any node can be the leader and it can change between convergence rounds. The leader is simply the first node in sorted order that is able to take the leadership role, where the preferred member states for a leader are up and leaving (see the Membership Lifecycle section below for more information about member states).
 
 The role of the leader is to shift members in and out of the cluster, changing joining members to the up state or exiting members to the removed state. Currently leader actions are only triggered by receiving a new cluster state with gossip convergence.
 
 The leader also has the power, if configured so, to “auto-down” a node that according to the Failure Detector is considered unreachable. This means setting the unreachable node status to down automatically after a configured time of unreachability.
-Seed Nodes
+
+### Seed Nodes
 
 The seed nodes are configured contact points for new nodes joining the cluster. When a new node is started it sends a message to all seed nodes and then sends a join command to the seed node that answers first.
 
 The seed nodes configuration value does not have any influence on the running cluster itself, it is only relevant for new nodes joining the cluster as it helps them to find contact points to send the join command to; a new member can send this command to any current member of the cluster, not only to the seed nodes.
-Gossip Protocol
+
+### Gossip Protocol
 
 A variation of push-pull gossip is used to reduce the amount of gossip information sent around the cluster. In push-pull gossip a digest is sent representing current versions but not actual values; the recipient of the gossip can then send back any values for which it has newer versions and also request values for which it has outdated versions. Akka uses a single shared state with a vector clock for versioning, so the variant of push-pull gossip used in Akka makes use of this version to only push the actual state as needed.
 
@@ -88,7 +95,8 @@ If the recipient and the gossip have the same version then the gossip state is n
 The periodic nature of the gossip has a nice batching effect of state changes, e.g. joining several nodes quickly after each other to one node will result in only one state change to be spread to other members in the cluster.
 
 The gossip messages are serialized with protobuf and also gzipped to reduce payload size.
-Membership Lifecycle
+
+## Membership Lifecycle
 
 A node begins in the joining state. Once all nodes have seen that the new node is joining (through gossip convergence) the leader will set the member state to up.
 
@@ -102,13 +110,16 @@ If you have auto-down enabled and the failure detector triggers, you can over ti
 As mentioned before, if a node is unreachable then gossip convergence is not possible and therefore any leader actions are also not possible. By enabling akka.cluster.allow-weakly-up-members (enabled by default) it is possible to let new joining nodes be promoted while convergence is not yet reached. These Joining nodes will be promoted as WeaklyUp. Once gossip convergence is reached, the leader will move WeaklyUp members to Up.
 
 Note that members on the other side of a network partition have no knowledge about the existence of the new members. You should for example not count WeaklyUp members in quorum decisions.
-State Diagram for the Member States (akka.cluster.allow-weakly-up-members=off)
+
+### State Diagram for the Member States (akka.cluster.allow-weakly-up-members=off)
 
 member-states.png
-State Diagram for the Member States (akka.cluster.allow-weakly-up-members=on)
+
+### State Diagram for the Member States (akka.cluster.allow-weakly-up-members=on)
 
 member-states-weakly-up.png
-Member States
+
+### Member States
 
     joining - transient state when joining a cluster
 
@@ -122,7 +133,8 @@ Member States
 
     removed - tombstone state (no longer a member)
 
-User Actions
+
+### User Actions
 
     join - join a single node to a cluster - can be explicit or automatic on startup if a node to join have been specified in the configuration
 
@@ -130,7 +142,8 @@ User Actions
 
     down - mark a node as down
 
-Leader Actions
+
+### Leader Actions
 
 The leader has the following duties:
 
@@ -138,7 +151,8 @@ The leader has the following duties:
         joining -> up
         exiting -> removed
 
-Failure Detection and Unreachability
+
+### Failure Detection and Unreachability
 
     fd* - the failure detector of one of the monitoring nodes has triggered causing the monitored node to be marked as unreachable
 
