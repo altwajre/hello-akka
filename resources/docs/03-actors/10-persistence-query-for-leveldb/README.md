@@ -41,7 +41,8 @@ You can retrieve a subset of all events by specifying `fromSequenceNr` and `toSe
 - Note that the corresponding sequence number of each event is provided in the `EventEnvelope`, 
 - which makes it possible to resume the stream at a later point from a given sequence number.
 
-The returned event stream is ordered by sequence number, i.e. the same order as the `PersistentActor` persisted the events. 
+The returned event stream is ordered by sequence number, 
+- i.e. the same order as the `PersistentActor` persisted the events. 
 - The same prefix of stream elements (in same order) are returned for multiple executions of the query, 
 - except for when events have been deleted.
 
@@ -92,7 +93,7 @@ val src: Source[EventEnvelope, NotUsed] =
   queries.eventsByTag(tag = "green", offset = Sequence(0L))
 ```
 
-To tag events you create an [Event Adapters](TODO) 
+To tag events you create an [Event Adapters](../07-persistence#event-adapters) 
 - that wraps the events in a `akka.persistence.journal.Tagged` with the given `tags`.
 
 ```scala
