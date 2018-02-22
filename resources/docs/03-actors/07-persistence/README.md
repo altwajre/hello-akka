@@ -629,11 +629,10 @@ context.actorOf(props, name = "mySupervisor")
 - Special care should be given when shutting down persistent actors from the outside.
 - With normal Actors it is often acceptable to use the special [PoisonPill](../01-actors#poisonpill) message  
     - to signal to an Actor that it should stop itself once it receives this message.
-    - In fact, this message is handled automatically by Akka,  
+    - The poison pill message is handled automatically by Akka,  
     - leaving the target actor no way to refuse stopping itself when given a poison pill.
 - This can be dangerous when used with `PersistentActor` due to the fact that incoming commands are stashed  
-    - while the persistent actor is awaiting confirmation from the Journal  
-    - that events have been written when `persist()` was used.
+    - while the persistent actor is awaiting confirmation from the Journal that events have been written successfully.
 - Since the incoming commands will be drained from the Actor’s mailbox and put into its internal stash  
     - while awaiting the confirmation (thus, before calling the persist handlers)  
     - the Actor may receive and **(auto)handle** the `PoisonPill` before it processes the other messages  
