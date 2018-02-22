@@ -611,9 +611,9 @@ context.actorOf(props, name = "mySupervisor")
 - This is because if the underlying journal implementation is signalling persistence failures  
     - it is most likely either failing completely or overloaded  
     - and restarting right-away and trying to persist the event again will most likely not help the journal recover 
-    - as it would likely cause a [Thundering herd problem](TODO),  
+    - as it would likely cause a [Thundering herd problem](https://en.wikipedia.org/wiki/Thundering_herd_problem),  
     - as many persistent actors would restart and try to persist their events again.
-- Instead, use a `BackoffSupervisor` (as described in [Failures](TODO))  
+- Instead, use a `BackoffSupervisor` (as described in [Failures](#failures))  
     - which implements an exponential-backoff strategy  
     - and allows for more breathing room for the journal to recover  
     - between restarts of the persistent actor.
@@ -627,7 +627,7 @@ context.actorOf(props, name = "mySupervisor")
 
 ## Safely shutting down persistent actors
 - Special care should be given when shutting down persistent actors from the outside.
-- With normal Actors it is often acceptable to use the special [PoisonPill](TODO) message  
+- With normal Actors it is often acceptable to use the special [PoisonPill](../01-actors#poisonpill) message  
     - to signal to an Actor that it should stop itself once it receives this message 
     - in fact this message is handled automatically by Akka,  
     - leaving the target actor no way to refuse stopping itself when given a poison pill.
@@ -785,7 +785,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - However, Akka will log a warning message when this situation is detected  
     - and then continue to operate until an actor tries to store a snapshot,  
     - at which point the operation will fail (by replying with an `SaveSnapshotFailure` for example).
-- Note that the "persistence mode" of [Cluster Sharding](TODO) makes use of snapshots.
+- Note that the "persistence mode" of [Cluster Sharding](../../05-clustering/06-cluster-sharding) makes use of snapshots.
 - If you use that mode, you’ll need to define a snapshot store plugin.
 
 ## Snapshot deletion
@@ -830,7 +830,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
     - after a crash and restart of the destination messages are still delivered to the new actor incarnation
 - These semantics are similar to what an `ActorPath` represents,  
     - therefore you need to supply a path and not a reference when delivering messages.
-    - see [Actor Lifecycle](TODO)
+    - see [Actor Lifecycle](../01-actors#actor-lifecycle)
 - The messages are sent to the path with an actor selection.
 ##
 
@@ -1005,7 +1005,7 @@ akka.persistence.journal {
 - The adapted events are then delivered in-order to the `PersistentActor` during replay.
 
 #### Note
-- For more advanced schema evolution techniques refer to the [Persistence - Schema Evolution](TODO) documentation.
+- For more advanced schema evolution techniques refer to the [Persistence - Schema Evolution](../08-persistence-schema-evolution) documentation.
 
 # Persistent FSM
 - `PersistentFSM` handles the incoming messages in an FSM like fashion.
@@ -1181,7 +1181,7 @@ akka.persistence.fsm.snapshot-after = 1000
 # Storage plugins
 - Storage backends for journals and snapshot stores are pluggable in the Akka persistence extension.
 - A directory of persistence journal and snapshot store plugins is available at the Akka Community Projects page,  
-    - see [Community plugins](TODO)
+    - see [Community plugins](http://akka.io/community)
 - Plugins can be selected either by "default" for all persistent actors, or "individually",  
     - when a persistent actor defines its own set of plugins.
 - When a persistent actor does NOT override the `journalPluginId` and `snapshotPluginId` methods,  
@@ -1193,9 +1193,9 @@ akka.persistence.snapshot-store.plugin = ""
 - However, these entries are provided as empty "", and require explicit user configuration via override  
     - in the user `application.conf`.
 - For an example of a journal plugin which writes messages to LevelDB:
-    - see [Local LevelDB journal](TODO).
+    - see [Local LevelDB journal](#local-leveldb-journal).
 - For an example of a snapshot store plugin which writes snapshots as individual files to the local filesystem:  
-    - see [Local snapshot store](TODO).
+    - see [Local snapshot store](#local-snapshot-store).
 - Applications can provide their own plugins by implementing a plugin API and activating them by configuration.
 - Plugin development requires the following imports:
 ```scala
@@ -1608,10 +1608,10 @@ akka.persistence.journal.leveldb.compaction-intervals {
 
 #### Warning
 - A shared LevelDB instance is a single point of failure and should therefore only be used for testing purposes.
-- Highly-available, replicated journals are available as [Community plugins](TODO).
+- Highly-available, replicated journals are available as [Community plugins](http://akka.io/community).
 
 #### Note
-- This plugin has been supplanted by [Persistence Plugin Proxy](TODO).
+- This plugin has been supplanted by [Persistence Plugin Proxy](#persistence-plugin-proxy).
 ##
 
 - A shared LevelDB instance is started by instantiating the `SharedLeveldbStore` actor.
@@ -1672,7 +1672,7 @@ akka.persistence.snapshot-store.local.dir = "target/snapshots"
 
 #### Warning
 - A shared journal/snapshot store is a single point of failure and should therefore only be used for testing purposes.
-- Highly-available, replicated persistence plugins are available as [Community plugins](TODO).
+- Highly-available, replicated persistence plugins are available as [Community plugins](http://akka.io/community).
 ##
 
 - The journal and snapshot store proxies are controlled via  
@@ -1689,14 +1689,14 @@ akka.persistence.snapshot-store.local.dir = "target/snapshots"
 #### Note
 - Akka starts extensions lazily when they are required, and this includes the proxy.
 - This means that in order for the proxy to work, the persistence plugin on the target node must be instantiated.
-- This can be done by instantiating the `PersistencePluginProxyExtension` [extension](TODO),  
+- This can be done by instantiating the `PersistencePluginProxyExtension` [extension](../../09-utilities/07-akka-extensions),  
     - or by calling the `PersistencePluginProxy.start` method.
 
 #### Note
 - The proxied persistence plugin can (and should) be configured using its original configuration keys.
 
 # Custom serialization
-- Serialization of snapshots and payloads of `Persistent` messages is configurable with Akka’s [Serialization](TODO) infrastructure.
+- Serialization of snapshots and payloads of `Persistent` messages is configurable with Akka’s [Serialization](../../07-networking#serialization) infrastructure.
 - For example, if an application wants to serialize
     - payloads of type `MyPayload` with a custom `MyPayloadSerializer` and
     - snapshots of type `MySnapshot` with a custom `MySnapshotSerializer`
