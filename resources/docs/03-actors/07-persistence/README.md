@@ -644,7 +644,7 @@ context.actorOf(props, name = "mySupervisor")
 
 - The example below highlights how messages arrive in the Actor’s mailbox  
     - and how they interact with its internal stashing mechanism when `persist()` is used.
-    - See [test Code](./persistence-examples/src/test/scala/persistence/)
+    - See [Test Code](./persistence-examples/src/test/scala/persistence/shutdown/SafePersistentActorSpec.scala).
 - Notice the early stop behaviour that occurs when `PoisonPill` is used:
 
 ```scala
@@ -705,10 +705,10 @@ persistentActor ! Shutdown
 - In your configuration, under the `akka.persistence.journal.xxx.replay-filter` section  
     - (where `xxx` is your journal plugin id),  
     - you can select the replay filter mode from one of the following values:
-        - repair-by-discard-old
-        - fail
-        - warn
-        - off
+    - `repair-by-discard-old`
+    - `fail`
+    - `warn`
+    - `off`
 - For example, if you configure the replay filter for leveldb plugin, it looks like this:
 ```hocon
 # The replay filter can detect a corrupt event stream by inspecting
