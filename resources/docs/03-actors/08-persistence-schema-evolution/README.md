@@ -566,7 +566,7 @@ Domain events (**A**) are adapted to the data model events (**D**) by the `Event
 - The data model can be a format natively understood by the journal, 
 - such that it can store it more efficiently 
 - or include additional data for the event 
-- (e.g. tags to simplify querying later).
+- (e.g. tags to simplify querying).
 
 We will use the following domain and data models to showcase how the separation can be implemented by the adapter:
 ```scala
