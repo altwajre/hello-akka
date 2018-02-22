@@ -30,19 +30,19 @@ Akka persistence query is purposely designed to be a very loosely specified API.
 - or if a journal is able to subscribe to a live event stream this should also be possible to expose the same API 
 - a typed stream of events.
 
-Each read journal must explicitly document which types of queries it supports. 
+**Each read journal must explicitly document which types of queries it supports**. 
 - Refer to your journal’s plugins documentation for details on which queries and semantics it supports.
 
-While Akka Persistence Query does not provide actual implementations of ReadJournals, 
+While Akka Persistence Query does not provide actual implementations of `ReadJournal`s, 
 - it defines a number of pre-defined query types for the most common query scenarios, 
 - that most journals are likely to implement (however they are not required to).
 
 # Read Journals
 
-In order to issue queries one has to first obtain an instance of a ReadJournal. 
+In order to issue queries one has to first obtain an instance of a `ReadJournal`. 
 - Read journals are implemented as Community plugins, each targeting a specific datastore 
 - (for example Cassandra or JDBC databases). 
-- For example, given a library that provides a akka.persistence.query.my-read-journal obtaining the related journal is as simple as:
+- For example, given a library that provides a `akka.persistence.query.my-read-journal` obtaining the related journal is as simple as:
 
 ```scala
 // obtain read journal by plugin id
@@ -60,7 +60,7 @@ source.runForeach { event ⇒ println("Event: " + event) }
 ```
 
 Journal implementers are encouraged to put this identifier in a variable known to the user, 
-- such that one can access it via readJournalFor[NoopJournal](NoopJournal.identifier), however this is not enforced.
+- such that one can access it via readJournalFor\[NoopJournal\](NoopJournal.identifier), however this is not enforced.
 
 Read journal implementations are available as Community plugins.
 
@@ -72,7 +72,7 @@ Akka persistence query comes with a number of query interfaces built in
 - for example because in a given journal such query would be significantly inefficient.
 
 #### Note
-Refer to the documentation of the ReadJournal plugin you are using for a specific list of supported query types. 
+Refer to the documentation of the `ReadJournal` plugin you are using for a specific list of supported query types. 
 - For example, Journal plugins should document their stream completion strategies.
 ##
 
@@ -242,7 +242,7 @@ On the other hand the same application may have some complex statistics view
 - Therefore the data stored in the write-side needs to be projected into the other read-optimised datastore.
 
 #### Note
-When referring to Materialized Views in Akka Persistence think of it as “some persistent storage of the result of a Query”. 
+When referring to **Materialized Views** in Akka Persistence think of it as “some persistent storage of the result of a Query”. 
 - In other words, it means that the view is created once, in order to be afterwards queried multiple times, 
 - as in this format it may be more efficient or interesting to query it (instead of the source events directly).
 
@@ -345,7 +345,7 @@ class TheOneWhoWritesToQueryJournal(id: String) extends Actor {
 
 # Query plugins
 
-Query plugins are various (mostly community driven) ReadJournal implementations for all kinds of available datastores. 
+Query plugins are various (mostly community driven) `ReadJournal` implementations for all kinds of available datastores. 
 - The complete list of available plugins is maintained on the Akka Persistence Query Community Plugins page.
 
 The plugin for LevelDB is described in Persistence Query for LevelDB.
@@ -355,9 +355,9 @@ This section aims to provide tips and guide plugin developers through implementi
 
 #### Note
 Since different data stores provide different query capabilities,
-- journal plugins must extensively document their exposed semantics as well as handled query scenarios.
+- journal plugins **must extensively document** their exposed semantics as well as handled query scenarios.
 
-## ReadJournal plugin API
+## `ReadJournal` plugin API
 A read journal plugin must implement akka.persistence.query.ReadJournalProvider 
 - which creates instances of akka.persistence.query.scaladsl.ReadJournal and akka.persistence.query.javaadsl.ReadJournal. 
 - The plugin must implement both the scaladsl and the javadsl traits 
