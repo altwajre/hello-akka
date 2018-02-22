@@ -1,5 +1,5 @@
 # Persistence Query - Overview
-Akka persistence query complements Persistence by 
+Akka persistence query complements [Persistence](../07-persistence) by: 
 - providing a universal asynchronous stream based query interface 
 - that various journal plugins can implement in order to expose their query capabilities.
 
@@ -36,7 +36,7 @@ While Akka Persistence Query does not provide actual implementations of `ReadJou
 
 # Read Journals
 In order to issue queries one has to first obtain an instance of a `ReadJournal`. 
-- Read journals are implemented as Community plugins, each targeting a specific datastore 
+- Read journals are implemented as [Community plugins](https://akka.io/community), each targeting a specific datastore 
 - (for example Cassandra or JDBC databases). 
 - For example, given a library that provides a `akka.persistence.query.my-read-journal` obtaining the related journal is as simple as:
 
@@ -59,7 +59,7 @@ Journal implementers are encouraged to put this identifier in a variable known t
 - such that one can access it via `readJournalFor[NoopJournal](NoopJournal.identifier)`, 
 - however this is not enforced.
 
-Read journal implementations are available as Community plugins.
+Read journal implementations are available as [Community plugins](https://akka.io/community).
 
 ## Predefined queries
 Akka persistence query comes with a number of query interfaces built in 
@@ -90,7 +90,7 @@ readJournal.currentPersistenceIds()
 ```
 
 ## EventsByPersistenceIdQuery and CurrentEventsByPersistenceIdQuery
-`eventsByPersistenceId` is a query equivalent to replaying a PersistentActor, 
+`eventsByPersistenceId` is a query equivalent to replaying a [PersistentActor](../07-persistence#event-sourcing), 
 - however, since it is a stream it is possible to keep it alive 
 - and watch for additional incoming events persisted by the persistent actor identified by the given `persistenceId`.
 
@@ -111,7 +111,7 @@ If your usage does not require a live stream, you can use the `currentEventsByPe
 - That includes the use case to query all domain events of an Aggregate Root type. 
 - Please refer to your read journal plugin’s documentation to find out if and how it is supported.
 
-Some journals may support tagging of events via an Event Adapters 
+Some journals may support tagging of events via an [Event Adapters](../07-persistence#event-adapters) 
 - that wraps the events in a `akka.persistence.journal.Tagged` with the given `tags`. 
 - The journal may support other ways of doing tagging - again, 
 - how exactly this is implemented depends on the used journal. 
@@ -149,7 +149,7 @@ Journals may choose to opt for strict ordering of the events,
 - yet may be hard to implement efficiently on plain key-value datastores.
 
 In the example below we query all events which have been tagged.
-- We assume this was performed by the write-side using an EventAdapter, 
+- We assume this was performed by the write-side using an [EventAdapter](../07-persistence#event-adapters), 
 - or that the journal is smart enough that it can figure out what we mean by this tag 
 - for example if the journal stored the events as JSON 
 - it may try to find those with the field `tag` set to this value etc.
@@ -171,7 +171,7 @@ val top10BlueThings: Future[Vector[Any]] =
 val furtherBlueThings = readJournal.eventsByTag("blue", offset = Sequence(10))
 ```
 
-As you can see, we can use all the usual stream combinators available from Streams on the resulting query stream, 
+As you can see, we can use all the usual stream combinators available from [Streams](../../06-streams) on the resulting query stream, 
 - including for example taking the first 10 and cancelling the stream. 
 - It is worth pointing out that the built-in `EventsByTag` query has an optionally supported offset parameter 
 - (of type `Long`) 
@@ -183,8 +183,8 @@ As you can see, we can use all the usual stream combinators available from Strea
 If your usage does not require a live stream, you can use the `currentEventsByTag` query.
 
 ## Materialized values of queries
-Journals are able to provide additional information related to a query by exposing Materialized values, 
-- which are a feature of Streams that allows to expose additional values at stream materialization time.
+Journals are able to provide additional information related to a query by exposing [Materialized values](TODO), 
+- which are a feature of [Streams](../../06-streams) that allows to expose additional values at stream materialization time.
 
 More advanced query journals may use this technique to expose information about the character of the materialized stream, f
 - or example if it’s finite or infinite, strictly ordered or not ordered at all. 
@@ -217,7 +217,7 @@ query
 ```
 
 # Performance and denormalization
-When building systems using Event sourcing and CQRS techniques 
+When building systems using [Event sourcing](../07-persistence#event-sourcing) and [CQRS](https://msdn.microsoft.com/en-us/library/jj554200.aspx) techniques:
 - it is tremendously important to realise that the write-side has completely different needs from the read-side, 
 - and separating those concerns into datastores that are optimised for either side 
 - makes it possible to offer the best experience for the write and read sides independently.
@@ -238,7 +238,7 @@ When referring to **Materialized Views** in Akka Persistence think of it as "som
 - as in this format it may be more efficient or interesting to query it (instead of the source events directly).
 
 ## Materialize view to Reactive Streams compatible datastore
-If the read datastore exposes a Reactive Streams interface then implementing a simple projection is as simple as, 
+If the read datastore exposes a [Reactive Streams](http://reactive-streams.org/) interface then implementing a simple projection is as simple as, 
 - using the read-journal and feeding it into the databases driver interface, for example like so:
 
 ```scala
@@ -333,9 +333,9 @@ class TheOneWhoWritesToQueryJournal(id: String) extends Actor {
 
 # Query plugins
 Query plugins are various (mostly community driven) `ReadJournal` implementations for all kinds of available datastores. 
-- The complete list of available plugins is maintained on the Akka Persistence Query Community Plugins page.
+- The complete list of available plugins is maintained on the Akka Persistence Query [Community Plugins](http://akka.io/community) page.
 
-The plugin for LevelDB is described in Persistence Query for LevelDB.
+The plugin for LevelDB is described in [Persistence Query for LevelDB](../10-persistence-query-for-leveldb).
 
 This section aims to provide tips and guide plugin developers through implementing a custom query plugin. 
 - Most users will not need to implement journals themselves, except if targeting a not yet supported datastore.
