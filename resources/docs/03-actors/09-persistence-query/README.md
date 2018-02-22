@@ -139,8 +139,7 @@ class MyTaggingEventAdapter extends WriteEventAdapter {
 
 
 #### Note
-When using queries spanning multiple persistenceIds, 
-- such as `EventsByTag`,
+When using queries spanning multiple `persistenceIds` such as `EventsByTag`,
 - the order of events at which the events appear in the stream is not guaranteed 
 - (or stable between materializations).
 
