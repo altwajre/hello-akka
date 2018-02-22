@@ -1696,7 +1696,7 @@ akka.persistence.snapshot-store.local.dir = "target/snapshots"
 - The proxied persistence plugin can (and should) be configured using its original configuration keys.
 
 # Custom serialization
-- Serialization of snapshots and payloads of `Persistent` messages is configurable with Akka’s [Serialization](../../07-networking#serialization) infrastructure.
+- Serialization of snapshots and payloads of `Persistent` messages is configurable with Akka’s [Serialization](../../07-networking/03-serialization) infrastructure.
 - For example, if an application wants to serialize
     - payloads of type `MyPayload` with a custom `MyPayloadSerializer` and
     - snapshots of type `MySnapshot` with a custom `MySnapshotSerializer`
@@ -1715,7 +1715,7 @@ akka.actor {
 ```
 - to the application configuration.
 - If not specified, a default serializer is used.
-- For more advanced schema evolution techniques refer to the [Persistence - Schema Evolution](TODO) documentation.
+- For more advanced schema evolution techniques refer to the [Persistence - Schema Evolution](../08-persistence-schema-evolution) documentation.
 
 # Testing
 - When running tests with LevelDB default settings in `sbt`, make sure to set `fork := true` in your sbt project.
@@ -1736,14 +1736,14 @@ akka.persistence.journal.leveldb-shared.store.native = off
 ```
 
 #### Warning
-- It is not possible to test persistence provided classes (i.e. [PersistentActor](TODO) and [AtLeastOnceDelivery](TODO)) using `TestActorRef`  
+- It is not possible to test persistence provided classes (i.e. [PersistentActor](#event-sourcing) and [AtLeastOnceDelivery](#at-least-once-delivery)) using `TestActorRef`  
     - due to its synchronous nature.
 - These traits need to be able to perform asynchronous tasks in the background  
     - in order to handle internal persistence related events.
-- When testing Persistence based projects always rely on [asynchronous messaging using the TestKit](TODO).
+- When testing Persistence based projects always rely on [asynchronous messaging using the TestKit](../11-testing-actor-systems#asynchronous-testing-testkit).
 
 # Configuration
-- There are several configuration properties for the persistence module, please refer to the [reference configuration](TODO).
+- There are several configuration properties for the persistence module, please refer to the [reference configuration](https://doc.akka.io/docs/akka/current/general/configuration.html#akka-persistence).
 
 # Multiple persistence plugin configurations
 - By default, a persistent actor will use the "default" journal and snapshot store plugins  
