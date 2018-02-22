@@ -80,7 +80,7 @@ val two: immutable.Seq[AnyRef] = receiveN(2)
 
 In these examples, the maximum durations you will find mentioned below are left out, 
 - in which case they use the default value from configuration item `akka.test.single-expect-default`, 
-- which itself defaults to 3 seconds (or they obey the innermost enclosing Within as detailed below).
+- which itself defaults to 3 seconds (or they obey the innermost enclosing Within as detailed [below](TODO)).
 - The full signatures are:
 
 #### `expectMsg[T](d: Duration, msg: T): T` 
@@ -91,7 +91,7 @@ Within the given time period, a message must be received and the given partial f
 - the result from applying the partial function to the received message is returned.
 - The duration may be left unspecified 
 - (empty parentheses are required in this case) 
-- to use the deadline from the innermost enclosing within block instead.
+- to use the deadline from the innermost enclosing [`within`](TODO) block instead.
 
 #### `expectMsgClass[T](d: Duration, c: Class[T]): T` 
 An object which is an instance of the given `Class` must be received within the allotted time frame; 
@@ -158,19 +158,19 @@ Collect messages as long as
 - The next message is received within the idle timeout.
 - The number of messages has not yet reached the maximum All collected messages are returned.
 
-The maximum duration defaults to the time remaining in the innermost enclosing within block 
+The maximum duration defaults to the time remaining in the innermost enclosing `within` block 
 - and the idle duration defaults to infinity (thereby disabling the idle timeout feature).
 - The number of expected messages defaults to `Int.MaxValue`, which effectively disables this limit.
 
 #### `awaitCond(p: => Boolean, max: Duration, interval: Duration)` 
 Poll the given condition every interval until it returns true or the max duration is used up.
-- The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing within block.
+- The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing `within` block.
 
 #### `awaitAssert(a: => Any, max: Duration, interval: Duration)` 
 Poll the given assert function every interval until it does not throw an exception or the max duration is used up.
 - If the timeout expires the last exception is thrown.
-- The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing within block
-- The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing within block.
+- The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing `within` block
+- The interval defaults to 100 ms and the maximum defaults to the time remaining in the innermost enclosing `within` block.
 
 #### `ignoreMsg(pf: PartialFunction[AnyRef, Boolean])` `ignoreMsg` 
 The internal `testActor` contains a partial function for ignoring messages: 
@@ -231,7 +231,7 @@ within([min, ]max) {
 }
 ```
 
-The block given to `within` must complete after a Duration which is between `min` and `max`, where the former defaults to zero.
+The block given to `within` must complete after a [Duration](TODO) which is between `min` and `max`, where the former defaults to zero.
 - The deadline calculated by adding the max parameter to the block’s start time 
 - is implicitly available within the block to all examination methods, 
 - if you do not specify it, it is inherited from the innermost enclosing `within` block.
@@ -265,7 +265,7 @@ Ray Roestenburg has written a great [article on using the TestKit](http://roeste
 The tight timeouts you use during testing on your lightning-fast notebook 
 - will invariably lead to spurious test failures on the heavily loaded Jenkins server (or similar).
 - To account for this situation, 
-- all maximum durations are internally scaled by a factor taken from the Configuration, 
+- all maximum durations are internally scaled by a factor taken from the [Configuration](TODO), 
 - `akka.test.timefactor`, which defaults to `1`.
 
 You can scale other durations with the same factor 
@@ -436,7 +436,7 @@ The `run` method must return the auto-pilot for the next message,
 
 ### Caution about Timing Assertions
 The behavior of `within` blocks when using test probes might be perceived as counter-intuitive: 
-- you need to remember that the nicely scoped deadline as described above is local to each probe.
+- you need to remember that the nicely scoped deadline as described [above](TODO) is local to each probe.
 - Hence, probes do not react to each other’s deadlines or to the deadline set in an enclosing `TestKit` instance:
 
 ```scala
@@ -732,7 +732,7 @@ akka {
 ```
 
 # Different Testing Frameworks
-Akka’s own test suite is written using ScalaTest, which also shines through in documentation examples.
+Akka’s own test suite is written using [ScalaTest](TODO), which also shines through in documentation examples.
 - However, the `TestKit` and its facilities do not depend on that framework, 
 - you can essentially use whichever suits your development style best.
 
@@ -772,7 +772,7 @@ N/A
 There are several configuration properties for the `TestKit` module, please refer to the reference configuration.
 
 # Example
-Ray Roestenburg’s example code from his blog adapted to work with Akka 2.x.
+Ray Roestenburg’s example code from [his blog](TODO) adapted to work with Akka 2.x.
 ```scala
 import scala.util.Random
 
@@ -942,7 +942,7 @@ Due to the synchronous nature of `TestActorRef`
 - it will not work with some support traits that Akka provides 
 - as they require asynchronous behaviours to function properly.
 - Examples of traits that do not mix well with test actor refs are 
-- PersistentActor and AtLeastOnceDelivery provided by Akka Persistence.
+- [PersistentActor](TODO) and [AtLeastOnceDelivery](TODO) provided by [Akka Persistence](TODO).
 
 ## Obtaining a Reference to an `Actor`
 Having access to the actual `Actor` object 
@@ -1006,7 +1006,7 @@ When the dispatcher invokes the processing behavior of an actor on a message,
 - Therefore the `TestActorRef` offers a different mode of operation to complement the `Actor` testing: 
 - it supports all operations also valid on normal `ActorRef`.
 - Messages sent to the actor are processed synchronously on the current thread and answers may be sent back as usual.
-- This trick is made possible by the `CallingThreadDispatcher` described below (see CallingThreadDispatcher); 
+- This trick is made possible by the `CallingThreadDispatcher` described below (see [CallingThreadDispatcher](TODO)); 
 - this dispatcher is set implicitly for any actor instantiated into a `TestActorRef`.
 
 ```scala
