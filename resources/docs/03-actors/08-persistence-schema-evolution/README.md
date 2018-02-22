@@ -3,6 +3,7 @@
 When working on long running projects using Persistence, or any kind of Event Sourcing architectures, 
 - schema evolution becomes one of the more important technical aspects of developing your application. 
 - The requirements as well as our own understanding of the business domain may (and will) change in time.
+
 In fact, if a project matures to the point where you need to evolve its schema to adapt to changing business requirements
 - you can view this as first signs of its success 
 - if you wouldn’t need to adapt anything over an apps lifecycle that could mean that no-one is really using it actively.
