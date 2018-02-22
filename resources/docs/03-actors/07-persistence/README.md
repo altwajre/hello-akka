@@ -1486,9 +1486,9 @@ my-snapshot-store {
     - so the methods corresponding to requests from persistent actors are executed sequentially.
 - It may delegate to asynchronous libraries, spawn futures, or delegate to other actors to achive parallelism.
 - The snapshot store plugin class must have a constructor with one of these signatures:
-    - constructor with one `com.typesafe.config.Config` parameter and a `String` parameter for the config path
-    - constructor with one `com.typesafe.config.Config` parameter
-    - constructor without parameters
+    - Constructor with one `com.typesafe.config.Config` parameter and a `String` parameter for the config path.
+    - Constructor with one `com.typesafe.config.Config` parameter.
+    - Constructor without parameters.
 - The plugin section of the actor system’s config will be passed in the config constructor parameter.
 - The config path of the plugin is passed in the `String` parameter.
 - The `plugin-dispatcher` is the dispatcher used for the plugin actor.
