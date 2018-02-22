@@ -144,8 +144,8 @@ When using queries spanning multiple `persistenceIds` such as `EventsByTag`,
 - (or stable between materializations).
 
 Journals may choose to opt for strict ordering of the events, 
-- and should then document explicitly what kind of ordering guarantee they provide 
-- for example "ordered by timestamp ascending, independently of persistenceId" is easy to achieve on relational databases, 
+- and should then document explicitly what kind of ordering guarantee they provide.
+- For example, "ordered by timestamp ascending, independently of persistenceId" is easy to achieve on relational databases, 
 - yet may be hard to implement efficiently on plain key-value datastores.
 ##
 
@@ -177,9 +177,9 @@ As you can see, we can use all the usual stream combinators available from [Stre
 - It is worth pointing out that the built-in `EventsByTag` query has an optionally supported offset parameter 
 - (of type `Long`) 
 - which the journals can use to implement resumable-streams. 
-- For example a journal may be able to use a WHERE clause to begin the read starting from a specific row, 
+- For example a journal may be able to use a `WHERE` clause to begin the read starting from a specific row, 
 - or in a datastore that is able to order events by insertion time, 
-- it could treat the Long as a timestamp and select only older events.
+- it could treat the `Long` as a timestamp and select only older events.
 
 If your usage does not require a live stream, you can use the `currentEventsByTag` query.
 
@@ -187,8 +187,8 @@ If your usage does not require a live stream, you can use the `currentEventsByTa
 Journals are able to provide additional information related to a query by exposing [Materialized values](TODO), 
 - which are a feature of [Streams](../../06-streams) that allows to expose additional values at stream materialization time.
 
-More advanced query journals may use this technique to expose information about the character of the materialized stream, f
-- or example if it’s finite or infinite, strictly ordered or not ordered at all. 
+More advanced query journals may use this technique to expose information about the character of the materialized stream. 
+- For example if it’s finite or infinite, strictly ordered or not ordered at all. 
 - The materialized value type is defined as the second type parameter of the returned `Source`, 
 - which allows journals to provide users with their specialised query object, as demonstrated in the sample below:
 
@@ -287,12 +287,12 @@ readJournal
 Sometimes you may need to implement "resumable" projections, 
 - that will not start from the beginning of time each time when run. 
 - In this case you will need to store the sequence number (or `offset`) of the processed event 
-- and use it the next time this projection is started. This pattern is not built-in, 
-- however is rather simple to implement yourself.
+- and use it the next time this projection is started. 
+- This pattern is not built-in, however is rather simple to implement yourself.
 
 The example below additionally highlights how you would use Actors to implement the write side, 
-- in case you need to do some complex logic 
-- that would be best handled inside an Actor before persisting the event into the other datastore:
+- in case you need to do some complex logic that would be best handled inside an Actor
+- before persisting the event into the other datastore:
 
 ```scala
 import akka.pattern.ask
