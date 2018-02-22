@@ -60,7 +60,7 @@ source.runForeach { event ⇒ println("Event: " + event) }
 ```
 
 Journal implementers are encouraged to put this identifier in a variable known to the user, 
-- such that one can access it via readJournalFor\[NoopJournal\](NoopJournal.identifier), however this is not enforced.
+- such that one can access it via `readJournalFor[NoopJournal](NoopJournal.identifier)`, however this is not enforced.
 
 Read journal implementations are available as Community plugins.
 
