@@ -638,7 +638,7 @@ class JsonDataModelAdapter extends EventAdapter {
 This technique only applies if the Akka Persistence plugin you are using provides this capability. 
 - Check the documentation of your favourite plugin to see if it supports this style of persistence.
 
-If it doesn’t, you may want to skim the [list of existing journal plugins](http://akka.io/community/?_ga=2.93258013.1460082199.1519288472-542223074.1518507267#journal-plugins), 
+If it doesn’t, you may want to skim the [list of existing journal plugins](http://akka.io/community), 
 - just in case some other plugin for your favourite datastore does provide this capability.
 #
 
