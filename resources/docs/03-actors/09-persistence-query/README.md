@@ -1,20 +1,18 @@
 # Persistence Query - Overview
-
 Akka persistence query complements Persistence by 
 - providing a universal asynchronous stream based query interface 
 - that various journal plugins can implement in order to expose their query capabilities.
 
 The most typical use case of persistence query is implementing the so-called query side 
-- (also known as “read side”) in the popular CQRS architecture pattern 
+- (also known as "read side") in the popular CQRS architecture pattern 
 - in which the writing side of the application (e.g. implemented using akka persistence) 
-- is completely separated from the “query side”. 
+- is completely separated from the "query side". 
 - Akka Persistence Query itself is not directly the query side of an application, 
 - however it can help to migrate data from the write side to the query side database. 
 - In very simple scenarios Persistence Query may be powerful enough to fulfill the query needs of your app, 
 - however we highly recommend splitting up the write/read sides into separate datastores as the need arises.
 
 # Dependencies
-
 Akka persistence query is a separate jar file. Make sure that you have the following dependency in your project:
 
 ```sbtshell
@@ -22,7 +20,6 @@ Akka persistence query is a separate jar file. Make sure that you have the follo
 ```
 
 # Design overview
-
 Akka persistence query is purposely designed to be a very loosely specified API. 
 - This is in order to keep the provided APIs general enough for each journal implementation 
 - to be able to expose its best features, 
@@ -33,12 +30,11 @@ Akka persistence query is purposely designed to be a very loosely specified API.
 **Each read journal must explicitly document which types of queries it supports**. 
 - Refer to your journal’s plugins documentation for details on which queries and semantics it supports.
 
-While Akka Persistence Query does not provide actual implementations of `ReadJournal`s, 
+While Akka Persistence Query does not provide actual implementations of `ReadJournals`, 
 - it defines a number of pre-defined query types for the most common query scenarios, 
 - that most journals are likely to implement (however they are not required to).
 
 # Read Journals
-
 In order to issue queries one has to first obtain an instance of a `ReadJournal`. 
 - Read journals are implemented as Community plugins, each targeting a specific datastore 
 - (for example Cassandra or JDBC databases). 
@@ -60,12 +56,12 @@ source.runForeach { event ⇒ println("Event: " + event) }
 ```
 
 Journal implementers are encouraged to put this identifier in a variable known to the user, 
-- such that one can access it via `readJournalFor[NoopJournal](NoopJournal.identifier)`, however this is not enforced.
+- such that one can access it via `readJournalFor[NoopJournal](NoopJournal.identifier)`, 
+- however this is not enforced.
 
 Read journal implementations are available as Community plugins.
 
 ## Predefined queries
-
 Akka persistence query comes with a number of query interfaces built in 
 - and suggests Journal implementors to implement them according to the semantics described below. 
 - It is important to notice that while these query types are very common a journal is not obliged to implement all of them 
@@ -79,9 +75,8 @@ Refer to the documentation of the `ReadJournal` plugin you are using for a speci
 The predefined queries are:
 
 ## PersistenceIdsQuery and CurrentPersistenceIdsQuery
-
-persistenceIds which is designed to allow users to subscribe to a stream of all persistent ids in the system. 
-- By default this stream should be assumed to be a “live” stream, 
+`persistenceIds` which is designed to allow users to subscribe to a stream of all persistent ids in the system. 
+- By default this stream should be assumed to be a "live" stream, 
 - which means that the journal should keep emitting new persistence ids as they come into the system:
 
 ```scala
@@ -95,31 +90,29 @@ readJournal.currentPersistenceIds()
 ```
 
 ## EventsByPersistenceIdQuery and CurrentEventsByPersistenceIdQuery
-
-eventsByPersistenceId is a query equivalent to replaying a PersistentActor, 
+`eventsByPersistenceId` is a query equivalent to replaying a PersistentActor, 
 - however, since it is a stream it is possible to keep it alive 
-- and watch for additional incoming events persisted by the persistent actor identified by the given persistenceId.
+- and watch for additional incoming events persisted by the persistent actor identified by the given `persistenceId`.
 
 ```scala
 readJournal.eventsByPersistenceId("user-us-1337")
 ```
 
 Most journals will have to revert to polling in order to achieve this, 
-- which can typically be configured with a refresh-interval configuration property.
+- which can typically be configured with a `refresh-interval` configuration property.
 
-If your usage does not require a live stream, you can use the currentEventsByPersistenceId query.
+If your usage does not require a live stream, you can use the `currentEventsByPersistenceId` query.
 
 ## EventsByTag and CurrentEventsByTag
-
-eventsByTag allows querying events regardless of which persistenceId they are associated with. 
+`eventsByTag` allows querying events regardless of which `persistenceId` they are associated with. 
 - This query is hard to implement in some journals 
 - or may need some additional preparation of the used data store to be executed efficiently. 
-- The goal of this query is to allow querying for all events which are “tagged” with a specific tag. 
+- The goal of this query is to allow querying for all events which are "tagged" with a specific tag. 
 - That includes the use case to query all domain events of an Aggregate Root type. 
 - Please refer to your read journal plugin’s documentation to find out if and how it is supported.
 
 Some journals may support tagging of events via an Event Adapters 
-- that wraps the events in a akka.persistence.journal.Tagged with the given tags. 
+- that wraps the events in a `akka.persistence.journal.Tagged` with the given `tags`. 
 - The journal may support other ways of doing tagging - again, 
 - how exactly this is implemented depends on the used journal. 
 - Here is an example of such a tagging event adapter:
@@ -147,19 +140,19 @@ class MyTaggingEventAdapter extends WriteEventAdapter {
 
 #### Note
 A very important thing to keep in mind when using queries spanning multiple persistenceIds, 
-- such as EventsByTag is that the order of events at which the events appear in the stream rarely is guaranteed 
+- such as `EventsByTag` is that the order of events at which the events appear in the stream rarely is guaranteed 
 - (or stable between materializations).
 
 Journals may choose to opt for strict ordering of the events, 
 - and should then document explicitly what kind of ordering guarantee they provide 
-- for example “ordered by timestamp ascending, independently of persistenceId” is easy to achieve on relational databases, 
+- for example "ordered by timestamp ascending, independently of persistenceId" is easy to achieve on relational databases, 
 - yet may be hard to implement efficiently on plain key-value datastores.
 
 In the example below we query all events which have been tagged.
 - We assume this was performed by the write-side using an EventAdapter, 
 - or that the journal is smart enough that it can figure out what we mean by this tag 
 - for example if the journal stored the events as JSON 
-- it may try to find those with the field tag set to this value etc.
+- it may try to find those with the field `tag` set to this value etc.
 
 ```scala
 // assuming journal is able to work with numeric offsets we can:
@@ -180,23 +173,22 @@ val furtherBlueThings = readJournal.eventsByTag("blue", offset = Sequence(10))
 
 As you can see, we can use all the usual stream combinators available from Streams on the resulting query stream, 
 - including for example taking the first 10 and cancelling the stream. 
-- It is worth pointing out that the built-in EventsByTag query has an optionally supported offset parameter 
-- (of type Long) 
+- It is worth pointing out that the built-in `EventsByTag` query has an optionally supported offset parameter 
+- (of type `Long`) 
 - which the journals can use to implement resumable-streams. 
 - For example a journal may be able to use a WHERE clause to begin the read starting from a specific row, 
 - or in a datastore that is able to order events by insertion time, 
 - it could treat the Long as a timestamp and select only older events.
 
-If your usage does not require a live stream, you can use the currentEventsByTag query.
+If your usage does not require a live stream, you can use the `currentEventsByTag` query.
 
 ## Materialized values of queries
-
 Journals are able to provide additional information related to a query by exposing Materialized values, 
 - which are a feature of Streams that allows to expose additional values at stream materialization time.
 
 More advanced query journals may use this technique to expose information about the character of the materialized stream, f
 - or example if it’s finite or infinite, strictly ordered or not ordered at all. 
-- The materialized value type is defined as the second type parameter of the returned Source, 
+- The materialized value type is defined as the second type parameter of the returned `Source`, 
 - which allows journals to provide users with their specialised query object, as demonstrated in the sample below:
 
 ```scala
@@ -225,13 +217,12 @@ query
 ```
 
 # Performance and denormalization
-
 When building systems using Event sourcing and CQRS techniques 
 - it is tremendously important to realise that the write-side has completely different needs from the read-side, 
 - and separating those concerns into datastores that are optimised for either side 
 - makes it possible to offer the best experience for the write and read sides independently.
 
-For example, in a bidding system it is important to “take the write” 
+For example, in a bidding system it is important to "take the write" 
 - and respond to the bidder that we have accepted the bid as soon as possible, 
 - which means that write-throughput is of highest importance for the write-side. 
 - Often this means that data stores which are able to scale to accommodate these requirements have a less expressive query side.
@@ -242,12 +233,11 @@ On the other hand the same application may have some complex statistics view
 - Therefore the data stored in the write-side needs to be projected into the other read-optimised datastore.
 
 #### Note
-When referring to **Materialized Views** in Akka Persistence think of it as “some persistent storage of the result of a Query”. 
+When referring to **Materialized Views** in Akka Persistence think of it as "some persistent storage of the result of a Query". 
 - In other words, it means that the view is created once, in order to be afterwards queried multiple times, 
 - as in this format it may be more efficient or interesting to query it (instead of the source events directly).
 
 ## Materialize view to Reactive Streams compatible datastore
-
 If the read datastore exposes a Reactive Streams interface then implementing a simple projection is as simple as, 
 - using the read-journal and feeding it into the databases driver interface, for example like so:
 
@@ -269,9 +259,8 @@ readJournal
   .runWith(Sink.fromSubscriber(dbBatchWriter)) // write batches to read-side database
 ```
 
-## Materialize view using mapAsync
-
-If the target database does not provide a reactive streams Subscriber that can perform writes, 
+## Materialize view using `mapAsync`
+If the target database does not provide a reactive streams `Subscriber` that can perform writes, 
 - you may have to implement the write logic using plain functions or Actors instead.
 
 In case your write logic is state-less 
@@ -294,10 +283,9 @@ readJournal
 ```
 
 ## Resumable projections
-
-Sometimes you may need to implement “resumable” projections, 
+Sometimes you may need to implement "resumable" projections, 
 - that will not start from the beginning of time each time when run. 
-- In this case you will need to store the sequence number (or offset) of the processed event 
+- In this case you will need to store the sequence number (or `offset`) of the processed event 
 - and use it the next time this projection is started. This pattern is not built-in, 
 - however is rather simple to implement yourself.
 
@@ -344,7 +332,6 @@ class TheOneWhoWritesToQueryJournal(id: String) extends Actor {
 ```
 
 # Query plugins
-
 Query plugins are various (mostly community driven) `ReadJournal` implementations for all kinds of available datastores. 
 - The complete list of available plugins is maintained on the Akka Persistence Query Community Plugins page.
 
@@ -358,12 +345,12 @@ Since different data stores provide different query capabilities,
 - journal plugins **must extensively document** their exposed semantics as well as handled query scenarios.
 
 ## `ReadJournal` plugin API
-A read journal plugin must implement akka.persistence.query.ReadJournalProvider 
-- which creates instances of akka.persistence.query.scaladsl.ReadJournal and akka.persistence.query.javaadsl.ReadJournal. 
-- The plugin must implement both the scaladsl and the javadsl traits 
-- because the akka.stream.scaladsl.Source and akka.stream.javadsl.Source are different types 
+A read journal plugin must implement `akka.persistence.query.ReadJournalProvider` 
+- which creates instances of `akka.persistence.query.scaladsl.ReadJournal` and `akka.persistence.query.javaadsl.ReadJournal`. 
+- The plugin must implement both the `scaladsl` and the `javadsl` traits 
+- because the `akka.stream.scaladsl.Source` and `akka.stream.javadsl.Source` are different types 
 - and even though those types can easily be converted to each other 
-- it is most convenient for the end user to get access to the Java or Scala Source directly. 
+- it is most convenient for the end user to get access to the Java or Scala `Source` directly. 
 - As illustrated below one of the implementations can delegate to the other.
 
 Below is a simple journal implementation:
@@ -470,7 +457,7 @@ class MyJavadslReadJournal(scaladslReadJournal: MyScaladslReadJournal)
 }
 ```
 
-And the eventsByTag could be backed by such an Actor for example:
+And the `eventsByTag` could be backed by such an Actor for example:
 
 ```scala
 class MyEventsByTagPublisher(tag: String, offset: Long, refreshInterval: FiniteDuration)
@@ -557,17 +544,17 @@ class MyEventsByTagPublisher(tag: String, offset: Long, refreshInterval: FiniteD
 }
 ```
 
-The ReadJournalProvider class must have a constructor with one of these signatures:
-    - Constructor with a ExtendedActorSystem parameter, a com.typesafe.config.Config parameter, 
-- and a String parameter for the config path.
-    - Constructor with a ExtendedActorSystem parameter, and a com.typesafe.config.Config parameter.
-    - Constructor with one ExtendedActorSystem parameter.
-    - Constructor without parameters.
+The `ReadJournalProvider` class must have a constructor with one of these signatures:
+- Constructor with a `ExtendedActorSystem` parameter, a `com.typesafe.config.Config` parameter, 
+    - and a String parameter for the config path.
+- Constructor with a `ExtendedActorSystem` parameter, and a `com.typesafe.config.Config parameter`.
+- Constructor with one `ExtendedActorSystem` parameter.
+- Constructor without parameters.
 
 The plugin section of the actor system’s config will be passed in the config constructor parameter. 
-- The config path of the plugin is passed in the String parameter.
+- The config path of the plugin is passed in the `String` parameter.
 
-If the underlying datastore only supports queries that are completed when they reach the end of the “result set”, 
+If the underlying datastore only supports queries that are completed when they reach the end of the "result set", 
 - the journal has to submit new queries after a while 
-- in order to support “infinite” event streams that include events stored after the initial query has completed. 
-- It is recommended that the plugin use a configuration property named refresh-interval for defining such a refresh interval.
+- in order to support "infinite" event streams that include events stored after the initial query has completed. 
+- It is recommended that the plugin use a configuration property named `refresh-interval` for defining such a refresh interval.
