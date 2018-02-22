@@ -5,7 +5,7 @@ When working on long running projects using [Persistence](../07-persistence), or
 - The requirements as well as our own understanding of the business domain may (and will) change in time.
 
 In fact, if a project matures to the point where you need to evolve its schema to adapt to changing business requirements
-- you can view this as first signs of its success 
+- you can view this as first signs of its success,
 - if you wouldn’t need to adapt anything over an apps lifecycle that could mean that no-one is really using it actively.
 
 In this chapter we will investigate various schema evolution strategies and techniques 
@@ -150,7 +150,8 @@ This section aims to highlight the complete basics on how to define custom seria
 
 #### Note
 Read the [Akka Serialization](../../07-networking/03-serialization) docs to learn more about defining custom serializers, 
-- to improve performance and maintainability of your system. Do not depend on Java serialization for production deployments.
+- to improve performance and maintainability of your system. 
+- Do not depend on Java serialization for production deployments.
 ##
 
 The below snippet explains in the minimal amount of lines how a custom serializer can be registered. 
@@ -240,7 +241,7 @@ You need to add a field to an existing message type.
 
 ### Solution: 
 Adding fields is the most common change you’ll need to apply to your messages 
-- so make sure the serialization format you picked for your payloads can handle it apropriately, 
+- so make sure the serialization format you picked for your payloads can handle it appropriately, 
 - i.e. such changes should be binary compatible. This is easily achieved using the right serializer toolkit 
 - we recommend something like [Google Protocol Buffers](https://developers.google.com/protocol-buffers) or [Apache Thrift](https://thrift.apache.org/) however other tools may fit your needs just as well 
 - picking a serializer backend is something you should research before picking one to run with. 
