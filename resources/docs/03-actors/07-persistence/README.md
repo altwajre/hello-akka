@@ -760,9 +760,9 @@ override def receiveRecover: Receive = {
 ```
 - The replayed messages that follow the `SnapshotOffer` message, if any, are younger than the offered snapshot.
 - They finally recover the persistent actor to its current (i.e. latest) state.
-- In general, a persistent actor is only offered a snapshot if that persistent actor  
-    - has previously saved one or more snapshots  
-    - and at least one of these snapshots matches the `SnapshotSelectionCriteria` that can be specified for recovery.
+- In general, a persistent actor is only offered a snapshot if that persistent actor:  
+    - Has previously saved one or more snapshots.
+    - And at least one of these snapshots matches the `SnapshotSelectionCriteria` that can be specified for recovery.
 ```scala
 override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
   maxSequenceNr = 457L,
@@ -770,7 +770,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 ```
 - If not specified, they default to `SnapshotSelectionCriteria.Latest` which selects the latest (= youngest) snapshot.
 - To disable snapshot-based recovery, applications should use `SnapshotSelectionCriteria.None`.
-- A recovery where no saved snapshot matches the specified `SnapshotSelectionCriteria` will replay all journaled messages.
+- A recovery where **no saved snapshot matches** the specified `SnapshotSelectionCriteria` will **replay all journaled messages**.
 
 #### Note
 - In order to use snapshots, a default snapshot-store (`akka.persistence.snapshot-store.plugin`) must be configured,  
@@ -778,7 +778,7 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - Since it is acceptable for some applications to not use any snapshotting, it is legal to not configure a snapshot store.
 - However, Akka will log a warning message when this situation is detected  
     - and then continue to operate until an actor tries to store a snapshot,  
-    - at which point the operation will fail (by replying with an `SaveSnapshotFailure` for example).
+    - at which point the operation will fail (by replying with a `SaveSnapshotFailure` for example).
 - Note that the "persistence mode" of [Cluster Sharding](../../05-clustering/06-cluster-sharding) makes use of snapshots.
 - If you use that mode, you’ll need to define a snapshot store plugin.
 
@@ -788,8 +788,8 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - To bulk-delete a range of snapshots matching `SnapshotSelectionCriteria`, persistent actors should use the `deleteSnapshots` method.
 
 ## Snapshot status handling
-- Saving or deleting snapshots can either succeed or fail 
-    - this information is reported back to the persistent actor via status messages  
+- Saving or deleting snapshots can either succeed or fail:
+    - This information is reported back to the persistent actor via status messages,  
     - as illustrated in the following table:
 
 | Method                                     | Success                | Failure message        |
@@ -799,11 +799,10 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 | deleteSnapshots(SnapshotSelectionCriteria) | DeleteSnapshotsSuccess | DeleteSnapshotsFailure |
 
 - If failure messages are left unhandled by the actor,  
-    - a default warning log message will be logged  
-    - for each incoming failure message.
+    - a default warning log message will be logged for each incoming failure message.
 - No default action is performed on the success messages, however you’re free to handle them  
     - e.g. in order to delete an in memory representation of the snapshot,  
-    - or in the case of failure to attempt save the snapshot again.
+    - or in the case of failure to attempt saving the snapshot again.
 
 # At-Least-Once Delivery
 - To send messages with at-least-once delivery semantics to destinations  
@@ -816,15 +815,16 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - It is your responsibility to persist the intent that a message is sent and that a confirmation has been received.
 
 #### Note
-- At-least-once delivery implies that original message sending order is not always preserved,  
+- At-least-once delivery implies that:
+    - original message sending order is not always preserved,  
     - and the destination may receive duplicate messages.
 - Semantics do not match those of a normal `ActorRef` send operation:
-    - it is not at-most-once delivery
-    - message order for the same sender-receiver pair is not preserved due to possible resends
-    - after a crash and restart of the destination messages are still delivered to the new actor incarnation
+    - It is not at-most-once delivery.
+    - Message order for the same sender-receiver pair is not preserved due to possible resends.
+    - After a crash and restart of the destination, messages are still delivered to the new actor incarnation.
 - These semantics are similar to what an `ActorPath` represents,  
     - therefore you need to supply a path and not a reference when delivering messages.
-    - see [Actor Lifecycle](../01-actors#actor-lifecycle)
+    - See [Actor Lifecycle](../01-actors#actor-lifecycle)
 - The messages are sent to the path with an actor selection.
 ##
 
@@ -841,12 +841,13 @@ override def recovery = Recovery(fromSnapshot = SnapshotSelectionCriteria(
 - Once recovery has completed,  
     - if there are outstanding messages that have not been confirmed (during the message replay),  
     - the persistent actor will resend these before sending any other messages.
-- Deliver requires a `deliveryIdToMessage` function to pass the provided deliveryId into the message  
+- Deliver requires a `deliveryIdToMessage` function to pass the provided `deliveryId` into the message  
     - so that the correlation between `deliver` and `confirmDelivery` is possible.
 - The `deliveryId` must do the round trip.
 - Upon receipt of the message,  
     - the destination actor will send the same `deliveryId` wrapped in a confirmation message back to the sender.
 - The sender will then use it to call `confirmDelivery` method to complete the delivery routine.
+- See [Test Code](./persistence-examples/src/test/scala/persistence/atleastonce/AtLeastOnceSpec.scala)
 ```scala
 import akka.actor.{ Actor, ActorSelection }
 import akka.persistence.AtLeastOnceDelivery
