@@ -25,7 +25,7 @@ _Akka Persistence Query_ is purposely designed to be a very loosely specified AP
 - to be able to expose its best features, 
 - e.g. a SQL journal can use complex SQL queries 
 - or if a journal is able to subscribe to a live event stream this should also be possible to expose the same API 
-- a typed stream of events.
+    - a typed stream of events.
 
 **Each read journal must explicitly document which types of queries it supports**. 
 - Refer to your journal’s plugins documentation for details on which queries and semantics it supports.
@@ -35,7 +35,7 @@ While Akka Persistence Query does not provide actual implementations of `ReadJou
 - that most journals are likely to implement (however they are not required to).
 
 # Read Journals
-In order to issue queries one has to first obtain an instance of a `ReadJournal`. 
+In order to issue queries, one has to first obtain an instance of a `ReadJournal`. 
 - Read journals are implemented as [Community plugins](https://akka.io/community), each targeting a specific datastore 
 - (for example Cassandra or JDBC databases). 
 - For example, given a library that provides a `akka.persistence.query.my-read-journal` obtaining the related journal is as simple as:
@@ -64,8 +64,8 @@ Read journal implementations are available as [Community plugins](https://akka.i
 ## Predefined queries
 _Akka Persistence Query_ comes with a number of query interfaces built in 
 - and suggests Journal implementors to implement them according to the semantics described below. 
-- It is important to notice that while these query types are very common a journal is not obliged to implement all of them 
-- for example because in a given journal such query would be significantly inefficient.
+- It is important to notice that while these query types are very common a journal is not obliged to implement all of them. 
+- For example, because in a given journal such query would be significantly inefficient.
 
 #### Note
 Refer to the documentation of the `ReadJournal` plugin you are using for a specific list of supported query types. 
@@ -74,7 +74,7 @@ Refer to the documentation of the `ReadJournal` plugin you are using for a speci
 
 The predefined queries are:
 
-## PersistenceIdsQuery and CurrentPersistenceIdsQuery
+## `PersistenceIdsQuery` and `CurrentPersistenceIdsQuery`
 `persistenceIds` which is designed to allow users to subscribe to a stream of all persistent ids in the system. 
 - By default this stream should be assumed to be a "live" stream, 
 - which means that the journal should keep emitting new persistence ids as they come into the system:
@@ -89,7 +89,7 @@ If your usage does not require a live stream, you can use the currentPersistence
 readJournal.currentPersistenceIds()
 ```
 
-## EventsByPersistenceIdQuery and CurrentEventsByPersistenceIdQuery
+## `EventsByPersistenceIdQuery` and `CurrentEventsByPersistenceIdQuery`
 `eventsByPersistenceId` is a query equivalent to replaying a [PersistentActor](../07-persistence#event-sourcing), 
 - however, since it is a stream it is possible to keep it alive 
 - and watch for additional incoming events persisted by the persistent actor identified by the given `persistenceId`.
@@ -103,7 +103,7 @@ Most journals will have to revert to polling in order to achieve this,
 
 If your usage does not require a live stream, you can use the `currentEventsByPersistenceId` query.
 
-## EventsByTag and CurrentEventsByTag
+## `EventsByTag` and `CurrentEventsByTag`
 `eventsByTag` allows querying events regardless of which `persistenceId` they are associated with. 
 - This query is hard to implement in some journals 
 - or may need some additional preparation of the used data store to be executed efficiently. 
