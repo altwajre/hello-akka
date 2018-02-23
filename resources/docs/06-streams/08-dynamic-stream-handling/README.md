@@ -5,9 +5,8 @@
 A KillSwitch allows the completion of graphs of FlowShape from the outside.
 - It consists of a flow element that can be linked to a graph of FlowShape needing completion control.
 - The KillSwitch trait allows to:
-
-    complete the graph(s) via shutdown()
-    fail the graph(s) via abort(Throwable error)
+    - complete the graph(s) via shutdown().
+    - fail the graph(s) via abort(Throwable error).
 
 ```scala
 
@@ -26,9 +25,8 @@ A KillSwitch allows the completion of graphs of FlowShape from the outside.
 
 After the first call to either shutdown or abort, all subsequent calls to any of these methods will be ignored.
 - Graph completion is performed by both
-
-    completing its downstream
-    cancelling (in case of shutdown) or failing (in case of abort) its upstream.
+    - completing its downstream.
+    - cancelling (in case of shutdown) or failing (in case of abort) its upstream.
 
 A KillSwitch can control the completion of one or multiple streams, and therefore comes in two different flavours.
 
@@ -37,8 +35,7 @@ A KillSwitch can control the completion of one or multiple streams, and therefor
 UniqueKillSwitch allows to control the completion of one materialized Graph of FlowShape.
 - Refer to the below for usage examples.
 
-    Shutdown
-
+### Shutdown
 ```scala
 
     val countingSrc = Source(Stream.from(1)).delay(1.second, DelayOverflowStrategy.backpressure)
@@ -57,8 +54,7 @@ UniqueKillSwitch allows to control the completion of one materialized Graph of F
 
 ```
 
-    Abort
-
+### Abort
 ```scala
 
     val countingSrc = Source(Stream.from(1)).delay(1.second, DelayOverflowStrategy.backpressure)
@@ -82,8 +78,7 @@ A SharedKillSwitch allows to control the completion of an arbitrary number graph
 - It can be materialized multiple times via its flow method, and all materialized graphs linked to it are controlled by the switch.
 - Refer to the below for usage examples.
 
-    Shutdown
-
+### Shutdown
 ```scala
 
     val countingSrc = Source(Stream.from(1)).delay(1.second, DelayOverflowStrategy.backpressure)
@@ -108,8 +103,7 @@ A SharedKillSwitch allows to control the completion of an arbitrary number graph
 
 ```
 
-    Abort
-
+### Abort
 ```scala
 
     val countingSrc = Source(Stream.from(1)).delay(1.second)

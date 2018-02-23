@@ -294,9 +294,8 @@ After realizing that RunnableGraph is nothing more than a module with no unused 
 When it comes to streams, each materialization creates a new running network corresponding to the blueprint that was encoded in the provided RunnableGraph.
 - To be able to interact with the running network, each materialization needs to return a different object that provides the necessary interaction capabilities.
 - In other words, the RunnableGraph can be seen as a factory, which creates:
-
-    a network of running processing entities, inaccessible from the outside
-    a materialized value, optionally providing a controlled interaction capability with the network
+    - a network of running processing entities, inaccessible from the outside.
+    - a materialized value, optionally providing a controlled interaction capability with the network.
 
 Unlike actors though, each of the processing stages might provide a materialized value, so when we compose multiple stages or modules, we need to combine the materialized value as well (there are default rules which make this easier, for example to() and via() takes care of the most common case of taking the materialized value to the left.
 - See Combining materialized values for details).

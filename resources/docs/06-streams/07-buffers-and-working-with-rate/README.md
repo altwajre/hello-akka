@@ -22,7 +22,7 @@ To run a stage asynchronously it has to be marked explicitly as such using the .
 ```
 
 Running the above example, one of the possible outputs looks like this:
-
+```
 A: 1
 A: 2
 B: 1
@@ -32,6 +32,7 @@ C: 1
 B: 3
 C: 2
 C: 3
+```
 
 Note that the order is not A:1, B:1, C:1, A:2, B:2, C:2, which would correspond to the normal fused synchronous execution model of flows where an element completely passes through the processing pipeline before the next element enters the flow.
 - The next element is processed by an asynchronous stage as soon as it is emitted the previous one.
@@ -53,8 +54,9 @@ As we have explained, for performance reasons Akka Streams introduces a buffer f
 - The purpose of these buffers is solely optimization, in fact the size of 1 would be the most natural choice if there would be no need for throughput improvements.
 - Therefore it is recommended to keep these buffer sizes small, and increase them only to a level suitable for the throughput requirements of the application.
 - Default buffer sizes can be set through configuration:
-
+```hocon
 akka.stream.materializer.max-input-buffer-size = 16
+```
 
 Alternatively they can be set by passing a ActorMaterializerSettings to the materializer:
 
@@ -212,7 +214,6 @@ Another possible use of conflate is to not consider all elements for summary whe
       .mapConcat(identity)
 
 ```
-
 
 ## Understanding expand
 

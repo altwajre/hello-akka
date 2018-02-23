@@ -12,20 +12,25 @@ Akka Streams is a library to process and transfer a sequence of elements using b
 Before we move on, let’s define some basic terminology which will be used throughout the entire documentation:
 
 ### Stream
-    An active process that involves moving and transforming data.
+An active process that involves moving and transforming data.
+
 ### Element
-    An element is the processing unit of streams.
+An element is the processing unit of streams.
 - All operations transform and transfer elements from upstream to downstream.
 - Buffer sizes are always expressed as number of elements independently from the actual size of the elements.
+
 ### Back-pressure
-    A means of flow-control, a way for consumers of data to notify a producer about their current availability, effectively slowing down the upstream producer to match their consumption speeds.
+A means of flow-control, a way for consumers of data to notify a producer about their current availability, effectively slowing down the upstream producer to match their consumption speeds.
 - In the context of Akka Streams back-pressure is always understood as non-blocking and asynchronous.
+
 ### Non-Blocking
-    Means that a certain operation does not hinder the progress of the calling thread, even if it takes a long time to finish the requested operation.
+Means that a certain operation does not hinder the progress of the calling thread, even if it takes a long time to finish the requested operation.
+
 ### Graph
-    A description of a stream processing topology, defining the pathways through which elements shall flow when the stream is running.
+A description of a stream processing topology, defining the pathways through which elements shall flow when the stream is running.
+
 ### Processing Stage
-    The common name for all building blocks that build up a Graph.
+The common name for all building blocks that build up a Graph.
 - Examples of a processing stage would be operations like map(), filter(), custom GraphStage s and graph junctions like Merge or Broadcast.
 - For the full list of built-in processing stages see stages overview
 
@@ -37,13 +42,18 @@ When we talk about asynchronous, non-blocking backpressure we mean that the proc
 Linear processing pipelines can be expressed in Akka Streams using the following core abstractions:
 
 ### Source
-    A processing stage with exactly one output, emitting data elements whenever downstream processing stages are ready to receive them.
+A processing stage with exactly one output, emitting data elements whenever downstream processing stages are ready to receive them.
+
 ### Sink
-    A processing stage with exactly one input, requesting and accepting data elements possibly slowing down the upstream producer of elements
+A processing stage with exactly one input, requesting and accepting data elements possibly slowing down the upstream producer of elements
+
 ### Flow
-    A processing stage which has exactly one input and output, which connects its upstream and downstream by transforming the data elements flowing through it.
+A processing stage which has exactly one input and output, which connects its upstream and downstream by transforming the data elements flowing through it.
+
 ### RunnableGraph
-    A Flow that has both ends “attached” to a Source and Sink respectively, and is ready to be run().
+A Flow that has both ends “attached” to a Source and Sink respectively, and is ready to be run().
+
+##
 
 It is possible to attach a Flow to a Source resulting in a composite source, and it is also possible to prepend a Flow to a Sink to get a new sink.
 - After a stream is properly terminated by having both a source and a sink, it will be represented by the RunnableGraph type, indicating that it is ready to be executed.
@@ -228,11 +238,10 @@ As we can see, in this scenario we effectively operate in so called push-mode si
 This is the case when back-pressuring the Publisher is required, because the Subscriber is not able to cope with the rate at which its upstream would like to emit data elements.
 
 Since the Publisher is not allowed to signal more elements than the pending demand signalled by the Subscriber, it will have to abide to this back-pressure by applying one of the below strategies:
-
-    not generate elements, if it is able to control their production rate,
-    try buffering the elements in a bounded manner until more demand is signalled,
-    drop elements until more demand is signalled,
-    tear down the stream if unable to apply any of the above strategies.
+- not generate elements, if it is able to control their production rate,
+- try buffering the elements in a bounded manner until more demand is signalled,
+- drop elements until more demand is signalled,
+- tear down the stream if unable to apply any of the above strategies.
 
 As we can see, this scenario effectively means that the Subscriber will pull the elements from the Publisher – this mode of operation is referred to as pull-based back-pressure.
 
@@ -256,9 +265,8 @@ Reusing instances of linear computation stages (Source, Sink, Flow) inside compo
 
 By default Akka Streams will fuse the stream operators.
 - This means that the processing steps of a flow or stream graph can be executed within the same Actor and has two consequences:
-
-    passing elements from one processing stage to the next is a lot faster between fused stages due to avoiding the asynchronous messaging overhead
-    fused stream processing stages does not run in parallel to each other, meaning that only up to one CPU core is used for each fused part
+    - passing elements from one processing stage to the next is a lot faster between fused stages due to avoiding the asynchronous messaging overhead.
+    - fused stream processing stages does not run in parallel to each other, meaning that only up to one CPU core is used for each fused part.
 
 To allow for parallel processing you will have to insert asynchronous boundaries manually into your flows and graphs by way of adding Attributes.asyncBoundary using the method async on Source, Sink and Flow to pieces that shall communicate with the rest of the graph in an asynchronous fashion.
 

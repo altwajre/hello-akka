@@ -86,9 +86,8 @@ Failure detection is performed by sending heartbeat messages to detect if a node
 - The failure detection across different data centers should be interpreted as an indication of problem with the network link between the data centers.
 
 Two different failure detectors can be configured for these two purposes:
-
-    akka.cluster.failure-detector for failure detection within own data center
-    akka.cluster.multi-data-center.failure-detector for failure detection across different data centers
+- akka.cluster.failure-detector for failure detection within own data center.
+- akka.cluster.multi-data-center.failure-detector for failure detection across different data centers.
 
 When subscribing to cluster events the UnreachableMember and ReachableMember events are for observations within the own data center.
 - The same data center as where the subscription was registered.

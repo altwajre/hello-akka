@@ -156,10 +156,9 @@ A partial graph also verifies that all ports are either connected or part of the
 Instead of treating a partial graph as simply a collection of flows and junctions which may not yet all be connected it is sometimes useful to expose such a complex graph as a simpler structure, such as a Source, Sink or Flow.
 
 In fact, these concepts can be easily expressed as special cases of a partially connected graph:
-
-    Source is a partial graph with exactly one output, that is it returns a SourceShape.
-    Sink is a partial graph with exactly one input, that is it returns a SinkShape.
-    Flow is a partial graph with exactly one input and exactly one output, that is it returns a FlowShape.
+- Source is a partial graph with exactly one output, that is it returns a SourceShape.
+- Sink is a partial graph with exactly one input, that is it returns a SinkShape.
+- Flow is a partial graph with exactly one input and exactly one output, that is it returns a FlowShape.
 
 Being able to hide complex graphs inside of simple elements such as Sink / Source / Flow enables you to easily create one complex element and from there on treat it as simple compound stage for linear computations.
 
@@ -648,9 +647,8 @@ The graph DSL allows the connection arrows to be reversed, which is particularly
 
 Running this we observe that after a few numbers have been printed, no more elements are logged to the console - all processing stops after some time.
 - After some investigation we observe that:
-
-    through merging from source we increase the number of elements flowing in the cycle
-    by broadcasting back to the cycle we do not decrease the number of elements in the cycle
+    - through merging from source we increase the number of elements flowing in the cycle.
+    - by broadcasting back to the cycle we do not decrease the number of elements in the cycle.
 
 Since Akka Streams (and Reactive Streams in general) guarantee bounded processing (see the “Buffering” section for more details) it means that only a bounded number of elements are buffered over any time span.
 - Since our cycle gains more and more elements, eventually all of its internal buffers become full, backpressuring source forever.
@@ -703,9 +701,8 @@ To make our cycle both live (not deadlocking) and fair we can introduce a droppi
 ```
 
 If we run this example we see that
-
-    The flow of elements does not stop, there are always elements printed
-    We see that some of the numbers are printed several times over time (due to the feedback loop) but on average the numbers are increasing in the long term
+- The flow of elements does not stop, there are always elements printed.
+- We see that some of the numbers are printed several times over time (due to the feedback loop) but on average the numbers are increasing in the long term.
 
 This example highlights that one solution to avoid deadlocks in the presence of potentially unbalanced cycles (cycles where the number of circulating elements are unbounded) is to drop elements.
 - An alternative would be to define a larger buffer with OverflowStrategy.fail which would fail the stream instead of deadlocking it after all buffer space has been consumed.
@@ -733,9 +730,8 @@ As we discovered in the previous examples, the core problem was the unbalanced n
 ```
 
 Still, when we try to run the example it turns out that no element is printed at all! After some investigation we realize that:
-
-    In order to get the first element from source into the cycle we need an already existing element in the cycle
-    In order to get an initial element in the cycle we need an element from source
+- In order to get the first element from source into the cycle we need an already existing element in the cycle
+- In order to get an initial element in the cycle we need an element from source
 
 These two conditions are a typical “chicken-and-egg” problem.
 - The solution is to inject an initial element into the cycle that is independent from source.
