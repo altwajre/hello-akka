@@ -1,7 +1,8 @@
 # Custom stream processing - Overview
 
 While the processing vocabulary of Akka Streams is quite rich (see the Streams Cookbook for examples) it is sometimes necessary to define new transformation stages either because some functionality is missing from the stock operations, or for performance reasons. In this part we show how to build custom processing stages and graph junctions of various kinds.
-Note
+
+#### Note
 
 A custom graph stage should not be the first tool you reach for, defining graphs using flows and the graph DSL is in general easier and does to a larger extent protect you from mistakes that might be easy to make with a custom GraphStage
 
@@ -29,7 +30,8 @@ Scala
 Java
 
 As you see, in itself the GraphStage only defines the ports of this stage and a shape that contains the ports. It also has, a currently unimplemented method called createLogic. If you recall, stages are reusable in multiple materializations, each resulting in a different executing entity. In the case of GraphStage the actual running logic is modeled as an instance of a GraphStageLogic which will be created by the materializer by calling the createLogic method. In other words, all we need to do is to create a suitable logic that will emit the numbers we want.
-Note
+
+#### Note
 
 It is very important to keep the GraphStage object itself immutable and reusable. All mutable state needs to be confined to the GraphStageLogic that is created for every materialization.
 
@@ -363,7 +365,8 @@ Stages by default automatically stop once all of their ports (input and output) 
 Logging debug or other important information in your stages is often a very good idea, especially when developing more advanced stages which may need to be debugged at some point.
 
 The helper trait akka.stream.stage.StageLogging is provided to enable you to easily obtain a LoggingAdapter inside of a GraphStage as long as the Materializer you’re using is able to provide you with a logger. In that sense, it serves a very similar purpose as ActorLogging does for Actors.
-Note
+
+#### Note
 
 Please note that you can always simply use a logging library directly inside a Stage. Make sure to use an asynchronous appender however, to not accidentally block the stage when writing to files etc. See Using the SLF4J API directly for more details on setting up async appenders in SLF4J.
 
@@ -397,7 +400,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 SPI Note: If you’re implementing a Materializer, you can add this ability to your materializer by implementing MaterializerLoggingProvider in your Materializer.
 

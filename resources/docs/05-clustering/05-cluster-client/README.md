@@ -1,7 +1,8 @@
 # Cluster Client - Overview
 
 An actor system that is not part of the cluster can communicate with actors somewhere in the cluster via this ClusterClient. The client can of course be part of another cluster. It only needs to know the location of one (or more) nodes to use as initial contact points. It will establish a connection to a ClusterReceptionist somewhere in the cluster. It will monitor the connection to the receptionist and establish a new connection if the link goes down. When looking for a new receptionist it uses fresh contact points retrieved from previous establishment, or periodically refreshed contacts, i.e. not necessarily the initial contact points.
-Note
+
+#### Note
 
 ClusterClient should not be used when sending messages to actors that run within the same cluster. Similar functionality as the ClusterClient is provided in a more efficient way by Distributed Publish Subscribe in Cluster for actors that belong to the same cluster.
 

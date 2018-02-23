@@ -105,7 +105,8 @@ Actors may also be subscribed to a named topic with a group id. If subscribing w
 If all the subscribed actors have the same group id, then this works just like Send and each message is only delivered to one subscriber.
 
 If all the subscribed actors have different group names, then this works like normal Publish and each message is broadcasted to all subscribers.
-Note
+
+#### Note
 
 Note that if the group id is used it is part of the topic identifier. Messages published with sendOneMessageToEachGroup=false will not be delivered to subscribers that subscribed with a group id. Messages published with sendOneMessageToEachGroup=true will not be delivered to subscribers that subscribed without a group id.
 

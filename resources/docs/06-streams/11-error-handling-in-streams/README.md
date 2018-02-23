@@ -126,7 +126,8 @@ Java
 Sinks and flows can also be supervised, using akka.stream.scaladsl.RestartSink and akka.stream.scaladsl.RestartFlow . The RestartSink is restarted when it cancels, while the RestartFlow is restarted when either the in port cancels, the out port completes, or the out port sends an error.
 
 # Supervision Strategies
-Note
+
+#### Note
 
 The stages that support supervision strategies are explicitly documented to do so, if there is nothing in the documentation of a stage saying that it adheres to the supervision strategy it means it fails rather than applies supervision.
 
@@ -172,7 +173,8 @@ Scala
 Java
 
 Here you can see that all ArithmeticException will resume the processing, i.e. the elements that cause the division by zero are effectively dropped.
-Note
+
+#### Note
 
 Be aware that dropping elements may result in deadlocks in graphs with cycles, as explained in Graph cycles, liveness and deadlocks.
 

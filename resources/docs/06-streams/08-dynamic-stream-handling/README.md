@@ -119,7 +119,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 A UniqueKillSwitch is always a result of a materialization, whilst SharedKillSwitch needs to be constructed before any materialization takes place.
 

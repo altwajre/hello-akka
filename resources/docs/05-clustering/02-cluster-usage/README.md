@@ -52,7 +52,8 @@ akka.extensions=["akka.cluster.metrics.ClusterMetricsExtension"]
 akka.cluster.metrics.native-library-extract-folder=${user.dir}/target/native
 
 To enable cluster capabilities in your Akka project you should, at a minimum, add the Remoting settings, but with cluster. The akka.cluster.seed-nodes should normally also be added to your application.conf file.
-Note
+
+#### Note
 
 If you are running Akka in a Docker container or the nodes for some other reason have separate internal and external ip addresses you must configure remoting according to Akka behind NAT or in a Docker container
 
@@ -141,7 +142,8 @@ If you don’t configure seed nodes or use joinSeedNodes you need to join the cl
 You can join to any node in the cluster. It does not have to be configured as a seed node. Note that you can only join to an existing cluster member, which means that for bootstrapping some node must join itself,and then the following nodes could join them to make up a cluster.
 
 An actor system can only join a cluster once. Additional attempts will be ignored. When it has successfully joined it must be restarted to be able to join another cluster or to join the same cluster again. It can use the same host name and port after the restart, when it come up as new incarnation of existing member in the cluster, trying to join in, then the existing one will be removed from the cluster and then it will be allowed to join.
-Note
+
+#### Note
 
 The name of the ActorSystem must be the same for all members of a cluster. The name is given when you start the ActorSystem.
 
@@ -356,7 +358,8 @@ This callback can be used for other things than starting actors.
 You can do some clean up in a registerOnMemberRemoved callback, which will be invoked when the current member status is changed to ‘Removed’ or the cluster have been shutdown.
 
 An alternative is to register tasks to the Coordinated Shutdown.
-Note
+
+#### Note
 
 Register a OnMemberRemoved callback on a cluster that have been shutdown, the callback will be invoked immediately on the caller thread, otherwise it will be invoked later when the current member status changed to ‘Removed’. You may want to install some cleanup handling after the cluster was started up, but the cluster might already be shutting down when you installing, and depending on the race is not healthy.
 
@@ -456,7 +459,8 @@ akka.actor.deployment {
     }
 }
 
-Note
+
+#### Note
 
 The routee actors should be started as early as possible when starting the actor system, because the router will try to use them as soon as the member status is changed to ‘Up’.
 
@@ -888,6 +892,7 @@ cluster-dispatcher {
   }
 }
 
-Note
+
+#### Note
 
 Normally it should not be necessary to configure a separate dispatcher for the Cluster. The default-dispatcher should be sufficient for performing the Cluster tasks, i.e. akka.cluster.use-dispatcher should not be changed. If you have Cluster related problems when using the default-dispatcher that is typically an indication that you are running blocking or CPU intensive actors/tasks on the default-dispatcher. Use dedicated dispatchers for such actors/tasks instead of running them on the default-dispatcher, because that may starve system internal tasks. Related config properties: akka.cluster.use-dispatcher = akka.cluster.cluster-dispatcher. Corresponding default values: akka.cluster.use-dispatcher =.

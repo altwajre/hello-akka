@@ -1,7 +1,8 @@
 # Design Principles behind Akka Streams - Overview
 
 It took quite a while until we were reasonably happy with the look and feel of the API and the architecture of the implementation, and while being guided by intuition the design phase was very much exploratory research. This section details the findings and codifies them into a set of principles that have emerged during the process.
-Note
+
+#### Note
 
 As detailed in the introduction keep in mind that the Akka Streams API is completely decoupled from the Reactive Streams interfaces which are just an implementation detail for how to pass stream data between individual processing stages.
 
@@ -52,7 +53,8 @@ We expect libraries to be built on top of Akka Streams, in fact Akka HTTP is one
 The reasoning behind the first rule is that compositionality would be destroyed if different libraries only accepted graphs and expected to materialize them: using two of these together would be impossible because materialization can only happen once. As a consequence, the functionality of a library must be expressed such that materialization can be done by the user, outside of the library’s control.
 
 The second rule allows a library to additionally provide nice sugar for the common case, an example of which is the Akka HTTP API that provides a handleWith method for convenient materialization.
-Note
+
+#### Note
 
 One important consequence of this is that a reusable flow description cannot be bound to “live” resources, any connection to or allocation of such resources must be deferred until materialization time. Examples of “live” resources are already existing TCP connections, a multicast Publisher, etc.; a TickSource does not fall into this category if its timer is created only upon materialization (as is the case for our implementation).
 
@@ -68,14 +70,16 @@ Akka Streams must enable a library to express any stream processing utility in t
     BidiFlow: something with exactly two input streams and two output streams that conceptually behave like two Flows of opposite direction
     Graph: a packaged stream processing topology that exposes a certain set of input and output ports, characterized by an object of type Shape.
 
-Note
+
+#### Note
 
 A source that emits a stream of streams is still just a normal Source, the kind of elements that are produced does not play a role in the static stream topology that is being expressed.
 
 # The difference between Error and Failure
 
 The starting point for this discussion is the definition given by the Reactive Manifesto. Translated to streams this means that an error is accessible within the stream as a normal data element, while a failure means that the stream itself has failed and is collapsing. In concrete terms, on the Reactive Streams interface level data elements (including errors) are signaled via onNext while failures raise the onError signal.
-Note
+
+#### Note
 
 Unfortunately the method name for signaling failure to a Subscriber is called onError for historical reasons. Always keep in mind that the Reactive Streams interfaces (Publisher/Subscription/Subscriber) are modeling the low-level infrastructure for passing streams between execution units, and errors on this level are precisely the failures that we are talking about on the higher level that is modeled by Akka Streams.
 

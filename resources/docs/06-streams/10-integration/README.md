@@ -56,7 +56,8 @@ The same pattern can be used with Actor routers. Then you can use mapAsyncUnorde
 The sink sends the elements of the stream to the given ActorRef that sends back back-pressure signal. First element is always onInitMessage, then stream is waiting for the given acknowledgement message from the given actor which means that it is ready to process elements. It also requires the given acknowledgement message after each stream element to make back-pressure work.
 
 If the target actor terminates the stream will be cancelled. When the stream is completed successfully the given onCompleteMessage will be sent to the destination actor. When the stream is completed with failure a akka.actor.Status.Failure message will be sent to the destination actor.
-Note
+
+#### Note
 
 Using Sink.actorRef or ordinary tell from a map or foreach stage means that there is no back-pressure signal from the destination actor, i.e. if the actor is not consuming the messages fast enough the mailbox of the actor will grow, unless you use a bounded mailbox with zero mailbox-push-timeout-time or use a rate limiting stage in front. It’s often better to use Sink.actorRefWithAck or ask in mapAsync, though.
 

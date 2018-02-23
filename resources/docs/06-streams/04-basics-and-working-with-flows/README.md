@@ -79,7 +79,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 By default Akka Streams elements support exactly one downstream processing stage. Making fan-out (supporting multiple downstream processing stages) an explicit opt-in feature allows default stream elements to be less complex and more efficient. Also it allows for greater flexibility on how exactly to handle the multicast scenarios, by providing named fan-out elements such as broadcast (signals all down-stream elements) or balance (signals one of available down-stream elements).
 
@@ -171,7 +172,8 @@ Akka Streams implement an asynchronous non-blocking back-pressure protocol stand
 The user of the library does not have to write any explicit back-pressure handling code — it is built in and dealt with automatically by all of the provided Akka Streams processing stages. It is possible however to add explicit buffer stages with overflow strategies that can influence the behaviour of the stream. This is especially important in complex processing graphs which may even contain loops (which must be treated with very special care, as explained in Graph cycles, liveness and deadlocks).
 
 The back pressure protocol is defined in terms of the number of elements a downstream Subscriber is able to receive and buffer, referred to as demand. The source of data, referred to as Publisher in Reactive Streams terminology and implemented as Source in Akka Streams, guarantees that it will never emit more elements than the received total demand for any given Subscriber.
-Note
+
+#### Note
 
 The Reactive Streams specification defines its protocol in terms of Publisher and Subscriber. These types are not meant to be user facing API, instead they serve as the low level building blocks for different Reactive Streams implementations.
 
@@ -209,7 +211,8 @@ When constructing flows and graphs in Akka Streams think of them as preparing a 
 Materialization is triggered at so called “terminal operations”. Most notably this includes the various forms of the run() and runWith() methods defined on Source and Flow elements as well as a small number of special syntactic sugars for running with well-known sinks, such as runForeach(el => ...) (being an alias to runWith(Sink.foreach(el => ...))).
 
 Materialization is currently performed synchronously on the materializing thread. The actual stream processing is handled by actors started up during the streams materialization, which will be running on the thread pools they have been configured to run on - which defaults to the dispatcher set in MaterializationSettings while constructing the ActorMaterializer.
-Note
+
+#### Note
 
 Reusing instances of linear computation stages (Source, Sink, Flow) inside composite Graphs is legal, yet will materialize that stage multiple times.
 
@@ -310,7 +313,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 In Graphs it is possible to access the materialized value from inside the stream processing graph. For details see Accessing the materialized value inside the Graph.
 

@@ -1,5 +1,6 @@
 # Cluster Specification - Overview
-Note
+
+#### Note
 
 This document describes the design concepts of the clustering.
 # Intro
@@ -103,13 +104,15 @@ A node begins in the joining state. Once all nodes have seen that the new node i
 If a node is leaving the cluster in a safe, expected manner then it switches to the leaving state. Once the leader sees the convergence on the node in the leaving state, the leader will then move it to exiting. Once all nodes have seen the exiting state (convergence) the leader will remove the node from the cluster, marking it as removed.
 
 If a node is unreachable then gossip convergence is not possible and therefore any leader actions are also not possible (for instance, allowing a node to become a part of the cluster). To be able to move forward the state of the unreachable nodes must be changed. It must become reachable again or marked as down. If the node is to join the cluster again the actor system must be restarted and go through the joining process again. The cluster can, through the leader, also auto-down a node after a configured time of unreachability. If new incarnation of unreachable node tries to rejoin the cluster old incarnation will be marked as down and new incarnation can rejoin the cluster without manual intervention.
-Note
+
+#### Note
 
 If you have auto-down enabled and the failure detector triggers, you can over time end up with a lot of single node clusters if you don’t put measures in place to shut down nodes that have become unreachable. This follows from the fact that the unreachable node will likely see the rest of the cluster as unreachable, become its own leader and form its own cluster.
 
 As mentioned before, if a node is unreachable then gossip convergence is not possible and therefore any leader actions are also not possible. By enabling akka.cluster.allow-weakly-up-members (enabled by default) it is possible to let new joining nodes be promoted while convergence is not yet reached. These Joining nodes will be promoted as WeaklyUp. Once gossip convergence is reached, the leader will move WeaklyUp members to Up.
 
-Note that members on the other side of a network partition have no knowledge about the existence of the new members. You should for example not count WeaklyUp members in quorum decisions.
+
+#### Note that members on the other side of a network partition have no knowledge about the existence of the new members. You should for example not count WeaklyUp members in quorum decisions.
 
 ### State Diagram for the Member States (akka.cluster.allow-weakly-up-members=off)
 

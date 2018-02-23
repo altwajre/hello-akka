@@ -203,7 +203,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 If you would like to get an overview of the used vocabulary first instead of diving head-first into an actual example you can have a look at the Core concepts and Defining and running streams sections of the docs, and then come back to this quickstart to see it all pieced together into a simple example application.
 Transforming and consuming simple streams
@@ -286,7 +287,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 The name flatMap was consciously avoided due to its proximity with for-comprehensions and monadic composition. It is problematic for two reasons: first, flattening by concatenation is often undesirable in bounded stream processing due to the risk of deadlock (with merge being the preferred strategy), and second, the monad laws would not hold for our implementation of flatMap (due to the liveness issues).
 
@@ -396,6 +398,7 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 runWith() is a convenience method that automatically ignores the materialized value of any other stages except those appended by the runWith() itself. In the above example it translates to using Keep.right as the combiner for materialized values.

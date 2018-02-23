@@ -207,7 +207,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 All graph builder sections check if the resulting graph has all ports connected except the exposed ones and will throw an exception if this is violated.
 
@@ -313,7 +314,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 The nested structure in the above example is not necessary for combining the materialized values, it just demonstrates how the two features work together. See Combining materialized values for further examples of combining materialized values without nesting and hierarchy involved.
 
