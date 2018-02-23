@@ -6,7 +6,8 @@ Akka Streams provide a uniform model of stream processing graphs, which allows f
 
 Every processing stage used in Akka Streams can be imagined as a “box” with input and output ports where elements to be processed arrive and leave the stage. In this view, a Source is nothing else than a “box” with a single output port, or, a BidiFlow is a “box” with exactly two input and two output ports. In the figure below we illustrate the most common used stages viewed as “boxes”.
 
-compose_shapes.png
+![compose_shapes.png](https://doc.akka.io/docs/akka/current/images/compose_shapes.png)
+
 
 The linear stages are Source, Sink and Flow, as these can be used to compose strict chains of processing stages. Fan-in and Fan-out stages have usually multiple input or multiple output ports, therefore they allow to build more complex graph layouts, not just chains. BidiFlow stages are usually useful in IO related tasks, where there are input and output channels to be handled. Due to the specific shape of BidiFlow it is easy to stack them on top of each other to build a layered protocol for example. The TLS support in Akka is for example implemented as a BidiFlow.
 
@@ -14,7 +15,8 @@ These reusable components already allow the creation of complex processing netwo
 
 The following figure demonstrates various composite stages, that contain various other type of stages internally, but hiding them behind a shape that looks like a Source, Flow, etc.
 
-compose_composites.png
+![compose_composites.png](https://doc.akka.io/docs/akka/current/images/compose_composites.png)
+
 
 One interesting example above is a Flow which is composed of a disconnected Sink and Source. This can be achieved by using the fromSinkAndSource() constructor method on Flow which takes the two parts as parameters.
 
@@ -24,7 +26,8 @@ The example BidiFlow demonstrates that internally a module can be of arbitrary c
 
 These mechanics allow arbitrary nesting of modules. For example the following figure demonstrates a RunnableGraph that is built from a composite Source and a composite Sink (which in turn contains a composite Flow).
 
-compose_nested_flow.png
+![compose_nested_flow.png](https://doc.akka.io/docs/akka/current/images/compose_nested_flow.png)
+
 
 The above diagram contains one more shape that we have not seen yet, which is called RunnableGraph. It turns out, that if we wire all exposed ports together, so that no more open ports remain, we get a module that is closed. This is what the RunnableGraph class represents. This is the shape that a Materializer can take and turn into a network of running entities that perform the task described. In fact, a RunnableGraph is a module itself, and (maybe somewhat surprisingly) it can be used as part of larger graphs. It is rarely useful to embed a closed graph shape in a larger graph (since it becomes an isolated island as there are no open port for communication with the rest of the graph), but this demonstrates the uniform underlying model.
 
@@ -69,7 +72,8 @@ The following code demonstrates how to achieve the desired nesting:
 
 Once we have hidden the internals of our components, they act like any other built-in component of similar shape. If we hide some of the internals of our composites, the result looks just like if any other predefine component has been used:
 
-compose_nested_flow_opaque.png
+![compose_nested_flow_opaque.png](https://doc.akka.io/docs/akka/current/images/compose_nested_flow_opaque.png)
+
 
 If we look at usage of built-in components, and our custom components, there is no difference in usage as the code snippet below demonstrates.
 
@@ -90,7 +94,8 @@ In the previous section we explored the possibility of composition, and hierarch
 
 As a first example, let’s look at a more complex layout:
 
-compose_graph.png
+![compose_graph.png](https://doc.akka.io/docs/akka/current/images/compose_graph.png)
+
 
 The diagram shows a RunnableGraph (remember, if there are no unwired ports, the graph is closed, and therefore can be materialized) that encapsulates a non-trivial stream processing network. It contains fan-in, fan-out stages, directed and non-directed cycles. The runnable() method of the GraphDSL object allows the creation of a general, closed, and runnable graph. For example the network on the diagram can be realized like this:
 
@@ -139,7 +144,8 @@ In the code above we used the implicit port numbering feature (to make the graph
 
 Similar to the case in the first section, so far we have not considered modularity. We created a complex graph, but the layout is flat, not modularized. We will modify our example, and create a reusable component with the graph DSL. The way to do it is to use the create() factory method on GraphDSL. If we remove the sources and sinks from the previous example, what remains is a partial graph:
 
-compose_graph_partial.png
+![compose_graph_partial.png](https://doc.akka.io/docs/akka/current/images/compose_graph_partial.png)
+
 
 We can recreate a similar graph in code, using the DSL in a similar way than before:
 
@@ -164,7 +170,8 @@ The only new addition is the return value of the builder block, which is a Shape
 
 The resulting graph is already a properly wrapped module, so there is no need to call named() to encapsulate the graph, but it is a good practice to give names to modules to help debugging.
 
-compose_graph_shape.png
+![compose_graph_shape.png](https://doc.akka.io/docs/akka/current/images/compose_graph_shape.png)
+
 
 Since our partial graph has the right shape, it can be already used in the simpler, linear DSL:
 
@@ -176,7 +183,8 @@ Since our partial graph has the right shape, it can be already used in the simpl
 
 It is not possible to use it as a Flow yet, though (i.e. we cannot call .filter() on it), but Flow has a fromGraph() method that just adds the DSL to a FlowShape. There are similar methods on Source, Sink and BidiShape, so it is easy to get back to the simpler DSL if a graph has the right shape. For convenience, it is also possible to skip the partial graph creation, and use one of the convenience creator methods. To demonstrate this, we will create the following graph:
 
-compose_graph_flow.png
+![compose_graph_flow.png](https://doc.akka.io/docs/akka/current/images/compose_graph_flow.png)
+
 
 The code version of the above closed graph might look like this:
 
@@ -244,7 +252,8 @@ Unlike actors though, each of the processing stages might provide a materialized
 
 The propagation of the individual materialized values from the enclosed modules towards the top will look like this:
 
-compose_mat.png
+![compose_mat.png](https://doc.akka.io/docs/akka/current/images/compose_mat.png)
+
 
 To implement the above, first, we create a composite Source, where the enclosed Source have a materialized type of Promise[[Option[Int]] . By using the combiner function Keep.left, the resulting materialized type is of the nested module (indicated by the color red on the diagram):
 
@@ -346,6 +355,7 @@ The code below, a modification of an earlier example sets the inputBuffer attrib
 
 The effect is, that each module inherits the inputBuffer attribute from its enclosing parent, unless it has the same attribute explicitly set. nestedSource gets the default attributes from the materializer itself. nestedSink on the other hand has this attribute set, so it will be used by all nested modules. nestedFlow will inherit from nestedSink except the map stage which has again an explicitly provided attribute overriding the inherited one.
 
-compose_attributes.png
+![compose_attributes.png](https://doc.akka.io/docs/akka/current/images/compose_attributes.png)
+
 
 This diagram illustrates the inheritance process for the example code (representing the materializer default attributes as the color red, the attributes set on nestedSink as blue and the attributes set on nestedFlow as green).

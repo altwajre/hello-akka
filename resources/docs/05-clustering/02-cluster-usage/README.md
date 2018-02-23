@@ -428,15 +428,15 @@ A low threshold is prone to generate many false positives but ensures a quick de
 
 The following chart illustrates how phi increase with increasing time since the previous heartbeat.
 
-phi1.png
+![phi1.png](https://doc.akka.io/docs/akka/current/images/phi1.png)
 
 Phi is calculated from the mean and standard deviation of historical inter arrival times. The previous chart is an example for standard deviation of 200 ms. If the heartbeats arrive with less deviation the curve becomes steeper, i.e. it is possible to determine failure more quickly. The curve looks like this for a standard deviation of 100 ms.
 
-phi2.png
+![phi2.png](https://doc.akka.io/docs/akka/current/images/phi2.png)
 
 To be able to survive sudden abnormalities, such as garbage collection pauses and transient network failures the failure detector is configured with a margin, akka.cluster.failure-detector.acceptable-heartbeat-pause. You may want to adjust the configuration of this depending on your environment. This is how the curve looks like for acceptable-heartbeat-pause configured to 3 seconds.
 
-phi3.png
+![phi3.png](https://doc.akka.io/docs/akka/current/images/phi3.png)
 
 Death watch uses the cluster failure detector for nodes in the cluster, i.e. it detects network failures and JVM crashes, in addition to graceful termination of watched actor. Death watch generates the Terminated message to the watching actor when the unreachable cluster node has been downed and removed.
 

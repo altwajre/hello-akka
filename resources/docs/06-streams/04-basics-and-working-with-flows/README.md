@@ -236,7 +236,7 @@ To allow for parallel processing you will have to insert asynchronous boundaries
 
 In this example we create two regions within the flow which will be executed in one Actor each—assuming that adding and multiplying integers is an extremely costly operation this will lead to a performance gain since two CPUs can work on the tasks in parallel. It is important to note that asynchronous boundaries are not singular places within a flow where elements are passed asynchronously (as in other streaming libraries), but instead attributes always work by adding information to the flow graph that has been constructed up to this point:
 
-asyncBoundary.png
+![asyncBoundary.png](https://doc.akka.io/docs/akka/current/images/asyncBoundary.png)
 
 This means that everything that is inside the red bubble will be executed by one actor and everything outside of it by another. This scheme can be applied successively, always having one such boundary enclose the previous ones plus all processing stages that have been added since them.
 

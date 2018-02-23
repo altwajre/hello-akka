@@ -38,7 +38,7 @@ The grouping of nodes is not limited to the physical boundaries of data centers,
 
 Some membership transitions are managed by one node called the leader. There is one leader per data center and it is responsible for these transitions for the members within the same data center. Members of other data centers are managed independently by the leader of the respective data center. These actions cannot be performed while there are any unreachability observations among the nodes in the data center, but unreachability across different data centers don’t influence the progress of membership management within a data center. Nodes can be added and removed also when there are network partitions between data centers, which is impossible if nodes are not grouped into data centers.
 
-cluster-dc.png
+![cluster-dc.png](https://doc.akka.io/docs/akka/current/images/cluster-dc.png)
 
 User actions like joining, leaving, and downing can be sent to any node in the cluster, not only to the nodes in the data center of the node. Seed nodes are also global.
 
