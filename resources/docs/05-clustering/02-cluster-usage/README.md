@@ -6,12 +6,11 @@ For introduction to the Akka Cluster concepts please see Cluster Specification.
 
 The Akka cluster is a separate jar file. Make sure that you have the following dependency in your project:
 
-sbt
+```sbtshell
 
     "com.typesafe.akka" %% "akka-cluster" % "2.5.9"
 
-Gradle
-Maven
+```
 
 
 # A Simple Cluster Example
@@ -20,6 +19,7 @@ The following configuration enables the Cluster extension to be used. It joins t
 
 The application.conf configuration looks like this:
 
+```hocon
 akka {
   actor {
     provider = "cluster"
@@ -43,11 +43,15 @@ akka {
     # auto-down-unreachable-after = 10s
   }
 }
+```
 
 # Enable metrics extension in akka-cluster-metrics.
+```hocon
 akka.extensions=["akka.cluster.metrics.ClusterMetricsExtension"]
 
 # Sigar native library extract location during tests.
+```
+
 # Note: use per-jvm-instance folder when running multiple jvm on one host.
 akka.cluster.metrics.native-library-extract-folder=${user.dir}/target/native
 
@@ -109,7 +113,7 @@ You may decide if joining to the cluster should be done manually or automaticall
 When a new node is started it sends a message to all seed nodes and then sends join command to the one that answers first. If no one of the seed nodes replied (might not be started yet) it retries this procedure until successful or shutdown.
 
 You define the seed nodes in the configuration file (application.conf):
-
+```hocon
 akka.cluster.seed-nodes = [
   "akka.tcp://ClusterSystem@host1:2552",
   "akka.tcp://ClusterSystem@host2:2552"]
@@ -118,6 +122,7 @@ This can also be defined as Java system properties when starting the JVM using t
 
 -Dakka.cluster.seed-nodes.0=akka.tcp://ClusterSystem@host1:2552
 -Dakka.cluster.seed-nodes.1=akka.tcp://ClusterSystem@host2:2552
+```
 
 Such configuration is typically created dynamically by external tools, see for example:
 
@@ -133,9 +138,10 @@ You may also use Cluster(system).joinSeedNodes to join programmatically, which i
 Unsuccessful attempts to contact seed nodes are automatically retried after the time period defined in configuration property seed-node-timeout. Unsuccessful attempt to join a specific seed node is automatically retried after the configured retry-unsuccessful-join-after. Retrying means that it tries to contact all seed nodes and then joins the node that answers first. The first node in the list of seed nodes will join itself if it cannot contact any of the other seed nodes within the configured seed-node-timeout.
 
 The joining of given seed nodes will by default be retried indefinitely until a successful join. That process can be aborted if unsuccessful by configuring a timeout. When aborted it will run Coordinated Shutdown, which by default will terminated the ActorSystem. CoordinatedShutdown can also be configured to exit the JVM. It is useful to define this timeout if the seed-nodes are assembled dynamically and a restart with new seed-nodes should be tried after unsuccessful attempts.
-
+```hocon
 akka.cluster.shutdown-after-unsuccessful-join-seed-nodes = 20s
 akka.coordinated-shutdown.terminate-actor-system = on
+```
 
 If you don’t configure seed nodes or use joinSeedNodes you need to join the cluster manually, which can be performed by using JMX or HTTP.
 
@@ -158,8 +164,9 @@ A pre-packaged solution for the downing problem is provided by Split Brain Resol
 ## Auto-downing (DO NOT USE)
 
 There is an automatic downing feature that you should not use in production. For testing purpose you can enable it with configuration:
-
+```hocon
 akka.cluster.auto-down-unreachable-after = 120s
+```
 
 This means that the cluster leader member will change the unreachable node status to down automatically after the configured time of unreachability.
 
@@ -197,8 +204,9 @@ If a node is unreachable then gossip convergence is not possible and therefore a
 Joining members will be promoted to WeaklyUp and become part of the cluster if convergence can’t be reached. Once gossip convergence is reached, the leader will move WeaklyUp members to Up.
 
 This feature is enabled by default, but it can be disabled with configuration option:
-
+```hocon
 akka.cluster.allow-weakly-up-members = off
+```
 
 You can subscribe to the WeaklyUp membership event to make use of the members that are in this state, but you should be aware of that members on the other side of a network partition have no knowledge about the existence of the new members. You should for example not count WeaklyUp members in quorum decisions.
 
@@ -330,15 +338,17 @@ The roles of the nodes is part of the membership information in MemberEvent that
 A common use case is to start actors after the cluster has been initialized, members have joined, and the cluster has reached a certain size.
 
 With a configuration option you can define required number of members before the leader changes member status of ‘Joining’ members to ‘Up’.:
-
+```hocon
 akka.cluster.min-nr-of-members = 3
+```
 
 In a similar way you can define required number of members of a certain role before the leader changes member status of ‘Joining’ members to ‘Up’.:
-
+```hocon
 akka.cluster.role {
   frontend.min-nr-of-members = 1
   backend.min-nr-of-members = 2
 }
+```
 
 You can start the actors in a registerOnMemberUp callback, which will be invoked when the current member status is changed to ‘Up’, i.e. the cluster has at least the defined number of members.
 
@@ -447,7 +457,7 @@ There are two distinct types of routers.
 ## Router with Group of Routees
 
 When using a Group you must start the routee actors on the cluster member nodes. That is not done by the router. The configuration for a group looks like this::
-
+```hocon
 akka.actor.deployment {
   /statsService/workerRouter {
       router = consistent-hashing-group
@@ -459,6 +469,7 @@ akka.actor.deployment {
       }
     }
 }
+```
 
 
 #### Note
@@ -525,7 +536,7 @@ The worker that counts number of characters in each word:
 ```
 
 The service that receives text from users and splits it up into words, delegates to workers and aggregates:
-
+```scala
 class StatsService extends Actor {
   // This router is used both with lookup and deploy of routees. If you
   // have a router with only lookup of routees you can use Props.empty
@@ -565,11 +576,12 @@ class StatsAggregator(expectedResults: Int, replyTo: ActorRef) extends Actor {
       context.stop(self)
   }
 }
+```
 
 Note, nothing cluster specific so far, just plain actors.
 
 All nodes start StatsService and StatsWorker actors. Remember, routees are the workers in this case. The router is configured with routees.paths::
-
+```hocon
 akka.actor.deployment {
   /statsService/workerRouter {
     router = consistent-hashing-group
@@ -581,6 +593,7 @@ akka.actor.deployment {
     }
   }
 }
+```
 
 This means that user requests can be sent to StatsService on any node and it will use StatsWorker on all nodes.
 
@@ -589,7 +602,7 @@ The easiest way to run Router Example with Group of Routees example yourself is 
 ## Router with Pool of Remote Deployed Routees
 
 When using a Pool with routees created and deployed on the cluster member nodes the configuration for a router looks like this::
-
+```hocon
 akka.actor.deployment {
   /statsService/singleton/workerRouter {
       router = consistent-hashing-pool
@@ -601,6 +614,7 @@ akka.actor.deployment {
       }
     }
 }
+```
 
 It is possible to limit the deployment of routees to member nodes tagged with a particular set of roles by specifying use-roles.
 
@@ -653,7 +667,7 @@ We also need an actor on each node that keeps track of where current single mast
 The ClusterSingletonProxy receives text from users and delegates to the current StatsService, the single master. It listens to cluster events to lookup the StatsService on the oldest node.
 
 All nodes start ClusterSingletonProxy and the ClusterSingletonManager. The router is now configured like this::
-
+```hocon
 akka.actor.deployment {
   /statsService/singleton/workerRouter {
     router = consistent-hashing-pool
@@ -665,6 +679,7 @@ akka.actor.deployment {
     }
   }
 }
+```
 
 The easiest way to run Router Example with Pool of Remote Deployed Routees example yourself is to download the ready to run Akka Cluster Sample with Scala together with the tutorial. It contains instructions on how to run the Router Example with Pool of Remote Deployed Routees sample. The source code of this sample can be found in the Akka Samples Repository.
 
@@ -679,7 +694,7 @@ Multi Node Testing is useful for testing cluster applications.
 Set up your project according to the instructions in Multi Node Testing and Multi JVM Testing, i.e. add the sbt-multi-jvm plugin and the dependency to akka-multi-node-testkit.
 
 First, as described in Multi Node Testing, we need some scaffolding to configure the MultiNodeSpec. Define the participating roles and their configuration in an object extending MultiNodeConfig:
-
+```scala
 import akka.remote.testkit.MultiNodeConfig
 import com.typesafe.config.ConfigFactory
 
@@ -723,18 +738,20 @@ object StatsSampleSpecConfig extends MultiNodeConfig {
     """))
 
 }
+```
 
 Define one concrete test class for each role/node. These will be instantiated on the different nodes (JVMs). They can be implemented differently, but often they are the same and extend an abstract test class, as illustrated here.
-
+```scala
 // need one concrete test class per node
 class StatsSampleSpecMultiJvmNode1 extends StatsSampleSpec
 class StatsSampleSpecMultiJvmNode2 extends StatsSampleSpec
 class StatsSampleSpecMultiJvmNode3 extends StatsSampleSpec
+```
 
 Note the naming convention of these classes. The name of the classes must end with MultiJvmNode1, MultiJvmNode2 and so on. It is possible to define another suffix to be used by the sbt-multi-jvm, but the default should be fine in most cases.
 
 Then the abstract MultiNodeSpec, which takes the MultiNodeConfig as constructor parameter.
-
+```scala
 import akka.remote.testkit.MultiNodeSpec
 import akka.testkit.ImplicitSender
 import org.scalatest.{ BeforeAndAfterAll, Matchers, WordSpecLike }
@@ -750,11 +767,12 @@ abstract class StatsSampleSpec extends MultiNodeSpec(StatsSampleSpecConfig)
   override def beforeAll() = multiNodeSpecBeforeAll()
 
   override def afterAll() = multiNodeSpecAfterAll()
+```
 
 Most of this can of course be extracted to a separate trait to avoid repeating this in all your tests.
 
 Typically you begin your test by starting up the cluster and let the members join, and create some actors. That can be done like this:
-
+```scala
 "illustrate how to startup cluster" in within(15 seconds) {
   Cluster(system).subscribe(testActor, classOf[MemberUp])
   expectMsgClass(classOf[CurrentClusterState])
@@ -775,15 +793,17 @@ Typically you begin your test by starting up the cluster and let the members joi
 
   testConductor.enter("all-up")
 }
+```
 
 From the test you interact with the cluster using the Cluster extension, e.g. join.
-
+```scala
 Cluster(system) join firstAddress
+```
 
 Notice how the testActor from testkit is added as subscriber to cluster changes and then waiting for certain events, such as in this case all members becoming ‘Up’.
 
 The above code was running for all roles (JVMs). runOn is a convenient utility to declare that a certain block of code should only run for a specific role.
-
+```scala
 "show usage of the statsService from one node" in within(15 seconds) {
   runOn(second) {
     assertServiceOk()
@@ -803,14 +823,16 @@ def assertServiceOk(): Unit = {
   }
 
 }
+```
 
 Once again we take advantage of the facilities in testkit to verify expected behavior. Here using testActor as sender (via ImplicitSender) and verifying the reply with expectMsgPF.
 
 In the above code you can see node(third), which is useful facility to get the root actor reference of the actor system for a specific role. This can also be used to grab the akka.actor.Address of that node.
-
+```scala
 val firstAddress = node(first).address
 val secondAddress = node(second).address
 val thirdAddress = node(third).address
+```
 
 
 # Management
@@ -875,14 +897,15 @@ There are several configuration properties for the cluster. We refer to the refe
 ## Cluster Info Logging
 
 You can silence the logging of cluster events at info level with configuration property:
-
+```hocon
 akka.cluster.log-info = off
+```
 
 
 ## Cluster Dispatcher
 
 Under the hood the cluster extension is implemented with actors and it can be necessary to create a bulkhead for those actors to avoid disturbance from other actors. Especially the heartbeating actors that is used for failure detection can generate false positives if they are not given a chance to run at regular intervals. For this purpose you can define a separate dispatcher to be used for the cluster actors:
-
+```hocon
 akka.cluster.use-dispatcher = cluster-dispatcher
 
 cluster-dispatcher {
@@ -893,6 +916,7 @@ cluster-dispatcher {
     parallelism-max = 4
   }
 }
+```
 
 
 #### Note

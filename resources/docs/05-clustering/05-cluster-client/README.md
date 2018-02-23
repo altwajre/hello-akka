@@ -42,12 +42,13 @@ It’s worth noting that messages can always be lost because of the distributed 
 # An Example
 
 On the cluster nodes first start the receptionist. Note, it is recommended to load the extension when the actor system is started by defining it in the akka.extensions configuration property:
-
+```hocon
 akka.extensions = ["akka.cluster.client.ClusterClientReceptionist"]
+```
 
 Next, register the actors that should be available for the client.
 
-Scala
+```scala
 
     runOn(host1) {
       val serviceA = system.actorOf(Props[Service], "serviceA")
@@ -59,11 +60,11 @@ Scala
       ClusterClientReceptionist(system).registerService(serviceB)
     }
 
-Java
+```
 
 On the client you create the ClusterClient actor and use it as a gateway for sending messages to the actors identified by their path (without address information) somewhere in the cluster.
 
-Scala
+```scala
 
     runOn(client) {
       val c = system.actorOf(ClusterClient.props(
@@ -72,11 +73,11 @@ Scala
       c ! ClusterClient.SendToAll("/user/serviceB", "hi")
     }
 
-Java
+```
 
 The initialContacts parameter is a Set[ActorPath], which can be created like this:
 
-Scala
+```scala
 
     val initialContacts = Set(
       ActorPath.fromString("akka.tcp://OtherSys@host1:2552/system/receptionist"),
@@ -84,7 +85,7 @@ Scala
     val settings = ClusterClientSettings(system)
       .withInitialContacts(initialContacts)
 
-Java
+```
 
 You will probably define the address information of the initial contact points in configuration or system property. See also Configuration.
 
@@ -97,15 +98,16 @@ In the example above the receptionist is started and accessed with the akka.clus
 Note that the ClusterClientReceptionist uses the DistributedPubSub extension, which is described in Distributed Publish Subscribe in Cluster.
 
 It is recommended to load the extension when the actor system is started by defining it in the akka.extensions configuration property:
-
+```hocon
 akka.extensions = ["akka.cluster.client.ClusterClientReceptionist"]
+```
 
 
 # Events
 
 As mentioned earlier, both the ClusterClient and ClusterClientReceptionist emit events that can be subscribed to. The following code snippet declares an actor that will receive notifications on contact points (addresses to the available receptionists), as they become available. The code illustrates subscribing to the events and receiving the ClusterClient initial state.
 
-Scala
+```scala
 
     class ClientListener(targetClient: ActorRef) extends Actor {
       override def preStart(): Unit =
@@ -127,11 +129,11 @@ Scala
       }
     }
 
-Java
+```
 
 Similarly we can have an actor that behaves in a similar fashion for learning what cluster clients are connected to a ClusterClientReceptionist:
 
-Scala
+```scala
 
     class ReceptionistListener(targetReceptionist: ActorRef) extends Actor {
       override def preStart(): Unit =
@@ -153,24 +155,24 @@ Scala
       }
     }
 
-Java
+```
 
 
 # Dependencies
 
 To use the Cluster Client you must add the following dependency in your project.
 
-sbt
+```sbtshell
 
     "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.9"
 
-Maven
+```
 
 
 # Configuration
 
 The ClusterClientReceptionist extension (or ClusterReceptionistSettings) can be configured with the following properties:
-
+```hocon
 # Settings for the ClusterClientReceptionist extension
 akka.cluster.client.receptionist {
   # Actor name of the ClusterReceptionist actor, /system/receptionist
@@ -207,9 +209,10 @@ akka.cluster.client.receptionist {
   # Failure detection checking interval for checking all ClusterClients
   failure-detection-interval = 2s
 }
+```
 
 The following configuration properties are read by the ClusterClientSettings when created with a ActorSystem parameter. It is also possible to amend the ClusterClientSettings or create it from another config section with the same layout as below. ClusterClientSettings is a parameter to the ClusterClient.props factory method, i.e. each client can be configured with different settings if needed.
-
+```hocon
 # Settings for the ClusterClient
 akka.cluster.client {
   # Actor paths of the ClusterReceptionist actors on the servers (cluster nodes)
@@ -255,6 +258,7 @@ akka.cluster.client {
   # forever.
   reconnect-timeout = off
 }
+```
 
 
 # Failure handling

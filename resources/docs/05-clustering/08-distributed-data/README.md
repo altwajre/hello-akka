@@ -16,7 +16,7 @@ Cluster members with status WeaklyUp, will participate in Distributed Data. This
 
 Below is an example of an actor that schedules tick messages to itself and for each tick adds or removes elements from a ORSet (observed-remove set). It also subscribes to changes of this.
 
-Scala
+```scala
 
     import java.util.concurrent.ThreadLocalRandom
     import akka.actor.Actor
@@ -69,7 +69,7 @@ Scala
 
     }
 
-Java
+```
 
 
 ## Update
@@ -93,7 +93,7 @@ When you specify to write to n out of x nodes, the update will first replicate t
 
 Note that WriteMajority has a minCap parameter that is useful to specify to achieve better safety for small clusters.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val replicator = DistributedData(system).replicator
@@ -114,29 +114,29 @@ Scala
     val writeAll = WriteAll(timeout = 5.seconds)
     replicator ! Update(ActiveFlagKey, Flag.Disabled, writeAll)(_.switchOn)
 
-Java
+```
 
 As reply of the Update a Replicator.UpdateSuccess is sent to the sender of the Update if the value was successfully replicated according to the supplied consistency level within the supplied timeout. Otherwise a Replicator.UpdateFailure subclass is sent back. Note that a Replicator.UpdateTimeout reply does not mean that the update completely failed or was rolled back. It may still have been replicated to some nodes, and will eventually be replicated to all nodes with the gossip protocol.
 
-Scala
+```scala
 
     case UpdateSuccess(Counter1Key, req) ⇒ // ok
 
-Java
+```
 
-Scala
+```scala
 
     case UpdateSuccess(Set1Key, req)  ⇒ // ok
     case UpdateTimeout(Set1Key, req)  ⇒
     // write to 3 nodes failed within 1.second
 
-Java
+```
 
 You will always see your own writes. For example if you send two Update messages changing the value of the same key, the modify function of the second message will see the change that was performed by the first Update message.
 
 In the Update message you can pass an optional request context, which the Replicator does not care about, but is included in the reply messages. This is a convenient way to pass contextual information (e.g. original sender) without having to use ask or maintain local correlation data structures.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val replicator = DistributedData(system).replicator
@@ -155,7 +155,7 @@ Scala
         replyTo ! "nack"
     }
 
-Java
+```
 
 
 ## Get
@@ -169,7 +169,7 @@ To retrieve the current value of a data you send Replicator.Get message to the R
 
 Note that ReadMajority has a minCap parameter that is useful to specify to achieve better safety for small clusters.
 
-Scala
+```scala
 
     val replicator = DistributedData(system).replicator
     val Counter1Key = PNCounterKey("counter1")
@@ -188,19 +188,19 @@ Scala
     val readAll = ReadAll(timeout = 5.seconds)
     replicator ! Get(ActiveFlagKey, readAll)
 
-Java
+```
 
 As reply of the Get a Replicator.GetSuccess is sent to the sender of the Get if the value was successfully retrieved according to the supplied consistency level within the supplied timeout. Otherwise a Replicator.GetFailure is sent. If the key does not exist the reply will be Replicator.NotFound.
 
-Scala
+```scala
 
     case g @ GetSuccess(Counter1Key, req) ⇒
       val value = g.get(Counter1Key).value
     case NotFound(Counter1Key, req) ⇒ // key counter1 does not exist
 
-Java
+```
 
-Scala
+```scala
 
     case g @ GetSuccess(Set1Key, req) ⇒
       val elements = g.get(Set1Key).elements
@@ -208,13 +208,13 @@ Scala
     // read from 3 nodes failed within 1.second
     case NotFound(Set1Key, req)   ⇒ // key set1 does not exist
 
-Java
+```
 
 You will always read your own writes. For example if you send a Update message followed by a Get of the same key the Get will retrieve the change that was performed by the preceding Update message. However, the order of the reply messages are not defined, i.e. in the previous example you may receive the GetSuccess before the UpdateSuccess.
 
 In the Get message you can pass an optional request context in the same way as for the Update message, described above. For example the original sender can be passed and replied to after receiving and transforming GetSuccess.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val replicator = DistributedData(system).replicator
@@ -235,7 +235,7 @@ Scala
         replyTo ! 0L
     }
 
-Java
+```
 
 
 ## Consistency
@@ -266,15 +266,15 @@ For small clusters (<7) the risk of membership changes between a WriteMajority a
 
 Here is an example of using WriteMajority and ReadMajority:
 
-Scala
+```scala
 
     private val timeout = 3.seconds
     private val readMajority = ReadMajority(timeout)
     private val writeMajority = WriteMajority(timeout)
 
-Java
+```
 
-Scala
+```scala
 
     def receiveGetCart: Receive = {
       case GetCart ⇒
@@ -293,9 +293,9 @@ Scala
         replicator ! Get(DataKey, ReadLocal, Some(replyTo))
     }
 
-Java
+```
 
-Scala
+```scala
 
     def receiveAddItem: Receive = {
       case cmd @ AddItem(item) ⇒
@@ -305,13 +305,13 @@ Scala
         replicator ! update
     }
 
-Java
+```
 
 In some rare cases, when performing an Update it is needed to first try to fetch latest data from other nodes. That can be done by first sending a Get with ReadMajority and then continue with the Update when the GetSuccess, GetFailure or NotFound reply is received. This might be needed when you need to base a decision on latest information or when removing entries from ORSet or ORMap. If an entry is added to an ORSet or ORMap from one node and removed from another node the entry will only be removed if the added entry is visible on the node where the removal is performed (hence the name observed-removed set).
 
 The following example illustrates how to do that:
 
-Scala
+```scala
 
     def receiveRemoveItem: Receive = {
       case cmd @ RemoveItem(productId) ⇒
@@ -334,7 +334,7 @@ Scala
       // nothing to remove
     }
 
-Java
+```
 
 
 #### Warning
@@ -347,7 +347,7 @@ You may also register interest in change notifications by sending Replicator.Sub
 
 The subscriber is automatically removed if the subscriber is terminated. A subscriber can also be deregistered with the Replicator.Unsubscribe message.
 
-Scala
+```scala
 
     val replicator = DistributedData(system).replicator
     val Counter1Key = PNCounterKey("counter1")
@@ -363,7 +363,7 @@ Scala
         sender() ! currentValue
     }
 
-Java
+```
 
 
 ## Delete
@@ -374,7 +374,7 @@ A deleted key cannot be reused again, but it is still recommended to delete unus
 
 In the Delete message you can pass an optional request context in the same way as for the Update message, described above. For example the original sender can be passed and replied to after receiving and transforming DeleteSuccess.
 
-Scala
+```scala
 
     val replicator = DistributedData(system).replicator
     val Counter1Key = PNCounterKey("counter1")
@@ -385,7 +385,7 @@ Scala
     val writeMajority = WriteMajority(timeout = 5.seconds)
     replicator ! Delete(Set2Key, writeMajority)
 
-Java
+```
 
 
 #### Warning
@@ -427,7 +427,7 @@ If you need both increments and decrements you can use the PNCounter (positive/n
 
 It is tracking the increments (P) separate from the decrements (N). Both P and N are represented as two internal GCounter. Merge is handled by merging the internal P and N counters. The value of the counter is the value of the P counter minus the value of the N counter.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val c0 = PNCounter.empty
@@ -436,13 +436,13 @@ Scala
     val c3: PNCounter = c2 - 2
     println(c3.value) // 6
 
-Java
+```
 
 GCounter and PNCounter have support for delta-CRDT and don’t need causal delivery of deltas.
 
 Several related counters can be managed in a map with the PNCounterMap data type. When the counters are placed in a PNCounterMap as opposed to placing them as separate top level values they are guaranteed to be replicated together as one unit, which is sometimes necessary for related data.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val m0 = PNCounterMap.empty[String]
@@ -452,14 +452,14 @@ Scala
     println(m3.get("a")) // 5
     m3.entries.foreach { case (key, value) ⇒ println(s"$key -> $value") }
 
-Java
+```
 
 
 ## Sets
 
 If you only need to add elements to a set and not remove elements the GSet (grow-only set) is the data type to use. The elements can be any type of values that can be serialized. Merge is simply the union of the two sets.
 
-Scala
+```scala
 
     val s0 = GSet.empty[String]
     val s1 = s0 + "a"
@@ -467,7 +467,7 @@ Scala
     if (s2.contains("a"))
       println(s2.elements) // a, b, c
 
-Java
+```
 
 GSet has support for delta-CRDT and it doesn’t require causal delivery of deltas.
 
@@ -475,7 +475,7 @@ If you need add and remove operations you should use the ORSet (observed-remove 
 
 The ORSet has a version vector that is incremented when an element is added to the set. The version for the node that added the element is also tracked for each element in a so called “birth dot”. The version vector and the dots are used by the merge function to track causality of the operations and resolve concurrent updates.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val s0 = ORSet.empty[String]
@@ -484,7 +484,7 @@ Scala
     val s3 = s2 - "a"
     println(s3.elements) // b
 
-Java
+```
 
 ORSet has support for delta-CRDT and it requires causal delivery of deltas.
 
@@ -506,7 +506,7 @@ LWWMap (last writer wins map) is a specialized ORMap with LWWRegister (last writ
 
 ORMap, ORMultiMap, PNCounterMap and LWWMap have support for delta-CRDT and they require causal delivery of deltas. Support for deltas here means that the ORSet being underlying key type for all those maps uses delta propagation to deliver updates. Effectively, the update for map is then a pair, consisting of delta for the ORSet being the key and full update for the respective value (ORSet, PNCounter or LWWRegister) kept in the map.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val m0 = ORMultiMap.empty[String, Int]
@@ -516,7 +516,7 @@ Scala
     val m4 = m3.addBinding("b", 1)
     println(m4.entries)
 
-Java
+```
 
 When a data entry is changed the full state of that entry is replicated to other nodes, i.e. when you update a map, the whole map is replicated. Therefore, instead of using one ORMap with 1000 elements it is more efficient to split that up in 10 top level ORMap entries with 100 elements each. Top level entries are replicated individually, which has the trade-off that different entries may not be replicated at the same time and you may see inconsistencies between related entries. Separate top level entries cannot be updated atomically together.
 
@@ -532,13 +532,13 @@ Note that LWWRegister and therefore LWWMap relies on synchronized clocks and sho
 
 Flag is a data type for a boolean value that is initialized to false and can be switched to true. Thereafter it cannot be changed. true wins over false in merge.
 
-Scala
+```scala
 
     val f0 = Flag.Disabled
     val f1 = f0.switchOn
     println(f1.enabled)
 
-Java
+```
 
 LWWRegister (last writer wins register) can hold any (serializable) value.
 
@@ -546,18 +546,18 @@ Merge of a LWWRegister takes the register with highest timestamp. Note that this
 
 Merge takes the register updated by the node with lowest address (UniqueAddress is ordered) if the timestamps are exactly the same.
 
-Scala
+```scala
 
     implicit val node = Cluster(system)
     val r1 = LWWRegister("Hello")
     val r2 = r1.withValue("Hi")
     println(s"${r1.value} by ${r1.updatedBy} at ${r1.timestamp}")
 
-Java
+```
 
 Instead of using timestamps based on System.currentTimeMillis() time it is possible to use a timestamp value based on something else, for example an increasing version number from a database record that is used for optimistic concurrency control.
 
-Scala
+```scala
 
     case class Record(version: Int, name: String, address: String)
 
@@ -576,7 +576,7 @@ Scala
     val r3 = r1.merge(r2)
     println(r3.value)
 
-Java
+```
 
 For first-write-wins semantics you can use the LWWRegister#reverseClock instead of the LWWRegister#defaultClock.
 
@@ -590,7 +590,7 @@ A nice property of stateful CRDTs is that they typically compose nicely, i.e. yo
 
 Here is s simple implementation of a custom TwoPhaseSet that is using two internal GSet types to keep track of addition and removals. A TwoPhaseSet is a set where an element may be added and removed, but never added again thereafter.
 
-Scala
+```scala
 
     case class TwoPhaseSet(
       adds:     GSet[String] = GSet.empty,
@@ -612,7 +612,7 @@ Scala
           removals = this.removals.merge(that.removals))
     }
 
-Java
+```
 
 Data types should be immutable, i.e. “modifying” methods should return a new instance.
 
@@ -625,7 +625,7 @@ The data types must be serializable with an Akka Serializer. It is highly recomm
 ### Serialization of the data types are used in remote messages and also for creating message digests (SHA-1) to detect changes. Therefore it is important that the serialization is efficient and produce the same bytes for the same content. For example sets and maps should be sorted deterministically in the serialization.
 
 This is a protobuf representation of the above TwoPhaseSet:
-
+```
 option java_package = "docs.ddata.protobuf.msg";
 option optimize_for = SPEED;
 
@@ -633,10 +633,11 @@ message TwoPhaseSet {
   repeated string adds = 1;
   repeated string removals = 2;
 }
+```
 
 The serializer for the TwoPhaseSet:
 
-Scala
+```scala
 
     import java.util.ArrayList
     import java.util.Collections
@@ -695,13 +696,13 @@ Scala
       }
     }
 
-Java
+```
 
 Note that the elements of the sets are sorted so the SHA-1 digests are the same for the same elements.
 
 You register the serializer in configuration:
 
-Scala
+```scala
 
     akka.actor {
       serializers {
@@ -712,11 +713,11 @@ Scala
       }
     }
 
-Java
+```
 
 Using compression can sometimes be a good idea to reduce the data size. Gzip compression is provided by the akka.cluster.ddata.protobuf.SerializationSupport trait:
 
-Scala
+```scala
 
     override def toBinary(obj: AnyRef): Array[Byte] = obj match {
       case m: TwoPhaseSet ⇒ compress(twoPhaseSetToProto(m))
@@ -728,18 +729,19 @@ Scala
       twoPhaseSetFromBinary(decompress(bytes))
     }
 
-Java
+```
 
 The two embedded GSet can be serialized as illustrated above, but in general when composing new data types from the existing built in types it is better to make use of the existing serializer for those types. This can be done by declaring those as bytes fields in protobuf:
-
+```
 message TwoPhaseSet2 {
   optional bytes adds = 1;
   optional bytes removals = 2;
 }
+```
 
 and use the methods otherMessageToProto and otherMessageFromBinary that are provided by the SerializationSupport trait to serialize and deserialize the GSet instances. This works with any type that has a registered Akka serializer. This is how such an serializer would look like for the TwoPhaseSet:
 
-Scala
+```scala
 
     import akka.actor.ExtendedActorSystem
     import akka.cluster.ddata.GSet
@@ -793,7 +795,7 @@ Scala
       }
     }
 
-Java
+```
 
 
 ## Durable Storage
@@ -801,20 +803,22 @@ Java
 By default the data is only kept in memory. It is redundant since it is replicated to other nodes in the cluster, but if you stop all nodes the data is lost, unless you have saved it elsewhere.
 
 Entries can be configured to be durable, i.e. stored on local disk on each node. The stored data will be loaded next time the replicator is started, i.e. when actor system is restarted. This means data will survive as long as at least one node from the old cluster takes part in a new cluster. The keys of the durable entries are configured with:
-
+```hocon
 akka.cluster.distributed-data.durable.keys = ["a", "b", "durable*"]
+```
 
 Prefix matching is supported by using * at the end of a key.
 
 All entries can be made durable by specifying:
-
+```hocon
 akka.cluster.distributed-data.durable.keys = ["*"]
+```
 
 LMDB is the default storage implementation. It is possible to replace that with another implementation by implementing the actor protocol described in akka.cluster.ddata.DurableStore and defining the akka.cluster.distributed-data.durable.store-actor-class property for the new implementation.
 
 The location of the files for the data is configured with:
 
-Scala
+```scala
 
     # Directory of LMDB file. There are two options:
     # 1. A relative or absolute path to a directory that ends with 'ddata'
@@ -824,13 +828,14 @@ Scala
     #    a directory.
     akka.cluster.distributed-data.durable.lmdb.dir = "ddata"
 
-Java
+```
 
 When running in production you may want to configure the directory to a specific path (alt 2), since the default directory contains the remote port of the actor system to make the name unique. If using a dynamically assigned port (0) it will be different each time and the previously stored data will not be loaded.
 
 Making the data durable has of course a performance cost. By default, each update is flushed to disk before the UpdateSuccess reply is sent. For better performance, but with the risk of losing the last writes if the JVM crashes, you can enable write behind mode. Changes are then accumulated during a time period before it is written to LMDB and flushed to disk. Enabling write behind is especially efficient when performing many writes to the same key, because it is only the last value for each key that will be serialized and stored. The risk of losing writes if the JVM crashes is small since the data is typically replicated to other nodes immediately according to the given WriteConsistency.
-
+```hocon
 akka.cluster.distributed-data.lmdb.write-behind-interval = 200 ms
+```
 
 Note that you should be prepared to receive WriteFailure as reply to an Update of a durable entry if the data could not be stored for some reason. When enabling write-behind-interval such errors will only be logged and UpdateSuccess will still be the reply to the Update.
 
@@ -875,18 +880,16 @@ When a data entry is changed the full state of that entry may be replicated to o
 
 To use Distributed Data you must add the following dependency in your project.
 
-sbt
+```sbtshell
 
     "com.typesafe.akka" %% "akka-distributed-data" % "2.5.9"
 
-Gradle
-Maven
-
+```
 
 # Configuration
 
 The DistributedData extension can be configured with the following properties:
-
+```hocon
 # Settings for the DistributedData extension
 akka.cluster.distributed-data {
   # Actor name of the Replicator actor, /system/ddataReplicator
@@ -1009,4 +1012,5 @@ akka.cluster.distributed-data {
   }
   
 }
+```
 

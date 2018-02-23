@@ -18,7 +18,7 @@ Don’t use Cluster Sharding together with Automatic Downing, since it allows th
 
 This is how an entity actor may look like:
 
-Scala
+```scala
 
     case object Increment
     case object Decrement
@@ -54,7 +54,7 @@ Scala
       }
     }
 
-Java
+```
 
 The above actor uses event sourcing and the support provided in PersistentActor to store its state. It does not have to be a persistent actor, but in case of failure or migration of entities between nodes it must be able to recover its state if it is valuable.
 
@@ -62,7 +62,7 @@ Note how the persistenceId is defined. The name of the actor is the entity ident
 
 When using the sharding extension you are first, typically at system startup on each node in the cluster, supposed to register the supported entity types with the ClusterSharding.start method. ClusterSharding.start gives you the reference which you can pass along.
 
-Scala
+```scala
 
     val counterRegion: ActorRef = ClusterSharding(system).start(
       typeName = "Counter",
@@ -71,11 +71,11 @@ Scala
       extractEntityId = extractEntityId,
       extractShardId = extractShardId)
 
-Java
+```
 
 The extractEntityId and extractShardId are two application specific functions to extract the entity identifier and the shard identifier from incoming messages.
 
-Scala
+```scala
 
     val extractEntityId: ShardRegion.ExtractEntityId = {
       case EntityEnvelope(id, payload) ⇒ (id.toString, payload)
@@ -92,7 +92,7 @@ Scala
         (id.toLong % numberOfShards).toString
     }
 
-Java
+```
 
 This example illustrates two different ways to define the entity identifier in the messages:
 
@@ -109,7 +109,7 @@ A simple sharding algorithm that works fine in most cases is to take the absolut
 
 Messages to the entities are always sent via the local ShardRegion. The ShardRegion actor reference for a named entity type is returned by ClusterSharding.start and it can also be retrieved with ClusterSharding.shardRegion. The ShardRegion will lookup the location of the shard for the entity if it does not already know its location. It will delegate the message to the right node and it will create the entity actor on demand, i.e. when the first message for a specific entity is delivered.
 
-Scala
+```scala
 
     val counterRegion: ActorRef = ClusterSharding(system).shardRegion("Counter")
     counterRegion ! Get(123)
@@ -119,7 +119,7 @@ Scala
     counterRegion ! Get(123)
     expectMsg(1)
 
-Java
+```
 
 A more comprehensive sample is available in the tutorial named Akka Cluster Sharding with Scala!.
 
@@ -210,7 +210,7 @@ If the state of the entities are persistent you may stop entities that are not u
 
 The list of entities in each Shard can be made persistent (durable) by setting the rememberEntities flag to true in ClusterShardingSettings when calling ClusterSharding.start and making sure the shardIdExtractor handles Shard.StartEntity(EntityId) which implies that a ShardId must be possible to extract from the EntityId.
 
-Scala
+```scala
 
     val extractShardId: ShardRegion.ExtractShardId = {
       case EntityEnvelope(id, _) ⇒ (id % numberOfShards).toString
@@ -220,7 +220,7 @@ Scala
         (id.toLong % numberOfShards).toString
     }
 
-Java
+```
 
 When configured to remember entities, whenever a Shard is rebalanced onto another node or recovers after a crash it will recreate all the entities which were previously running in that Shard. To permanently stop entities, a Passivate message must be sent to the parent of the entity actor, otherwise the entity will be automatically restarted after the entity restart backoff specified in the configuration.
 
@@ -236,7 +236,7 @@ The performance cost of rememberEntities is rather high when starting/stopping e
 
 If you need to use another supervisorStrategy for the entity actors than the default (restarting) strategy you need to create an intermediate parent actor that defines the supervisorStrategy to the child entity actor.
 
-Scala
+```scala
 
     class CounterSupervisor extends Actor {
       val counter = context.actorOf(Props[Counter], "theCounter")
@@ -253,11 +253,11 @@ Scala
       }
     }
 
-Java
+```
 
 You start such a supervisor in the same way as if it was the entity actor.
 
-Scala
+```scala
 
     ClusterSharding(system).start(
       typeName = "SupervisedCounter",
@@ -266,7 +266,7 @@ Scala
       extractEntityId = extractEntityId,
       extractShardId = extractShardId)
 
-Java
+```
 
 Note that stopped entities will be started again when a new message is targeted to the entity.
 
@@ -293,10 +293,11 @@ It can be needed to remove the data if the Cluster Sharding coordinator cannot s
 Don’t use Cluster Sharding together with Automatic Downing, since it allows the cluster to split up into two separate clusters, which in turn will result in multiple shards and entities being started, one in each separate cluster! See Downing.
 
 Use this program as a standalone Java main program:
-
+```bash
 java -classpath <jar files, including akka-cluster-sharding>
   akka.cluster.sharding.RemoveInternalClusterShardingData
     -2.3 entityType1 entityType2 entityType3
+```
 
 The program is included in the akka-cluster-sharding jar file. It is easiest to run it with same classpath and configuration as your ordinary application. It can be run from sbt or Maven in similar way.
 
@@ -308,18 +309,14 @@ If you specify -2.3 as the first program argument it will also try to remove dat
 
 To use the Cluster Sharding you must add the following dependency in your project.
 
-sbt
-
+```sbtshell
     "com.typesafe.akka" %% "akka-cluster-sharding" % "2.5.9"
-
-Gradle
-Maven
-
+```
 
 # Configuration
 
 The ClusterSharding extension can be configured with the following properties. These configuration properties are read by the ClusterShardingSettings when created with a ActorSystem parameter. It is also possible to amend the ClusterShardingSettings or create it from another config section with the same layout as below. ClusterShardingSettings is a parameter to the start method of the ClusterSharding extension, i.e. each each entity type can be configured with different settings if needed.
-
+```hocon
 # Settings for the ClusterShardingExtension
 akka.cluster.sharding {
 
@@ -462,6 +459,7 @@ akka.cluster.sharding {
   # Props, i.e. this dispatcher is not used for the entity actors.
   use-dispatcher = ""
 }
+```
 
 Custom shard allocation strategy can be defined in an optional parameter to ClusterSharding.start. See the API documentation of ShardAllocationStrategy for details of how to implement a custom shard allocation strategy.
 

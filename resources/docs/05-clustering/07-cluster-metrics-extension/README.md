@@ -10,15 +10,16 @@ Cluster Metrics Extension is a separate Akka module delivered in akka-cluster-me
 
 To enable usage of the extension you need to add the following dependency to your project: :
 
-Scala
+```scala
 
     "com.typesafe.akka" % "akka-cluster-metrics_2.12" % "2.5.9"
 
-Java
+```
 
 and add the following configuration stanza to your application.conf :
-
+```hocon
 akka.extensions = [ "akka.cluster.metrics.ClusterMetricsExtension" ]
+```
 
 Cluster members with status WeaklyUp, if that feature is enabled, will participate in Cluster Metrics collection and dissemination.
 
@@ -52,11 +53,11 @@ The payload of the akka.cluster.metrics.ClusterMetricsChanged event will contain
 
 You can subscribe your metrics listener actors to these events in order to implement custom node lifecycle:
 
-Scala
+```scala
 
     ClusterMetricsExtension(system).subscribe(metricsListenerActor)
 
-Java
+```
 
 
 # Hyperic Sigar Provisioning
@@ -78,11 +79,11 @@ When using Kamon sigar-loader and running multiple instances of the same applica
 
 To enable usage of Sigar you can add the following dependency to the user project :
 
-Scala
+```scala
 
     "io.kamon" % "sigar-loader" % "1.6.6-rev002"
 
-Java
+```
 
 You can download Kamon sigar-loader from Maven Central
 
@@ -102,7 +103,7 @@ Let’s take a look at this router in action. What can be more demanding than ca
 
 The backend worker that performs the factorial calculation:
 
-Scala
+```scala
 
     class FactorialBackend extends Actor with ActorLogging {
 
@@ -123,11 +124,11 @@ Scala
 
     }
 
-Java
+```
 
 The frontend that receives user jobs and delegates to the backends via the router:
 
-Scala
+```scala
 
     class FactorialFrontend(upToN: Int, repeat: Boolean) extends Actor with ActorLogging {
 
@@ -160,10 +161,10 @@ Scala
       }
     }
 
-Java
+```
 
 As you can see, the router is defined in the same way as other routers, and in this case it is configured as follows:
-
+```hocon
 akka.actor.deployment {
   /factorialFrontend/factorialBackendRouter = {
     # Router type provided by metrics extension.
@@ -182,12 +183,13 @@ akka.actor.deployment {
     }
   }
 }
+```
 
 It is only router type and the metrics-selector parameter that is specific to this router, other things work in the same way as other routers.
 
 The same type of router could also have been defined in code:
 
-Scala
+```scala
 
     import akka.cluster.routing.ClusterRouterGroup
     import akka.cluster.routing.ClusterRouterGroupSettings
@@ -214,7 +216,7 @@ Scala
         allowLocalRoutees = false, useRoles = Set("backend"))).props(Props[FactorialBackend]),
       name = "factorialBackendRouter3")
 
-Java
+```
 
 The easiest way to run Adaptive Load Balancing example yourself is to download the ready to run Akka Cluster Sample with Scala together with the tutorial. It contains instructions on how to run the Adaptive Load Balancing sample. The source code of this sample can be found in the Akka Samples Repository.
 
@@ -222,7 +224,7 @@ The easiest way to run Adaptive Load Balancing example yourself is to download t
 
 It is possible to subscribe to the metrics events directly to implement other functionality.
 
-Scala
+```scala
 
     import akka.actor.ActorLogging
     import akka.actor.Actor
@@ -267,7 +269,7 @@ Scala
       }
     }
 
-Java
+```
 
 
 # Custom Metrics Collector
@@ -283,7 +285,7 @@ Custom metrics collector implementation class must be specified in the akka.clus
 # Configuration
 
 The Cluster metrics extension can be configured with the following properties:
-
+```hocon
 ##############################################
 # Akka Cluster Metrics Reference Config File #
 ##############################################
@@ -395,4 +397,4 @@ akka.actor {
     cluster-metrics-adaptive-group = "akka.cluster.metrics.AdaptiveLoadBalancingGroup"
   }
 }
-
+```

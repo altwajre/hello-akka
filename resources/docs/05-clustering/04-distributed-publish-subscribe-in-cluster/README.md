@@ -34,7 +34,7 @@ Actors are automatically removed from the registry when they are terminated, or 
 
 An example of a subscriber actor:
 
-Scala
+```scala
 
     class Subscriber extends Actor with ActorLogging {
       import DistributedPubSubMediator.{ Subscribe, SubscribeAck }
@@ -50,11 +50,11 @@ Scala
       }
     }
 
-Java
+```
 
 Subscriber actors can be started on several nodes in the cluster, and all will receive messages published to the “content” topic.
 
-Scala
+```scala
 
     runOn(first) {
       system.actorOf(Props[Subscriber], "subscriber1")
@@ -64,11 +64,11 @@ Scala
       system.actorOf(Props[Subscriber], "subscriber3")
     }
 
-Java
+```
 
 A simple actor that publishes to this “content” topic:
 
-Scala
+```scala
 
     class Publisher extends Actor {
       import DistributedPubSubMediator.Publish
@@ -82,11 +82,11 @@ Scala
       }
     }
 
-Java
+```
 
 It can publish messages to the topic from anywhere in the cluster:
 
-Scala
+```scala
 
     runOn(third) {
       val publisher = system.actorOf(Props[Publisher], "publisher")
@@ -95,7 +95,7 @@ Scala
       publisher ! "hello"
     }
 
-Java
+```
 
 
 ## Topic Groups
@@ -124,7 +124,7 @@ Actors are automatically removed from the registry when they are terminated, or 
 
 An example of a destination actor:
 
-Scala
+```scala
 
     class Destination extends Actor with ActorLogging {
       import DistributedPubSubMediator.Put
@@ -138,11 +138,11 @@ Scala
       }
     }
 
-Java
+```
 
 Destination actors can be started on several nodes in the cluster, and all will receive messages sent to the path (without address information).
 
-Scala
+```scala
 
     runOn(first) {
       system.actorOf(Props[Destination], "destination")
@@ -151,11 +151,11 @@ Scala
       system.actorOf(Props[Destination], "destination")
     }
 
-Java
+```
 
 A simple actor that sends to the path:
 
-Scala
+```scala
 
     class Sender extends Actor {
       import DistributedPubSubMediator.Send
@@ -169,11 +169,11 @@ Scala
       }
     }
 
-Java
+```
 
 It can send messages to the path from anywhere in the cluster:
 
-Scala
+```scala
 
     runOn(third) {
       val sender = system.actorOf(Props[Sender], "sender")
@@ -182,7 +182,7 @@ Scala
       sender ! "hello"
     }
 
-Java
+```
 
 It is also possible to broadcast messages to the actors that have been registered with Put. Send DistributedPubSubMediator.SendToAll message to the local mediator and the wrapped message will then be delivered to all recipients with a matching path. Actors with the same path, without address information, can be registered on different nodes. On each node there can only be one such actor, since the path is unique within one local actor system.
 
@@ -193,7 +193,7 @@ Typical usage of this mode is to broadcast messages to all replicas with the sam
 In the example above the mediator is started and accessed with the akka.cluster.pubsub.DistributedPubSub extension. That is convenient and perfectly fine in most cases, but it can be good to know that it is possible to start the mediator actor as an ordinary actor and you can have several different mediators at the same time to be able to divide a large number of actors/topics to different mediators. For example you might want to use different cluster roles for different mediators.
 
 The DistributedPubSub extension can be configured with the following properties:
-
+```hocon
 # Settings for the DistributedPubSub extension
 akka.cluster.pub-sub {
   # Actor name of the mediator actor, /system/distributedPubSubMediator
@@ -225,10 +225,12 @@ akka.cluster.pub-sub {
   # If specified you need to define the settings of the actual dispatcher.
   use-dispatcher = ""
 }
+```
 
 It is recommended to load the extension when the actor system is started by defining it in akka.extensions configuration property. Otherwise it will be activated when first used and then it takes a while for it to be populated.
-
+```hocon
 akka.extensions = ["akka.cluster.pubsub.DistributedPubSub"]
+```
 
 
 # Delivery Guarantee
@@ -241,10 +243,7 @@ If you are looking for at-least-once delivery guarantee, we recommend Kafka Akka
 
 To use Distributed Publish Subscribe you must add the following dependency in your project.
 
-sbt
-
+```sbtshell
     "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.9"
-
-Gradle
-Maven
+```
 

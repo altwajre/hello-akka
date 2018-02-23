@@ -43,7 +43,7 @@ Assume that we need one single entry point to an external system. An actor that 
 
 Before explaining how to create a cluster singleton actor, let’s define message classes which will be used by the singleton.
 
-Scala
+```scala
 
     object PointToPointChannel {
       case object UnregistrationOk
@@ -55,11 +55,11 @@ Scala
       case object Pong
     }
 
-Java
+```
 
 On each node in the cluster you need to start the ClusterSingletonManager and supply the Props of the singleton actor, in this case the JMS queue consumer.
 
-Scala
+```scala
 
     system.actorOf(
       ClusterSingletonManager.props(
@@ -68,7 +68,7 @@ Scala
         settings = ClusterSingletonManagerSettings(system).withRole("worker")),
       name = "consumer")
 
-Java
+```
 
 Here we limit the singleton to nodes tagged with the "worker" role, but all nodes, independent of role, can be used by not specifying withRole.
 
@@ -76,7 +76,7 @@ We use an application specific terminationMessage to be able to close the resour
 
 Here is how the singleton actor handles the terminationMessage in this example.
 
-Scala
+```scala
 
     case End ⇒
       queue ! UnregisterConsumer
@@ -86,11 +86,11 @@ Scala
     case Ping ⇒
       sender() ! Pong
 
-Java
+```
 
 With the names given above, access to the singleton can be obtained from any cluster node using a properly configured proxy.
 
-Scala
+```scala
 
     val proxy = system.actorOf(
       ClusterSingletonProxy.props(
@@ -98,7 +98,7 @@ Scala
         settings = ClusterSingletonProxySettings(system).withRole("worker")),
       name = "consumerProxy")
 
-Java
+```
 
 A more comprehensive sample is available in the tutorial named Distributed workers with Akka and Scala!.
 
@@ -106,17 +106,14 @@ A more comprehensive sample is available in the tutorial named Distributed worke
 
 To use the Cluster Singleton you must add the following dependency in your project.
 
-sbt
-
-    "com.typesafe.akka" %% "akka-cluster-tools" % "2.5.9"
-
-Maven
-
+```sbtshell
+"com.typesafe.akka" %% "akka-cluster-tools" % "2.5.9"
+```
 
 # Configuration
 
 The following configuration properties are read by the ClusterSingletonManagerSettings when created with a ActorSystem parameter. It is also possible to amend the ClusterSingletonManagerSettings or create it from another config section with the same layout as below. ClusterSingletonManagerSettings is a parameter to the ClusterSingletonManager.props factory method, i.e. each singleton can be configured with different settings if needed.
-
+```hocon
 akka.cluster.singleton {
   # The actor name of the child singleton actor.
   singleton-name = "singleton"
@@ -136,9 +133,10 @@ akka.cluster.singleton {
   # but it will never be less than this property.
   min-number-of-hand-over-retries = 10
 }
+```
 
 The following configuration properties are read by the ClusterSingletonProxySettings when created with a ActorSystem parameter. It is also possible to amend the ClusterSingletonProxySettings or create it from another config section with the same layout as below. ClusterSingletonProxySettings is a parameter to the ClusterSingletonProxy.props factory method, i.e. each singleton proxy can be configured with different settings if needed.
-
+```hocon
 akka.cluster.singleton-proxy {
   # The actor name of the singleton actor that is started by the ClusterSingletonManager
   singleton-name = ${akka.cluster.singleton.singleton-name}
@@ -159,4 +157,5 @@ akka.cluster.singleton-proxy {
   # Maximum allowed buffer size is 10000.
   buffer-size = 1000 
 }
+```
 
