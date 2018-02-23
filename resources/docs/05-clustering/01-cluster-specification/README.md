@@ -9,15 +9,15 @@ Akka Cluster provides a fault-tolerant decentralized peer-to-peer based cluster 
 
 # Terms
 
-### node
+### Node:
 A logical member of a cluster.
 - There could be multiple nodes on a physical machine.
 - Defined by a hostname:port:uid tuple.
 
-### cluster
+### Cluster:
 A set of nodes joined together through the membership service.
 
-### leader
+### Leader:
 A single node in the cluster that acts as the leader.
 - Managing cluster convergence and membership state transitions.
 
@@ -196,26 +196,19 @@ As mentioned before, if a node is unreachable then gossip convergence is not pos
 - **removed**: tombstone state (no longer a member)
 
 ### User Actions
-
-    join - join a single node to a cluster - can be explicit or automatic on startup if a node to join have been specified in the configuration
-
-    leave - tell a node to leave the cluster gracefully
-
-    down - mark a node as down
-
+- **join**: join a single node to a cluster - can be explicit or automatic on startup if a node to join have been specified in the configuration
+- **leave**: tell a node to leave the cluster gracefully
+- **down**: mark a node as down
 
 ### Leader Actions
 
 The leader has the following duties:
-
-    shifting members in and out of the cluster
-        joining -> up
-        exiting -> removed
+- shifting members in and out of the cluster
+    - joining -> up
+    - exiting -> removed
 
 
 ### Failure Detection and Unreachability
-
-    fd* - the failure detector of one of the monitoring nodes has triggered causing the monitored node to be marked as unreachable
-
-    unreachable* - unreachable is not a real member states but more of a flag in addition to the state signaling that the cluster is unable to talk to this node, after being unreachable the failure detector may detect it as reachable again and thereby remove the flag
+- **fd***: the failure detector of one of the monitoring nodes has triggered causing the monitored node to be marked as unreachable
+- **unreachable***: unreachable is not a real member states but more of a flag in addition to the state signaling that the cluster is unable to talk to this node, after being unreachable the failure detector may detect it as reachable again and thereby remove the flag
 
