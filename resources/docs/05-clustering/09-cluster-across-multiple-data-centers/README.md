@@ -16,23 +16,17 @@ There can be many reasons for using more than one data center, such as:
 
 It’s possible to run an ordinary Akka Cluster with default settings that spans multiple data centers but that may result in problems like:
 
-#### Management of Cluster membership is stalled during network partitions as described in a separate section below.
-This means that nodes would not be able to be added and removed during network partitions across data centers.
-
-#### More frequent false positive failure detection for network connections across data centers.
-It’s not possible to have different settings for the failure detection within vs. across data centers.
-
-#### Downing/removal of nodes in the case of network partitions should typically be treated differently for failures within vs. across data centers.
-For network partitions across the system should typically not down the unreachable nodes, but instead wait until it heals or a decision is made by a human or external monitoring system.
-- For failures within same data center automatic, more aggressive, downing mechanisms can be employed for quick fail over.
-
-#### Quick fail over of Cluster Singleton and Cluster Sharding from one data center to another is difficult to do in a safe way.
-There is a risk that singletons or sharded entities become active on both sides of a network partition.
-
-#### Lack of location information makes it difficult to optimize communication to prefer nodes that are close over distant nodes.
-E.g. a cluster aware router would be more efficient if it would prefer routing messages to nodes in the own data center.
-
-##
+- Management of Cluster membership is stalled during network partitions as described in a separate section below.
+    - This means that nodes would not be able to be added and removed during network partitions across data centers.
+- More frequent false positive failure detection for network connections across data centers.
+    - It’s not possible to have different settings for the failure detection within vs. across data centers.
+- Downing/removal of nodes in the case of network partitions should typically be treated differently for failures within vs. across data centers.
+    - For network partitions across the system should typically not down the unreachable nodes, but instead wait until it heals or a decision is made by a human or external monitoring system.
+    - For failures within same data center automatic, more aggressive, downing mechanisms can be employed for quick fail over.
+- Quick fail over of Cluster Singleton and Cluster Sharding from one data center to another is difficult to do in a safe way.
+    - There is a risk that singletons or sharded entities become active on both sides of a network partition.
+- Lack of location information makes it difficult to optimize communication to prefer nodes that are close over distant nodes.
+    - E.g. a cluster aware router would be more efficient if it would prefer routing messages to nodes in the own data center.
 
 To avoid some of these problems one can run a separate Akka Cluster per data center and use another communication channel between the data centers, such as HTTP, an external message broker or Cluster Client.
 - However, many of the nice tools that are built on top of the Cluster membership information are lost.
