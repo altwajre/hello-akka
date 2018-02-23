@@ -63,7 +63,7 @@ Note that if you are going to start the nodes on different machines you need to 
 
 An actor that uses the cluster extension may look like this:
 
-Scala
+```scala
 
     package scala.docs.cluster
 
@@ -96,7 +96,7 @@ Scala
       }
     }
 
-Java
+```
 
 The actor registers itself as subscriber of certain cluster events. It receives events corresponding to the current state of the cluster when the subscription starts and then it receives events for changes that happen in the cluster.
 
@@ -177,12 +177,12 @@ You can just stop the actor system (or the JVM process). It will be detected as 
 
 A more graceful exit can be performed if you tell the cluster that a node shall leave. This can be performed using JMX or HTTP. It can also be performed programmatically with:
 
-Scala
+```scala
 
     val cluster = Cluster(system)
     cluster.leave(cluster.selfAddress)
 
-Java
+```
 
 Note that this command can be issued to any member in the cluster, not necessarily the one that is leaving.
 
@@ -206,11 +206,11 @@ You can subscribe to the WeaklyUp membership event to make use of the members th
 
 You can subscribe to change notifications of the cluster membership by using Cluster(system).subscribe.
 
-Scala
+```scala
 
     cluster.subscribe(self, classOf[MemberEvent], classOf[UnreachableMember])
 
-Java
+```
 
 A snapshot of the full state, akka.cluster.ClusterEvent.CurrentClusterState, is sent to the subscriber as the first message, followed by events for incremental updates.
 
@@ -218,12 +218,12 @@ Note that you may receive an empty CurrentClusterState, containing no members, i
 
 If you find it inconvenient to handle the CurrentClusterState you can use ClusterEvent.InitialStateAsEvents as parameter to subscribe. That means that instead of receiving CurrentClusterState as the first message you will receive the events corresponding to the current state to mimic what you would have seen if you were listening to the events when they occurred in the past. Note that those initial events only correspond to the current state and it is not the full history of all changes that actually has occurred in the cluster.
 
-Scala
+```scala
 
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
 
-Java
+```
 
 The events to track the life-cycle of members are:
 
@@ -246,18 +246,18 @@ The example application provides a service to transform text. When some text is 
 
 Messages:
 
-Scala
+```scala
 
     final case class TransformationJob(text: String)
     final case class TransformationResult(text: String)
     final case class JobFailed(reason: String, job: TransformationJob)
     case object BackendRegistration
 
-Java
+```
 
 The backend worker that performs the transformation job:
 
-Scala
+```scala
 
     class TransformationBackend extends Actor {
 
@@ -281,13 +281,13 @@ Scala
             BackendRegistration
     }
 
-Java
+```
 
 Note that the TransformationBackend actor subscribes to cluster events to detect new, potential, frontend nodes, and send them a registration message so that they know that they can use the backend worker.
 
 The frontend that receives user jobs and delegates to one of the registered backend workers:
 
-Scala
+```scala
 
     class TransformationFrontend extends Actor {
 
@@ -311,7 +311,7 @@ Scala
       }
     }
 
-Java
+```
 
 Note that the TransformationFrontend actor watch the registered backend to be able to remove it from its list of available backend workers. Death watch uses the cluster failure detector for nodes in the cluster, i.e. it detects network failures and JVM crashes, in addition to graceful termination of watched actor. Death watch generates the Terminated message to the watching actor when the unreachable cluster node has been downed and removed.
 
@@ -342,7 +342,7 @@ akka.cluster.role {
 
 You can start the actors in a registerOnMemberUp callback, which will be invoked when the current member status is changed to ‘Up’, i.e. the cluster has at least the defined number of members.
 
-Scala
+```scala
 
     Cluster(system) registerOnMemberUp {
       system.actorOf(
@@ -350,7 +350,7 @@ Scala
         name = "factorialFrontend")
     }
 
-Java
+```
 
 This callback can be used for other things than starting actors.
 
@@ -471,7 +471,7 @@ max-total-nr-of-instances defines total number of routees in the cluster. By def
 
 The same type of router could also have been defined in code:
 
-Scala
+```scala
 
     import akka.cluster.routing.{ ClusterRouterGroup, ClusterRouterGroupSettings }
     import akka.routing.ConsistentHashingGroup
@@ -482,7 +482,7 @@ Scala
         allowLocalRoutees = true, useRoles = Set("compute"))).props(),
       name = "workerRouter2")
 
-Java
+```
 
 See configuration section for further descriptions of the settings.
 
@@ -494,17 +494,17 @@ The example application provides a service to calculate statistics for a text. W
 
 Messages:
 
-Scala
+```scala
 
     final case class StatsJob(text: String)
     final case class StatsResult(meanWordLength: Double)
     final case class JobFailed(reason: String)
 
-Java
+```
 
 The worker that counts number of characters in each word:
 
-Scala
+```scala
 
     class StatsWorker extends Actor {
       var cache = Map.empty[String, Int]
@@ -522,7 +522,7 @@ Scala
       }
     }
 
-Java
+```
 
 The service that receives text from users and splits it up into words, delegates to workers and aggregates:
 
@@ -608,7 +608,7 @@ max-total-nr-of-instances defines total number of routees in the cluster, but th
 
 The same type of router could also have been defined in code:
 
-Scala
+```scala
 
     import akka.cluster.routing.{ ClusterRouterPool, ClusterRouterPoolSettings }
     import akka.routing.ConsistentHashingPool
@@ -619,7 +619,7 @@ Scala
         allowLocalRoutees = false)).props(Props[StatsWorker]),
       name = "workerRouter3")
 
-Java
+```
 
 See configuration section for further descriptions of the settings.
 
@@ -627,7 +627,7 @@ See configuration section for further descriptions of the settings.
 
 Let’s take a look at how to use a cluster aware router on single master node that creates and deploys workers. To keep track of a single master we use the Cluster Singleton in the cluster-tools module. The ClusterSingletonManager is started on each node:
 
-Scala
+```scala
 
     system.actorOf(
       ClusterSingletonManager.props(
@@ -636,11 +636,11 @@ Scala
         settings = ClusterSingletonManagerSettings(system).withRole("compute")),
       name = "statsService")
 
-Java
+```
 
 We also need an actor on each node that keeps track of where current single master exists and delegates jobs to the StatsService. That is provided by the ClusterSingletonProxy:
 
-Scala
+```scala
 
     system.actorOf(
       ClusterSingletonProxy.props(
@@ -648,7 +648,7 @@ Scala
         settings = ClusterSingletonProxySettings(system).withRole("compute")),
       name = "statsServiceProxy")
 
-Java
+```
 
 The ClusterSingletonProxy receives text from users and delegates to the current StatsService, the single master. It listens to cluster events to lookup the StatsService on the oldest node.
 
