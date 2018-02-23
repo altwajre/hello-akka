@@ -140,6 +140,7 @@ Similarly, to create a custom Sink one can register a subclass InHandler with th
 ## Port states, InHandler and OutHandler
 
 In order to interact with a port (Inlet or Outlet) of the stage we need to be able to receive events and generate new events belonging to the port.
+
 From the GraphStageLogic the following operations are available on an output port:
 - push(out,elem) pushes an element to the output port.
     - Only possible after the port has been pulled by downstream.
