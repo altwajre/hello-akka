@@ -142,10 +142,13 @@ Similarly, to create a custom Sink one can register a subclass InHandler with th
 In order to interact with a port (Inlet or Outlet) of the stage we need to be able to receive events and generate new events belonging to the port.
 
 From the GraphStageLogic the following operations are available on an output port:
-- push(out,elem) pushes an element to the output port.
+- **push(out,elem)**: 
+    - pushes an element to the output port.
     - Only possible after the port has been pulled by downstream.
-- complete(out) closes the output port normally.
-- fail(out,exception) closes the port with a failure signal.
+- **complete(out)**: 
+    - closes the output port normally.
+- **fail(out,exception)**: 
+    - closes the port with a failure signal.
 
 The events corresponding to an output port can be received in an OutHandler instance registered to the output port using setHandler(out,handler).
 - This handler has two callbacks:
