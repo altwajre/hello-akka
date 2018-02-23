@@ -188,17 +188,17 @@ As mentioned before, if a node is unreachable then gossip convergence is not pos
 ![member-states-weakly-up.png](https://doc.akka.io/docs/akka/current/images/member-states-weakly-up.png)
 
 ### Member States
-- **joining**: transient state when joining a cluster
-- **weakly up**: transient state while network split (only if akka.cluster.allow-weakly-up-members=on)
-- **up**: normal operating state
-- **leaving**: exiting - states during graceful removal
-- **down**: marked as down (no longer part of cluster decisions)
-- **removed**: tombstone state (no longer a member)
+- **joining**: transient state when joining a cluster.
+- **weakly up**: transient state while network split (only if akka.cluster.allow-weakly-up-members=on).
+- **up**: normal operating state.
+- **leaving**: exiting - states during graceful removal.
+- **down**: marked as down (no longer part of cluster decisions).
+- **removed**: tombstone state (no longer a member).
 
 ### User Actions
-- **join**: join a single node to a cluster - can be explicit or automatic on startup if a node to join have been specified in the configuration
-- **leave**: tell a node to leave the cluster gracefully
-- **down**: mark a node as down
+- **join**: join a single node to a cluster - can be explicit or automatic on startup if a node to join have been specified in the configuration.
+- **leave**: tell a node to leave the cluster gracefully.
+- **down**: mark a node as down.
 
 ### Leader Actions
 
