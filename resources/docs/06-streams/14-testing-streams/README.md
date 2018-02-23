@@ -110,7 +110,8 @@ Java
 # Streams TestKit
 
 You may have noticed various code patterns that emerge when testing stream pipelines. Akka Stream has a separate akka-stream-testkit module that provides tools specifically for writing stream tests. This module comes with two main components that are TestSource and TestSink which provide sources and sinks that materialize to probes that allow fluent API.
-Note
+
+#### Note
 
 Be sure to add the module akka-stream-testkit to your dependencies.
 
@@ -190,6 +191,7 @@ For testing, it is possible to enable a special stream execution mode that exerc
 
 akka.stream.materializer.debug.fuzzing-mode = on
 
-Warning
+
+#### Warning
 
 Never use this setting in production or benchmarks. This is a testing tool to provide more coverage of your code during tests, but it reduces the throughput of streams. A warning message will be logged if you have this setting enabled.

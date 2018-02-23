@@ -239,7 +239,8 @@ In this example we create two regions within the flow which will be executed in 
 asyncBoundary.png
 
 This means that everything that is inside the red bubble will be executed by one actor and everything outside of it by another. This scheme can be applied successively, always having one such boundary enclose the previous ones plus all processing stages that have been added since them.
-Warning
+
+#### Warning
 
 Without fusing (i.e. up to version 2.0-M2) each stream processing stage had an implicit input buffer that holds a few elements for efficiency reasons. If your flow graphs contain cycles then these buffers may have been crucial in order to avoid deadlocks. With fusing these implicit buffers are no longer there, data elements are passed without buffering between fused stages. In those cases where buffering is needed in order to allow the stream to run at all, you will have to insert explicit buffers with the .buffer() combinator—typically a buffer of size 2 is enough to allow a feedback loop to function.
 
@@ -390,6 +391,7 @@ Scala
 Java
 
 In the above example we pass in a materializer to the Actor, which results in binding its lifecycle to the entire ActorSystem rather than the single enclosing actor. This can be useful if you want to share a materializer or group streams into specific materializers, for example because of the materializer’s settings etc.
-Warning
+
+#### Warning
 
 Do not create new actor materializers inside actors by passing the context.system to it. This will cause a new ActorMaterializer to be created and potentially leaked (unless you shut it down explicitly) for each such actor. It is instead recommended to either pass-in the Materializer or create one using the actor’s context.

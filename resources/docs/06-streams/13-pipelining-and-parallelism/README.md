@@ -34,7 +34,8 @@ The two map stages in sequence (encapsulated in the “frying pan” flows) will
     at this point fryingPan1 already takes the next scoop, without waiting for fryingPan2 to finish
 
 The benefit of pipelining is that it can be applied to any sequence of processing steps that are otherwise not parallelisable (for example because the result of a processing step depends on all the information from the previous step). One drawback is that if the processing times of the stages are very different then some of the stages will not be able to operate at full throughput because they will wait on a previous or subsequent stage most of the time. In the pancake example frying the second half of the pancake is usually faster than frying the first half, fryingPan2 will not be able to operate at full capacity [1].
-Note
+
+#### Note
 
 Asynchronous stream processing stages have internal buffers to make communication between them more efficient. For more details about the behavior of these and how to add additional buffers refer to Buffers and working with rate.
 

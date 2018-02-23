@@ -32,7 +32,8 @@ This pattern may seem to be very tempting to use at first, but it has several dr
     in the case of a network partition appearing in a Cluster that is using Automatic Downing (see docs for Auto Downing), it may happen that the isolated clusters each decide to spin up their own singleton, meaning that there might be multiple singletons running in the system, yet the Clusters have no way of finding out about them (because of the partition).
 
 Especially the last point is something you should be aware of — in general when using the Cluster Singleton pattern you should take care of downing nodes yourself and not rely on the timing based auto-down feature.
-Warning
+
+#### Warning
 
 Don’t use Cluster Singleton together with Automatic Downing, since it allows the cluster to split up into two separate clusters, which in turn will result in multiple Singletons being started, one in each separate cluster!
 

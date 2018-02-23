@@ -71,7 +71,8 @@ User can provision Sigar classes and native library in one of the following ways
     Use Kamon sigar-loader as java agent: java -javaagent:/path/to/sigar-loader.jar. Kamon sigar loader agent will extract and load sigar library during JVM start.
     Place sigar.jar on the classpath and Sigar native library for the o/s on the java.library.path. User is required to manage both project dependency and library deployment manually.
 
-Warning
+
+#### Warning
 
 When using Kamon sigar-loader and running multiple instances of the same application on the same host, you have to make sure that sigar library is extracted to a unique per instance directory. You can control the extract directory with the akka.cluster.metrics.native-library-extract-folder configuration setting.
 

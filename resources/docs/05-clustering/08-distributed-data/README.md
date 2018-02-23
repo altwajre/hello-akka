@@ -336,7 +336,8 @@ Scala
 
 Java
 
-Warning
+
+#### Warning
 
 Caveat: Even if you use WriteMajority and ReadMajority there is small risk that you may read stale data if the cluster membership has changed between the Update and the Get. For example, in cluster of 5 nodes when you Update and that change is written to 3 nodes: n1, n2, n3. Then 2 more nodes are added and a Get request is reading from 4 nodes, which happens to be n4, n5, n6, n7, i.e. the value on n1, n2, n3 is not seen in the response of the Get request.
 
@@ -386,7 +387,8 @@ Scala
 
 Java
 
-Warning
+
+#### Warning
 
 As deleted keys continue to be included in the stored data on each node as well as in gossip messages, a continuous series of updates and deletes of top-level entities will result in growing memory usage until an ActorSystem runs out of memory. To use Akka Distributed Data where frequent adds and removes are required, you should use a fixed number of top-level data types that support both updates and removals, for example ORMap or ORSet.
 

@@ -164,7 +164,8 @@ akka.cluster.auto-down-unreachable-after = 120s
 This means that the cluster leader member will change the unreachable node status to down automatically after the configured time of unreachability.
 
 This is a naïve approach to remove unreachable nodes from the cluster membership. It works great for crashes and short transient network partitions, but not for long network partitions. Both sides of the network partition will see the other side as unreachable and after a while remove it from its cluster membership. Since this happens on both sides the result is that two separate disconnected clusters have been created. This can also happen because of long GC pauses or system overload.
-Warning
+
+#### Warning
 
 We recommend against using the auto-down feature of Akka Cluster in production. This is crucial for correct behavior if you use Cluster Singleton or Cluster Sharding, especially together with Akka Persistence. For Akka Persistence with Cluster Sharding it can result in corrupt data in case of network partitions.
 
@@ -834,7 +835,8 @@ From JMX you can:
 Member nodes are identified by their address, in format akka.://@:.
 
 ## Command Line
-Warning
+
+#### Warning
 
 Deprecation warning - The command line script has been deprecated and is scheduled for removal in the next major version. Use the HTTP management API with curl or similar instead.
 

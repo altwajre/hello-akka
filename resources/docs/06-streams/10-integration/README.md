@@ -531,15 +531,18 @@ As described above any Akka Streams Source can be exposed as a Reactive Streams 
 For historical reasons the ActorPublisher and ActorSubscriber traits are provided to support implementing Reactive Streams Publisher and Subscriber with an Actor.
 
 These can be consumed by other Reactive Stream libraries or used as an Akka Streams Source or Sink.
-Warning
+
+#### Warning
 
 ActorPublisher and ActorSubscriber will probably be deprecated in future versions of Akka.
-Warning
+
+#### Warning
 
 ActorPublisher and ActorSubscriber cannot be used with remote actors, because if signals of the Reactive Streams protocol (e.g. request) are lost the the stream may deadlock.
 
 ### ActorPublisher
-Warning
+
+#### Warning
 
 Deprecation warning: ActorPublisher is deprecated in favour of the vastly more type-safe and safe to implement akka.stream.stage.GraphStage. It can also expose a “stage actor ref” is needed to be addressed as-if an Actor. Custom stages implemented using GraphStage are also automatically fusable.
 
@@ -640,7 +643,8 @@ Java
 A publisher that is created with Sink.asPublisher supports a specified number of subscribers. Additional subscription attempts will be rejected with an IllegalStateException.
 
 ### ActorSubscriber
-Warning
+
+#### Warning
 
 Deprecation warning: ActorSubscriber is deprecated in favour of the vastly more type-safe and safe to implement akka.stream.stage.GraphStage. It can also expose a “stage actor ref” is needed to be addressed as-if an Actor. Custom stages implemented using GraphStage are also automatically fusable.
 

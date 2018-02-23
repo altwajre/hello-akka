@@ -9,7 +9,8 @@ Cluster sharding is typically used when you have many stateful actors that toget
 In this context sharding means that actors with an identifier, so called entities, can be automatically distributed across multiple nodes in the cluster. Each entity actor runs only at one place, and messages can be sent to the entity without requiring the sender to know the location of the destination actor. This is achieved by sending the messages via a ShardRegion actor provided by this extension, which knows how to route the message with the entity id to the final destination.
 
 Cluster sharding will not be active on members with status WeaklyUp if that feature is enabled.
-Warning
+
+#### Warning
 
 Don’t use Cluster Sharding together with Automatic Downing, since it allows the cluster to split up into two separate clusters, which in turn will result in multiple shards and entities being started, one in each separate cluster! See Downing.
 
@@ -280,12 +281,14 @@ This is performed automatically by the Coordinated Shutdown and is therefore par
 The Cluster Sharding coordinator stores the locations of the shards using Akka Persistence. This data can safely be removed when restarting the whole Akka Cluster. Note that this is not application data.
 
 There is a utility program akka.cluster.sharding.RemoveInternalClusterShardingData that removes this data.
-Warning
+
+#### Warning
 
 Never use this program while there are running Akka Cluster nodes that are using Cluster Sharding. Stop all Cluster nodes before using this program.
 
 It can be needed to remove the data if the Cluster Sharding coordinator cannot startup because of corrupt data, which may happen if accidentally two clusters were running at the same time, e.g. caused by using auto-down and there was a network partition.
-Warning
+
+#### Warning
 
 Don’t use Cluster Sharding together with Automatic Downing, since it allows the cluster to split up into two separate clusters, which in turn will result in multiple shards and entities being started, one in each separate cluster! See Downing.
 

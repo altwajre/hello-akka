@@ -507,7 +507,8 @@ It is possible to acquire an ActorRef that can be addressed from the outside of 
 ## Custom materialized values
 
 Custom stages can return materialized values instead of NotUsed by inheriting from GraphStageWithMaterializedValue instead of the simpler GraphStage. The difference is that in this case the method createLogicAndMaterializedValue(inheritedAttributes) needs to be overridden, and in addition to the stage logic the materialized value must be provided
-Warning
+
+#### Warning
 
 There is no built-in synchronization of accessing this value from both of the thread where the logic runs and the thread that got hold of the materialized value. It is the responsibility of the programmer to add the necessary (non-blocking) synchronization and visibility guarantees to this shared object.
 
@@ -657,7 +658,8 @@ All of the above custom stages (linear or graph) provide a few simple guarantees
     The state encapsulated by these classes can be safely modified from the provided callbacks, without any further synchronization.
 
 In essence, the above guarantees are similar to what Actor s provide, if one thinks of the state of a custom stage as state of an actor, and the callbacks as the receive block of the actor.
-Warning
+
+#### Warning
 
 It is not safe to access the state of any custom stage outside of the callbacks that it provides, just like it is unsafe to access the state of an actor from the outside. This means that Future callbacks should not close over internal state of custom stages because such access can be concurrent with the provided callbacks, leading to undefined behavior.
 

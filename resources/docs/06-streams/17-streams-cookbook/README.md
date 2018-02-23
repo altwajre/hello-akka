@@ -219,7 +219,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 Please note that the reduce-by-key version we discussed above is sequential in reading the overall input stream, in other words it is NOT a parallelization pattern like MapReduce and similar frameworks.
 
@@ -580,7 +581,8 @@ Scala
 
 Java
 
-Note
+
+#### Note
 
 The global actor used for limiting introduces a global bottleneck. You might want to assign a dedicated dispatcher for this actor.
 
