@@ -50,3 +50,29 @@ sbt "runMain sample.cluster.stats.StatsSampleClient"
 
 sbt "runMain sample.cluster.stats.StatsSample 0"
 ```
+
+# Router Example with Pool of Remote Deployed Routees
+
+## Run the following commands in separate terminal windows.
+```bash
+sbt "runMain sample.cluster.stats.StatsSampleOneMaster 2551"
+
+sbt "runMain sample.cluster.stats.StatsSampleOneMaster 2552"
+
+sbt "runMain sample.cluster.stats.StatsSampleOneMasterClient"
+
+sbt "runMain sample.cluster.stats.StatsSampleOneMaster 0"
+```
+
+# Adaptive Load Balancing
+
+## Run the following commands in separate terminal windows.
+```bash
+sbt "runMain sample.cluster.factorial.FactorialBackend 2551"
+
+sbt "runMain sample.cluster.factorial.FactorialBackend 2552"
+
+sbt "runMain sample.cluster.factorial.FactorialBackend 0"
+
+sbt "runMain sample.cluster.factorial.FactorialFrontend 0"
+```
