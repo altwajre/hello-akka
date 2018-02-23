@@ -21,7 +21,7 @@ In order to implement a simple EchoServer we bind to a given address, which retu
 
 ```
 
-tcp-stream-bind.png
+![tcp-stream-bind.png](https://doc.akka.io/docs/akka/current/images/tcp-stream-bind.png)
 
 Next, we simply handle each incoming connection using a Flow which will be used as the processing stage to handle and emit ByteString s from and to the TCP Socket. Since one ByteString does not have to necessarily correspond to exactly one line of text (the client might be sending the line in chunks) we use the Framing.delimiter helper Flow to chunk the inputs up into actual lines of text. The last boolean argument indicates that we require an explicit line ending even for the last message before the connection is closed. In this example we simply add exclamation marks to each incoming text message and push it through the flow:
 
@@ -48,7 +48,7 @@ Next, we simply handle each incoming connection using a Flow which will be used 
 
 ```
 
-tcp-stream-run.png
+![tcp-stream-run.png](https://doc.akka.io/docs/akka/current/images/tcp-stream-run.png)
 
 Notice that while most building blocks in Akka Streams are reusable and freely shareable, this is not the case for the incoming connection Flow, since it directly corresponds to an existing, already accepted connection its handling can only ever be materialized once.
 

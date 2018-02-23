@@ -136,7 +136,7 @@ Also, there are two query methods available for output ports:
 
 The relationship of the above operations, events and queries are summarized in the state machine below. Green shows the initial state while orange indicates the end state. If an operation is not listed for a state, then it is invalid to call it while the port is in that state. If an event is not listed for a state, then that event cannot happen in that state.
 
-outport_transitions.png
+![outport_transitions.png](https://doc.akka.io/docs/akka/current/images/outport_transitions.png)
 
 The following operations are available for input ports:
 
@@ -158,7 +158,7 @@ Also, there are three query methods available for input ports:
 
 The relationship of the above operations, events and queries are summarized in the state machine below. Green shows the initial state while orange indicates the end state. If an operation is not listed for a state, then it is invalid to call it while the port is in that state. If an event is not listed for a state, then that event cannot happen in that state.
 
-inport_transitions.png
+![inport_transitions.png](https://doc.akka.io/docs/akka/current/images/inport_transitions.png)
 
 Finally, there are two methods available for convenience to complete the stage and all of its ports:
 
@@ -183,11 +183,11 @@ Graph stages allows for custom linear processing stages through letting them hav
 
 Such a stage can be illustrated as a box with two flows as it is seen in the illustration below. Demand flowing upstream leading to elements flowing downstream.
 
-graph_stage_conceptual.png
+![graph_stage_conceptual.png](https://doc.akka.io/docs/akka/current/images/graph_stage_conceptual.png)
 
 To illustrate these concepts we create a small GraphStage that implements the map transformation.
 
-graph_stage_map.png
+![graph_stage_map.png](https://doc.akka.io/docs/akka/current/images/graph_stage_map.png)
 
 Map calls push(out) from the onPush() handler and it also calls pull() from the onPull handler resulting in the conceptual wiring above, and fully expressed in code below:
 
@@ -221,7 +221,7 @@ Map is a typical example of a one-to-one transformation of a stream where demand
 
 To demonstrate a many-to-one stage we will implement filter. The conceptual wiring of Filter looks like this:
 
-graph_stage_filter.png
+![graph_stage_filter.png](https://doc.akka.io/docs/akka/current/images/graph_stage_filter.png)
 
 As we see above, if the given predicate matches the current element we are propagating it downwards, otherwise we return the “ball” to our upstream so that we get the new element. This is achieved by modifying the map example by adding a conditional in the onPush handler and decide between a pull(in) or push(out) call (and of course not having a mapping f function).
 
@@ -255,7 +255,7 @@ As we see above, if the given predicate matches the current element we are propa
 
 To complete the picture we define a one-to-many transformation as the next step. We chose a straightforward example stage that emits every upstream element twice downstream. The conceptual wiring of this stage looks like this:
 
-graph_stage_duplicate.png
+![graph_stage_duplicate.png](https://doc.akka.io/docs/akka/current/images/graph_stage_duplicate.png)
 
 This is a stage that has state: an option with the last element it has seen indicating if it has duplicated this last element already or not. We must also make sure to emit the extra element if the upstream completes.
 
@@ -338,7 +338,7 @@ This example can be simplified by replacing the usage of a mutable state with ca
 
 Finally, to demonstrate all of the stages above, we put them together into a processing chain, which conceptually would correspond to the following structure:
 
-graph_stage_chain.png
+![graph_stage_chain.png](https://doc.akka.io/docs/akka/current/images/graph_stage_chain.png)
 
 In code this is only a few lines, using the via use our custom stages in a stream:
 
@@ -354,7 +354,7 @@ In code this is only a few lines, using the via use our custom stages in a strea
 
 If we attempt to draw the sequence of events, it shows that there is one “event token” in circulation in a potential chain of stages, just like our conceptual “railroad tracks” representation predicts.
 
-graph_stage_tracks_1.png
+![graph_stage_tracks_1.png](https://doc.akka.io/docs/akka/current/images/graph_stage_tracks_1.png)
 
 ## Completion
 
@@ -577,11 +577,11 @@ One of the important use-case for this is to build buffer-like entities, that al
 
 The next diagram illustrates the event sequence for a buffer with capacity of two elements in a setting where the downstream demand is slow to start and the buffer will fill up with upstream elements before any demand is seen from downstream.
 
-graph_stage_detached_tracks_1.png
+![graph_stage_detached_tracks_1.png](https://doc.akka.io/docs/akka/current/images/graph_stage_detached_tracks_1.png)
 
 Another scenario would be where the demand from downstream starts coming in before any element is pushed into the buffer stage.
 
-graph_stage_detached_tracks_2.png
+![graph_stage_detached_tracks_2.png](https://doc.akka.io/docs/akka/current/images/graph_stage_detached_tracks_2.png)
 
 The first difference we can notice is that our Buffer stage is automatically pulling its upstream on initialization. The buffer has demand for up to two elements without any downstream demand.
 

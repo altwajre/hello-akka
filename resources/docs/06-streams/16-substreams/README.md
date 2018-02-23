@@ -18,7 +18,7 @@ A typical operation that generates substreams is groupBy.
 
 ```
 
-stream-substream-groupBy1.png
+![stream-substream-groupBy1.png](https://doc.akka.io/docs/akka/current/images/stream-substream-groupBy1.png)
 
 This operation splits the incoming stream into separate output streams, one for each element key. The key is computed for each element using the given function, which is f in the above diagram. When a new key is encountered for the first time a new substream is opened and subsequently fed with all elements belonging to that key.
 
@@ -30,7 +30,7 @@ If you add a Sink or Flow right after the groupBy stage, all transformations are
 
 ```
 
-stream-substream-groupBy2.png
+![stream-substream-groupBy2.png](https://doc.akka.io/docs/akka/current/images/stream-substream-groupBy2.png)
 
 Also substreams, more precisely, SubFlow and SubSource have methods that allow you to merge or concat substreams into the master stream again.
 
@@ -45,7 +45,7 @@ The mergeSubstreams method merges an unbounded number of substreams back to the 
 
 ```
 
-stream-substream-groupBy3.png
+![stream-substream-groupBy3.png](https://doc.akka.io/docs/akka/current/images/stream-substream-groupBy3.png)
 
 You can limit the number of active substreams running and being merged at a time, with either the mergeSubstreamsWithParallelism or concatSubstreams method.
 
@@ -68,7 +68,7 @@ However, since the number of running (i.e. not yet completed) substreams is capp
 
 Element one and two leads to two created substreams, but since the number of substreams are capped to 2 when element 3 comes in it cannot lead to creation of a new substream until one of the previous two are completed and this leads to the stream being deadlocked.
 
-stream-substream-groupBy4.png
+![stream-substream-groupBy4.png](https://doc.akka.io/docs/akka/current/images/stream-substream-groupBy4.png)
 
 ## splitWhen and splitAfter
 
@@ -111,7 +111,7 @@ This prints out the following output.
 16
 26
 
-stream-substream-splitWhen-splitAfter.png
+![stream-substream-splitWhen-splitAfter.png](https://doc.akka.io/docs/akka/current/images/stream-substream-splitWhen-splitAfter.png)
 
 # Flattening stages
 
@@ -129,13 +129,13 @@ flatMapConcat takes a function, which is f in the following diagram. The functio
 
 ```
 
-stream-substream-flatMapConcat1.png
+![stream-substream-flatMapConcat1.png](https://doc.akka.io/docs/akka/current/images/stream-substream-flatMapConcat1.png)
 
 Like the concat operation on Flow, it fully consumes one Source after the other. So, there is only one substream actively running at a given time.
 
 Then once the active substream is fully consumed, the next substream can start running. Elements from all the substreams are concatenated to the sink.
 
-stream-substream-flatMapConcat2.png
+![stream-substream-flatMapConcat2.png](https://doc.akka.io/docs/akka/current/images/stream-substream-flatMapConcat2.png)
 
 ## flatMapMerge
 
@@ -149,4 +149,4 @@ flatMapMerge is similar to flatMapConcat, but it doesn’t wait for one Source t
 
 ```
 
-stream-substream-flatMapMerge.png
+![stream-substream-flatMapMerge.png](https://doc.akka.io/docs/akka/current/images/stream-substream-flatMapMerge.png)
