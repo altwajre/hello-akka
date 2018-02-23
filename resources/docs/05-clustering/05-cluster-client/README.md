@@ -44,9 +44,8 @@ The ClusterClientReceptionist sends out notifications in relation to having rece
     The message will be delivered to all recipients Actors that have been registered as subscribers to the named topic.
 
 Response messages from the destination actor are tunneled via the receptionist to avoid inbound connections from other cluster nodes to the client:
-
-    sender(), as seen by the destination actor, is not the client itself, but the receptionist
-    sender() of the response messages, sent back from the destination and seen by the client, is deadLetters
+- sender(), as seen by the destination actor, is not the client itself, but the receptionist.
+- sender() of the response messages, sent back from the destination and seen by the client, is deadLetters.
 
 since the client should normally send subsequent messages via the ClusterClient.
 - It is possible to pass the original sender inside the reply messages if the client is supposed to communicate directly to the actor in the cluster.

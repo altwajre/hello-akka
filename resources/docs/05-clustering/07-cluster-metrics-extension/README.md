@@ -31,17 +31,15 @@ Different collector implementations provide different subsets of metrics publish
 - Certain message routing and let-it-crash functions may not work when Sigar is not provisioned.
 
 Cluster metrics extension comes with two built-in collector implementations:
-
-    akka.cluster.metrics.SigarMetricsCollector, which requires Sigar provisioning, and is more rich/precise
-    akka.cluster.metrics.JmxMetricsCollector, which is used as fall back, and is less rich/precise
+- akka.cluster.metrics.SigarMetricsCollector, which requires Sigar provisioning, and is more rich/precise.
+- akka.cluster.metrics.JmxMetricsCollector, which is used as fall back, and is less rich/precise.
 
 You can also plug-in your own metrics collector implementation.
 
 By default, metrics extension will use collector provider fall back and will try to load them in this order:
-
-    configured user-provided collector
-    built-in akka.cluster.metrics.SigarMetricsCollector
-    and finally akka.cluster.metrics.JmxMetricsCollector
+- configured user-provided collector.
+- built-in akka.cluster.metrics.SigarMetricsCollector.
+- and finally akka.cluster.metrics.JmxMetricsCollector.
 
 
 # Metrics Events

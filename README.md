@@ -7,6 +7,10 @@
 - Images
 - Compact lines
 - Fix indents
+    - Sections
+    - Notes
+    - Warnings
+    - Code blocks
 -----------------
 - Code snippets (single backtick)
 - Highlight

@@ -496,9 +496,9 @@ The suspicion level of failure is given by a value called phi.
 - The basic idea of the phi failure detector is to express the value of phi on a scale that is dynamically adjusted to reflect current network conditions.
 
 The value of phi is calculated as:
-
+```
 phi = -log10(1 - F(timeSinceLastHeartbeat))
-
+```
 where F is the cumulative distribution function of a normal distribution with mean and standard deviation estimated from historical heartbeat inter-arrival times.
 
 In the configuration you can adjust the akka.cluster.failure-detector.threshold to define when a phi value is considered to be a failure.
@@ -541,9 +541,13 @@ Cluster aware routers make use of members with status WeaklyUp if that feature i
 
 There are two distinct types of routers.
 
-    Group - router that sends messages to the specified path using actor selection The routees can be shared among routers running on different nodes in the cluster.
+#### Group:
+Router that sends messages to the specified path using actor selection.
+- The routees can be shared among routers running on different nodes in the cluster.
 - One example of a use case for this type of router is a service running on some backend nodes in the cluster and used by routers running on front-end nodes in the cluster.
-    Pool - router that creates routees as child actors and deploys them on remote nodes.
+    
+#### Pool:
+Router that creates routees as child actors and deploys them on remote nodes.
 - Each router will have its own routee instances.
 - For example, if you start a router on 3 nodes in a 10-node cluster, you will have 30 routees in total if the router is configured to use one instance per node.
 - The routees created by the different routers will not be shared among the routers.
@@ -974,28 +978,27 @@ Information and management of the cluster is available as JMX MBeans with the ro
 - The JMX information can be displayed with an ordinary JMX console such as JConsole or JVisualVM.
 
 From JMX you can:
-
-    see what members that are part of the cluster
-    see status of this node
-    see roles of each member
-    join this node to another node in cluster
-    mark any node in the cluster as down
-    tell any node in the cluster to leave
+- see what members that are part of the cluster.
+- see status of this node.
+- see roles of each member.
+- join this node to another node in cluster.
+- mark any node in the cluster as down.
+- tell any node in the cluster to leave.
 
 Member nodes are identified by their address, in format akka.://@:.
 
 ## Command Line
 
 #### Warning
-
 Deprecation warning - The command line script has been deprecated and is scheduled for removal in the next major version.
 - Use the HTTP management API with curl or similar instead.
+##
 
 The cluster can be managed with the script akka-cluster provided in the Akka GitHub repository here.
 - Place the script and the jmxsh-R5.jar library in the same directory.
 
 Run it without parameters to see instructions about how to use the script:
-
+```
 Usage: ./akka-cluster <node-hostname> <jmx-port> <command> ...
 
 Supported commands are:
@@ -1017,6 +1020,7 @@ Where the <node-url> should be on the format of
 Examples: ./akka-cluster localhost 9999 is-available
           ./akka-cluster localhost 9999 join akka.tcp://MySystem@darkstar:2552
           ./akka-cluster localhost 9999 cluster-status
+```
 
 To be able to use the script you must enable remote monitoring and management when starting the JVMs of the cluster nodes, as described in Monitoring and Management Using JMX Technology.
 - Make sure you understand the security implications of enabling remote monitoring and management.

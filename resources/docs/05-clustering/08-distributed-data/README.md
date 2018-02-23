@@ -102,11 +102,10 @@ The modify function is called by the Replicator actor and must therefore be a pu
 Update is intended to only be sent from an actor running in same local ActorSystem as : the Replicator, because the modify function is typically not serializable.
 
 You supply a write consistency level which has the following meaning:
-
-    WriteLocal the value will immediately only be written to the local replica, and later disseminated with gossip
-    WriteTo(n) the value will immediately be written to at least n replicas, including the local replica
-    WriteMajority the value will immediately be written to a majority of replicas, i.e. at least N/2 + 1 replicas, where N is the number of nodes in the cluster (or cluster role group)
-    WriteAll the value will immediately be written to all nodes in the cluster (or all nodes in the cluster role group)
+- WriteLocal the value will immediately only be written to the local replica, and later disseminated with gossip.
+- WriteTo(n) the value will immediately be written to at least n replicas, including the local replica.
+- WriteMajority the value will immediately be written to a majority of replicas, i.e. at least N/2 + 1 replicas, where N is the number of nodes in the cluster (or cluster role group).
+- WriteAll the value will immediately be written to all nodes in the cluster (or all nodes in the cluster role group).
 
 When you specify to write to n out of x nodes, the update will first replicate to n nodes.
 - If there are not enough Acks after 1/5th of the timeout, the update will be replicated to n other nodes.
@@ -283,9 +282,9 @@ WriteAll and ReadAll is the strongest consistency level, but also the slowest an
 - For example, it is enough that one node is unavailable for a Get request and you will not receive the value.
 
 If consistency is important, you can ensure that a read always reflects the most recent write by using the following formula:
-
+```
 (nodes_written + nodes_read) > N
-
+```
 where N is the total number of nodes in the cluster, or the number of nodes with the role that is used for the Replicator.
 
 For example, in a 7 node cluster this these consistency properties are achieved by writing to 4 nodes and reading from 4 nodes, or writing to 5 nodes and reading from 3 nodes.
@@ -473,11 +472,10 @@ akka.cluster.distributed-data.delta-crdt.enabled=off
 The data types must be convergent (stateful) CRDTs and implement the ReplicatedData trait, i.e. they provide a monotonic merge function and the state changes always converge.
 
 You can use your own custom ReplicatedData or DeltaReplicatedData types, and several types are provided by this package, such as:
-
-    Counters: GCounter, PNCounter
-    Sets: GSet, ORSet
-    Maps: ORMap, ORMultiMap, LWWMap, PNCounterMap
-    Registers: LWWRegister, Flag
+- **Counters**: GCounter, PNCounter.
+- **Sets**: GSet, ORSet.
+- **Maps**: ORMap, ORMultiMap, LWWMap, PNCounterMap.
+- **Registers**: LWWRegister, Flag.
 
 
 ## Counters
@@ -979,13 +977,12 @@ One thing that can be problematic with CRDTs is that some data types accumulate 
 
 # Samples
 
-Several interesting samples are included and described in the tutorial named Akka Distributed Data Samples with Scala (source code)
-
-    Low Latency Voting Service
-    Highly Available Shopping Cart
-    Distributed Service Registry
-    Replicated Cache
-    Replicated Metrics
+Several interesting samples are included and described in the tutorial named Akka Distributed Data Samples with Scala (source code):
+- Low Latency Voting Service.
+- Highly Available Shopping Cart.
+- Distributed Service Registry.
+- Replicated Cache.
+- Replicated Metrics.
 
 
 # Limitations
@@ -1009,11 +1006,10 @@ When a data entry is changed the full state of that entry may be replicated to o
 - This means that you cannot have too large data entries, because then the remote message size will be too large.
 
 # Learn More about CRDTs
-
-    The Final Causal Frontier talk by Sean Cribbs
-    Eventually Consistent Data Structures talk by Sean Cribbs
-    Strong Eventual Consistency and Conflict-free Replicated Data Types talk by Mark Shapiro
-    A comprehensive study of Convergent and Commutative Replicated Data Types paper by Mark Shapiro et. al.
+- The Final Causal Frontier talk by Sean Cribbs.
+- Eventually Consistent Data Structures talk by Sean Cribbs.
+- Strong Eventual Consistency and Conflict-free Replicated Data Types talk by Mark Shapiro.
+- A comprehensive study of Convergent and Commutative Replicated Data Types paper by Mark Shapiro et. al.
 
 
 # Dependencies

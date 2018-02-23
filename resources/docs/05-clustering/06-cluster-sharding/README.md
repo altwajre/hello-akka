@@ -104,9 +104,8 @@ The extractEntityId and extractShardId are two application specific functions to
 ```
 
 This example illustrates two different ways to define the entity identifier in the messages:
-
-    The Get message includes the identifier itself.
-    The EntityEnvelope holds the identifier, and the actual message that is sent to the entity actor is wrapped in the envelope.
+- The Get message includes the identifier itself.
+- The EntityEnvelope holds the identifier, and the actual message that is sent to the entity actor is wrapped in the envelope.
 
 Note how these two messages types are handled in the extractEntityId function shown above.
 - The message sent to the entity actor is the second part of the tuple returned by the extractEntityId and that makes it possible to unwrap envelopes if needed.
@@ -163,21 +162,19 @@ If the shard home is another ShardRegion instance messages will be forwarded to 
 - Subsequent messages to the resolved shard can be delivered to the target destination immediately without involving the ShardCoordinator.
 
 Scenario 1:
-
-    Incoming message M1 to ShardRegion instance R1.
-    M1 is mapped to shard S1. R1 doesn’t know about S1, so it asks the coordinator C for the location of S1.
-    C answers that the home of S1 is R1.
-    R1 creates child actor for the entity E1 and sends buffered messages for S1 to E1 child
-    All incoming messages for S1 which arrive at R1 can be handled by R1 without C. It creates entity children as needed, and forwards messages to them.
+- Incoming message M1 to ShardRegion instance R1.
+- M1 is mapped to shard S1. R1 doesn’t know about S1, so it asks the coordinator C for the location of S1.
+- C answers that the home of S1 is R1.
+- R1 creates child actor for the entity E1 and sends buffered messages for S1 to E1 child
+- All incoming messages for S1 which arrive at R1 can be handled by R1 without C. It creates entity children as needed, and forwards messages to them.
 
 Scenario 2:
-
-    Incoming message M2 to R1.
-    M2 is mapped to S2. R1 doesn’t know about S2, so it asks C for the location of S2.
-    C answers that the home of S2 is R2.
-    R1 sends buffered messages for S2 to R2
-    All incoming messages for S2 which arrive at R1 can be handled by R1 without C. It forwards messages to R2.
-    R2 receives message for S2, ask C, which answers that the home of S2 is R2, and we are in Scenario 1 (but for R2).
+- Incoming message M2 to R1.
+- M2 is mapped to S2. R1 doesn’t know about S2, so it asks C for the location of S2.
+- C answers that the home of S2 is R2.
+- R1 sends buffered messages for S2 to R2
+- All incoming messages for S2 which arrive at R1 can be handled by R1 without C. It forwards messages to R2.
+- R2 receives message for S2, ask C, which answers that the home of S2 is R2, and we are in Scenario 1 (but for R2).
 
 To make sure that at most one instance of a specific entity actor is running somewhere in the cluster it is important that all nodes have the same view of where the shards are located.
 - Therefore the shard allocation decisions are taken by the central ShardCoordinator, which is running as a cluster singleton, i.e. one instance on the oldest member among all cluster nodes or a group of nodes tagged with a specific role.
@@ -566,9 +563,8 @@ The purpose of these messages is testing and monitoring, they are not provided t
 # Rolling upgrades
 
 When doing rolling upgrades special care must be taken to not change any of the following aspects of sharding:
-
-    the extractShardId function
-    the role that the shard regions run on
-    the persistence mode
+- the extractShardId function.
+- the role that the shard regions run on.
+- the persistence mode.
 
 If any one of these needs a change it will require a full cluster restart.
