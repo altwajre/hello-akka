@@ -142,27 +142,30 @@ Similarly, to create a custom Sink one can register a subclass InHandler with th
 In order to interact with a port (Inlet or Outlet) of the stage we need to be able to receive events and generate new events belonging to the port.
 
 From the GraphStageLogic the following operations are available on an output port:
-- **push(out,elem)**: 
+- **`push(out,elem)`**: 
     - pushes an element to the output port.
     - Only possible after the port has been pulled by downstream.
-- **complete(out)**: 
+- **`complete(out)`**: 
     - closes the output port normally.
-- **fail(out,exception)**: 
+- **`fail(out,exception)`**: 
     - closes the port with a failure signal.
 
 The events corresponding to an output port can be received in an OutHandler instance registered to the output port using setHandler(out,handler).
-- This handler has two callbacks:
 
-    - onPull() is called when the output port is ready to emit the next element, push(out, elem) is now allowed to be called on this port.
-    - onDownstreamFinish() is called once the downstream has cancelled and no longer allows messages to be pushed to it.
-        - No more onPull() will arrive after this event.
-        - If not overridden this will default to stopping the stage.
+This handler has two callbacks:
+- **`onPull()`**: 
+    - is called when the output port is ready to emit the next element, push(out, elem) is now allowed to be called on this port.
+- **`onDownstreamFinish()`**: 
+    - is called once the downstream has cancelled and no longer allows messages to be pushed to it.
+    - No more onPull() will arrive after this event.
+    - If not overridden this will default to stopping the stage.
 
 Also, there are two query methods available for output ports:
-
-    isAvailable(out) returns true if the port can be pushed
-    isClosed(out) returns true if the port is closed.
-- At this point the port can not be pushed and will not be pulled anymore.
+- **`isAvailable(out)`**:
+    - returns true if the port can be pushed
+- **`isClosed(out)`**:
+    - returns true if the port is closed.
+    - At this point the port can not be pushed and will not be pulled anymore.
 
 The relationship of the above operations, events and queries are summarized in the state machine below.
 - Green shows the initial state while orange indicates the end state.
@@ -173,32 +176,41 @@ The relationship of the above operations, events and queries are summarized in t
 
 The following operations are available for input ports:
 
-    pull(in) requests a new element from an input port.
-- This is only possible after the port has been pushed by upstream.
-    grab(in) acquires the element that has been received during an onPush().
-- It cannot be called again until the port is pushed again by the upstream.
-    cancel(in) closes the input port.
+- **`pull(in)`**: 
+    - requests a new element from an input port.
+    - This is only possible after the port has been pushed by upstream.
+- **`grab(in)`**: 
+    - acquires the element that has been received during an onPush().
+    - It cannot be called again until the port is pushed again by the upstream.
+- **`cancel(in)`**: 
+    - closes the input port.
 
 The events corresponding to an input port can be received in an InHandler instance registered to the input port using setHandler(in, handler).
 - This handler has three callbacks:
 
-    onPush() is called when the input port has now a new element.
-- Now it is possible to acquire this element using grab(in) and/or call pull(in) on the port to request the next element.
-- It is not mandatory to grab the element, but if it is pulled while the element has not been grabbed it will drop the buffered element.
-    onUpstreamFinish() is called once the upstream has completed and no longer can be pulled for new elements.
-- No more onPush() will arrive after this event.
-- If not overridden this will default to stopping the stage.
-    onUpstreamFailure() is called if the upstream failed with an exception and no longer can be pulled for new elements.
-- No more onPush() will arrive after this event.
-- If not overridden this will default to failing the stage.
+- **`onPush()`**: 
+    - is called when the input port has now a new element.
+    - Now it is possible to acquire this element using grab(in) and/or call pull(in) on the port to request the next element.
+    - It is not mandatory to grab the element, but if it is pulled while the element has not been grabbed it will drop the buffered element.
+- **`onUpstreamFinish()`**: 
+    - is called once the upstream has completed and no longer can be pulled for new elements.
+    - No more onPush() will arrive after this event.
+    - If not overridden this will default to stopping the stage.
+- **`onUpstreamFailure()`**: 
+    - is called if the upstream failed with an exception and no longer can be pulled for new elements.
+    - No more onPush() will arrive after this event.
+    - If not overridden this will default to failing the stage.
 
 Also, there are three query methods available for input ports:
 
-    isAvailable(in) returns true if the port can be grabbed.
-    hasBeenPulled(in) returns true if the port has been already pulled.
-- Calling pull(in) in this state is illegal.
-    isClosed(in) returns true if the port is closed.
-- At this point the port can not be pulled and will not be pushed anymore.
+- **`isAvailable(in)`**: 
+    - returns true if the port can be grabbed.
+- **`hasBeenPulled(in)`**: 
+    - returns true if the port has been already pulled.
+    - Calling pull(in) in this state is illegal.
+- **`isClosed(in)`**: 
+    - returns true if the port is closed.
+    - At this point the port can not be pulled and will not be pushed anymore.
 
 The relationship of the above operations, events and queries are summarized in the state machine below.
 - Green shows the initial state while orange indicates the end state.
@@ -209,8 +221,10 @@ The relationship of the above operations, events and queries are summarized in t
 
 Finally, there are two methods available for convenience to complete the stage and all of its ports:
 
-    completeStage() is equivalent to closing all output ports and cancelling all input ports.
-    failStage(exception) is equivalent to failing all output ports and cancelling all input ports.
+- **`completeStage()`**:
+    - is equivalent to closing all output ports and cancelling all input ports.
+- **`failStage(exception)`**:
+    - is equivalent to failing all output ports and cancelling all input ports.
 
 In some cases it is inconvenient and error prone to react on the regular state machine events with the signal based API described above.
 - For those cases there is an API which allows for a more declarative sequencing of actions which will greatly simplify some use cases at the cost of some extra allocations.
@@ -218,9 +232,12 @@ In some cases it is inconvenient and error prone to react on the regular state m
 
 The operations of this part of the GraphStage API are:
 
-    emit(out, elem) and emitMultiple(out, Iterable(elem1, elem2)) replaces the OutHandler with a handler that emits one or more elements when there is demand, and then reinstalls the current handlers
-    read(in)(andThen) and readN(in, n)(andThen) replaces the InHandler with a handler that reads one or more elements as they are pushed and allows the handler to react once the requested number of elements has been read.
-    abortEmitting() and abortReading() which will cancel an ongoing emit or read
+- **`emit(out, elem)` and `emitMultiple(out, Iterable(elem1, elem2))`**:
+    - replaces the OutHandler with a handler that emits one or more elements when there is demand, and then reinstalls the current handlers
+- **`read(in)(andThen)` and `readN(in, n)(andThen)`**:
+    - replaces the InHandler with a handler that reads one or more elements as they are pushed and allows the handler to react once the requested number of elements has been read.
+- **`abortEmitting()` and `abortReading()`**:
+    - which will cancel an ongoing emit or read
 
 Note that since the above methods are implemented by temporarily replacing the handlers of the stage you should never call setHandler while they are running emit or read as that interferes with how they are implemented.
 - The following methods are safe to call after invoking emit and read (and will lead to actually running the operation when those are done): complete(out), completeStage(), emit, emitMultiple, abortEmitting() and abortReading()
