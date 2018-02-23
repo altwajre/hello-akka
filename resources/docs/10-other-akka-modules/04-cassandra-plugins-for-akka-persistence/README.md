@@ -1,1 +1,0 @@
-See [Cassandra Plugin for Akka documentation](https://github.com/akka/akka-persistence-cassandra)
