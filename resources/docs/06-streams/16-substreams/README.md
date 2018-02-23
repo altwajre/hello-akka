@@ -110,10 +110,11 @@ These are useful when you scanned over something and you don’t need to care ab
 ```
 
 This prints out the following output.
-
+```
 23
 16
 26
+```
 
 ![stream-substream-splitWhen-splitAfter.png](https://doc.akka.io/docs/akka/current/images/stream-substream-splitWhen-splitAfter.png)
 

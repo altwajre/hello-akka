@@ -323,7 +323,7 @@ Here is how we can use it with mapAsync:
 ```
 
 The output may look like this:
-
+```
 before: a
 before: B
 before: C
@@ -364,6 +364,7 @@ completed: J (1)
 completed: i (0)
 after: I
 after: J
+```
 
 Note that after lines are in the same order as the before lines even though elements are completed in a different order.
 - For example H is completed before g, but still emitted afterwards.
@@ -389,7 +390,7 @@ Here is how we can use the same service with mapAsyncUnordered:
 ```
 
 The output may look like this:
-
+```
 before: a
 before: B
 before: C
@@ -430,6 +431,7 @@ completed: g (1)
 after: G
 completed: i (0)
 after: I
+```
 
 Note that after lines are not in the same order as the before lines.
 - For example H overtakes the slow G.
@@ -444,11 +446,10 @@ Reactive Streams defines a standard for asynchronous stream processing with non-
 - Akka Streams is one such library.
 
 An incomplete list of other implementations:
-
-    Reactor (1.1+)
-    RxJava
-    Ratpack
-    Slick
+- Reactor (1.1+)
+- RxJava
+- Ratpack
+- Slick
 
 The two most important interfaces in Reactive Streams are the Publisher and Subscriber.
 
@@ -771,10 +772,9 @@ Here is an example of such an actor.
 
 Subclass must define the RequestStrategy to control stream back pressure.
 - After each incoming message the ActorSubscriber will automatically invoke the RequestStrategy.requestDemand and propagate the returned demand to the stream.
-
-    The provided WatermarkRequestStrategy is a good strategy if the actor performs work itself.
-    The provided MaxInFlightRequestStrategy is useful if messages are queued internally or delegated to other actors.
-    You can also implement a custom RequestStrategy or call request manually together with ZeroRequestStrategy or some other strategy.
+    - The provided WatermarkRequestStrategy is a good strategy if the actor performs work itself.
+    - The provided MaxInFlightRequestStrategy is useful if messages are queued internally or delegated to other actors.
+    - You can also implement a custom RequestStrategy or call request manually together with ZeroRequestStrategy or some other strategy.
 - In that case you must also call request when the actor is started or when it is ready, otherwise it will not receive any elements.
 
 More detailed information can be found in the API documentation.

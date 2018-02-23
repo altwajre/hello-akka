@@ -210,10 +210,9 @@ One noteworthy detail pertains to the MaximumDistinctWords parameter: this defin
 ```
 
 By extracting the parts specific to wordcount into
-
-    a groupKey function that defines the groups
-    a map map each element to value that is used by the reduce on the substream
-    a reduce function that does the actual reduction
+- a groupKey function that defines the groups.
+- a map map each element to value that is used by the reduce on the substream.
+- a reduce function that does the actual reduction.
 
 we get a generalized version below:
 
@@ -650,9 +649,8 @@ Situation: Given a stream of ByteString s we want to produce a stream of ByteStr
 
 This can be achieved with a single GraphStage.
 - The main logic of our stage is in emitChunk() which implements the following logic:
-
-    if the buffer is empty, and upstream is not closed we pull for more bytes, if it is closed we complete
-    if the buffer is nonEmpty, we split it according to the chunkSize.
+    - if the buffer is empty, and upstream is not closed we pull for more bytes, if it is closed we complete.
+    - if the buffer is nonEmpty, we split it according to the chunkSize.
 - This will give a next chunk that we will emit, and an empty or nonempty remaining buffer.
 
 Both onPush() and onPull() calls emitChunk() the only difference is that the push handler also stores the incoming chunk by appending to the end of the buffer.

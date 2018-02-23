@@ -857,13 +857,7 @@ Allows coupling termination (cancellation, completion, erroring) of Sinks and So
 
 E.g. if the emitted Flow gets a cancellation, the Source of course is cancelled, however the Sink will also be completed.
 - The table below illustrates the effects in detail:
-Returned Flow 	Sink (in) 	Source (out)
-cause: upstream (sink-side) receives completion 	effect: receives completion 	effect: receives cancel
-cause: upstream (sink-side) receives error 	effect: receives error 	effect: receives cancel
-cause: downstream (source-side) receives cancel 	effect: completes 	effect: receives cancel
-effect: cancels upstream, completes downstream 	effect: completes 	cause: signals complete
-effect: cancels upstream, errors downstream 	effect: receives error 	cause: signals error or throws
-effect: cancels upstream, completes downstream 	cause: cancels 	effect: receives cancel
+[Table](https://doc.akka.io/docs/akka/current/stream/stages-overview.html#flow-fromsinkandsourcecoupled)
 
 The order in which the in and out sides receive their respective completion signals is not defined, do not rely on its ordering.
 
@@ -1050,11 +1044,10 @@ completes when upstream completes and buffered elements has been drained
 
 Allow for a temporarily faster upstream events by buffering size elements.
 - When the buffer is full elements are dropped according to the specified OverflowStrategy:
-
-    dropHead drops the oldest element in the buffer to make space for the new element
-    dropTail drops the youngest element in the buffer to make space for the new element
-    dropBuffer drops the entire buffer and buffers the new element
-    dropNew drops the new element
+    - dropHead drops the oldest element in the buffer to make space for the new element.
+    - dropTail drops the youngest element in the buffer to make space for the new element.
+    - dropBuffer drops the entire buffer and buffers the new element.
+    - dropNew drops the new element.
 
 emits when downstream stops backpressuring and there is a pending element in the buffer
 

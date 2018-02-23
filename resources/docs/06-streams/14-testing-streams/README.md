@@ -2,10 +2,9 @@
 
 Verifying behaviour of Akka Stream sources, flows and sinks can be done using various code patterns and libraries.
 - Here we will discuss testing these elements using:
-
-    simple sources, sinks and flows;
-    sources and sinks in combination with TestProbe from the akka-testkit module;
-    sources and sinks specifically crafted for writing tests from the akka-stream-testkit module.
+    - simple sources, sinks and flows;
+    - sources and sinks in combination with TestProbe from the akka-testkit module;
+    - sources and sinks specifically crafted for writing tests from the akka-stream-testkit module.
 
 It is important to keep your data processing pipeline as separate sources, flows and sinks.
 - This makes them easily testable by wiring them up to other sources or sinks, or some test harnesses that akka-testkit or akka-stream-testkit provide.

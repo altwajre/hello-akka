@@ -175,7 +175,6 @@ The relationship of the above operations, events and queries are summarized in t
 ![outport_transitions.png](https://doc.akka.io/docs/akka/current/images/outport_transitions.png)
 
 The following operations are available for input ports:
-
 - **`pull(in)`**: 
     - requests a new element from an input port.
     - This is only possible after the port has been pushed by upstream.
@@ -186,8 +185,8 @@ The following operations are available for input ports:
     - closes the input port.
 
 The events corresponding to an input port can be received in an InHandler instance registered to the input port using setHandler(in, handler).
-- This handler has three callbacks:
 
+This handler has three callbacks:
 - **`onPush()`**: 
     - is called when the input port has now a new element.
     - Now it is possible to acquire this element using grab(in) and/or call pull(in) on the port to request the next element.
@@ -202,7 +201,6 @@ The events corresponding to an input port can be received in an InHandler instan
     - If not overridden this will default to failing the stage.
 
 Also, there are three query methods available for input ports:
-
 - **`isAvailable(in)`**: 
     - returns true if the port can be grabbed.
 - **`hasBeenPulled(in)`**: 
@@ -220,7 +218,6 @@ The relationship of the above operations, events and queries are summarized in t
 ![inport_transitions.png](https://doc.akka.io/docs/akka/current/images/inport_transitions.png)
 
 Finally, there are two methods available for convenience to complete the stage and all of its ports:
-
 - **`completeStage()`**:
     - is equivalent to closing all output ports and cancelling all input ports.
 - **`failStage(exception)`**:
@@ -231,7 +228,6 @@ In some cases it is inconvenient and error prone to react on the regular state m
 - The difference between the two APIs could be described as that the first one is signal driven from the outside, while this API is more active and drives its surroundings.
 
 The operations of this part of the GraphStage API are:
-
 - **`emit(out, elem)` and `emitMultiple(out, Iterable(elem1, elem2))`**:
     - replaces the OutHandler with a handler that emits one or more elements when there is demand, and then reinstalls the current handlers
 - **`read(in)(andThen)` and `readN(in, n)(andThen)`**:
@@ -596,10 +592,9 @@ It is possible to acquire an ActorRef that can be addressed from the outside of 
 - This reference can be used to watch other actors by calling its watch(ref) or unwatch(ref) methods.
 - The reference can be also watched by external actors.
 - The current limitations of this ActorRef are:
-
-    they are not location transparent, they cannot be accessed via remoting.
-    they cannot be returned as materialized values.
-    they cannot be accessed from the constructor of the GraphStageLogic, but they can be accessed from the preStart() method.
+    - they are not location transparent, they cannot be accessed via remoting.
+    - they cannot be returned as materialized values.
+    - they cannot be accessed from the constructor of the GraphStageLogic, but they can be accessed from the preStart() method.
 
 
 ## Custom materialized values
@@ -757,9 +752,8 @@ The following code example demonstrates a buffer class corresponding to the mess
 # Thread safety of custom processing stages
 
 All of the above custom stages (linear or graph) provide a few simple guarantees that implementors can rely on.
-
-    The callbacks exposed by all of these classes are never called concurrently.
-    The state encapsulated by these classes can be safely modified from the provided callbacks, without any further synchronization.
+    - The callbacks exposed by all of these classes are never called concurrently.
+    - The state encapsulated by these classes can be safely modified from the provided callbacks, without any further synchronization.
 
 In essence, the above guarantees are similar to what Actor s provide, if one thinks of the state of a custom stage as state of an actor, and the callbacks as the receive block of the actor.
 
