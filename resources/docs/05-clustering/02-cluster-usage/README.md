@@ -302,6 +302,7 @@ A member is considered as unreachable, detected by the failure detector of at le
 A member is considered as reachable again, after having been unreachable.
     - All nodes that previously detected it as unreachable has detected it as reachable again.
 
+##
 There are more types of change events, consult the API documentation of classes that extends akka.cluster.ClusterEvent.ClusterDomainEvent for details about the events.
 
 Instead of subscribing to cluster events it can sometimes be convenient to only get the full membership state with Cluster(system).state.
