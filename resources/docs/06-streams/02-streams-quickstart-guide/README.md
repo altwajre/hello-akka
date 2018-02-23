@@ -4,16 +4,16 @@ Create a project and add the akka-streams dependency to the build tool of your c
 
 A stream usually begins at a source, so this is also how we start an Akka Stream. Before we create one, we import the full complement of streaming tools:
 
-Scala
+```scala
 
     import akka.stream._
     import akka.stream.scaladsl._
 
-Java
+```
 
 If you want to execute the code samples while you read through the quick start guide, you will also need the following imports:
 
-Scala
+```scala
 
     import akka.{ NotUsed, Done }
     import akka.actor.ActorSystem
@@ -22,63 +22,63 @@ Scala
     import scala.concurrent.duration._
     import java.nio.file.Paths
 
-Java
+```
 
 And an object to hold your code, for example:
 
-Scala
+```scala
 
     object Main extends App {
       // Code here
     }
 
-Java
+```
 
 Now we will start with a rather simple source, emitting the integers 1 to 100:
 
-Scala
+```scala
 
     val source: Source[Int, NotUsed] = Source(1 to 100)
 
-Java
+```
 
 The Source type is parameterized with two types: the first one is the type of element that this source emits and the second one may signal that running the source produces some auxiliary value (e.g. a network source may provide information about the bound port or the peer’s address). Where no auxiliary information is produced, the type akka.NotUsed is used—and a simple range of integers surely falls into this category.
 
 Having created this source means that we have a description of how to emit the first 100 natural numbers, but this source is not yet active. In order to get those numbers out we have to run it:
 
-Scala
+```scala
 
     source.runForeach(i ⇒ println(i))(materializer)
 
-Java
+```
 
 This line will complement the source with a consumer function—in this example we simply print out the numbers to the console—and pass this little stream setup to an Actor that runs it. This activation is signaled by having “run” be part of the method name; there are other methods that run Akka Streams, and they all follow this pattern.
 
 When running this source in a scala.App you might notice it does not terminate, because the ActorSystem is never terminated. Luckily runForeach returns a Future[Done] which resolves when the stream finishes:
 
-Scala
+```scala
 
     val done: Future[Done] = source.runForeach(i ⇒ println(i))(materializer)
 
     implicit val ec = system.dispatcher
     done.onComplete(_ ⇒ system.terminate())
 
-Java
+```
 
 You may wonder where the Actor gets created that runs the stream, and you are probably also asking yourself what this materializer means. In order to get this value we first need to create an Actor system:
 
-Scala
+```scala
 
     implicit val system = ActorSystem("QuickStart")
     implicit val materializer = ActorMaterializer()
 
-Java
+```
 
 There are other ways to create a materializer, e.g. from an ActorContext when using streams from within Actors. The Materializer is a factory for stream execution engines, it is the thing that makes streams run—you don’t need to worry about any of the details just now apart from that you need one for calling any of the run methods on a Source. The materializer is picked up implicitly if it is omitted from the run method call arguments, which we will do in the following.
 
 The nice thing about Akka Streams is that the Source is just a description of what you want to run, and like an architect’s blueprint it can be reused, incorporated into a larger design. We may choose to transform the source of integers and write it to a file instead:
 
-Scala
+```scala
 
     val factorials = source.scan(BigInt(1))((acc, next) ⇒ acc * next)
 
@@ -87,7 +87,7 @@ Scala
         .map(num ⇒ ByteString(s"$num\n"))
         .runWith(FileIO.toPath(Paths.get("factorials.txt")))
 
-Java
+```
 
 First we use the scan combinator to run a computation over the whole stream: starting with the number 1 (BigInt(1)) we multiple by each of the incoming numbers, one after the other; the scan operation emits the initial value and then every calculation result. This yields the series of factorial numbers which we stash away as a Source for later reuse—it is important to keep in mind that nothing is actually computed yet, this is just a description of what we want to have computed once we run the stream. Then we convert the resulting series of numbers into a stream of ByteString objects describing lines in a text file. This stream is then run by attaching a file as the receiver of the data. In the terminology of Akka Streams this is called a Sink. IOResult is a type that IO operations return in Akka Streams in order to tell you how many bytes or elements were consumed and whether the stream terminated normally or exceptionally.
 
@@ -140,38 +140,38 @@ val tweets: Source[Tweet, NotUsed] = Source(
 
 One of the nice parts of Akka Streams—and something that other stream libraries do not offer—is that not only sources can be reused like blueprints, all other elements can be as well. We can take the file-writing Sink, prepend the processing steps necessary to get the ByteString elements from incoming strings and package that up as a reusable piece as well. Since the language for writing these streams always flows from left to right (just like plain English), we need a starting point that is like a source but with an “open” input. In Akka Streams this is called a Flow:
 
-Scala
+```scala
 
     def lineSink(filename: String): Sink[String, Future[IOResult]] =
       Flow[String]
         .map(s ⇒ ByteString(s + "\n"))
         .toMat(FileIO.toPath(Paths.get(filename)))(Keep.right)
 
-Java
+```
 
 Starting from a flow of strings we convert each to ByteString and then feed to the already known file-writing Sink. The resulting blueprint is a Sink[String, Future[IOResult]], which means that it accepts strings as its input and when materialized it will create auxiliary information of type Future[IOResult] (when chaining operations on a Source or Flow the type of the auxiliary information—called the “materialized value”—is given by the leftmost starting point; since we want to retain what the FileIO.toPath sink has to offer, we need to say Keep.right).
 
 We can use the new and shiny Sink we just created by attaching it to our factorials source—after a small adaptation to turn the numbers into strings:
 
-Scala
+```scala
 
     factorials.map(_.toString).runWith(lineSink("factorial2.txt"))
 
-Java
+```
 
 
 # Time-Based Processing
 
 Before we start looking at a more involved example we explore the streaming nature of what Akka Streams can do. Starting from the factorials source we transform the stream by zipping it together with another stream, represented by a Source that emits the number 0 to 100: the first number emitted by the factorials source is the factorial of zero, the second is the factorial of one, and so on. We combine these two by forming strings like "3! = 6".
 
-Scala
+```scala
 
     factorials
       .zipWith(Source(0 to 100))((num, idx) ⇒ s"$idx! = $num")
       .throttle(1, 1.second, 1, ThrottleMode.shaping)
       .runForeach(println)
 
-Java
+```
 
 All operations so far have been time-independent and could have been performed in the same fashion on strict collections of elements. The next line demonstrates that we are in fact dealing with streams that can flow at a certain speed: we use the throttle combinator to slow down the stream to 1 element per second (the second 1 in the argument list is the maximum size of a burst that we want to allow—passing 1 means that the first element gets through immediately and the second then has to wait for one second and so on).
 
@@ -187,7 +187,7 @@ We will also consider the problem inherent to all non-blocking streaming solutio
 
 Here’s the data model we’ll be working with throughout the quickstart examples:
 
-Scala
+```scala
 
     final case class Author(handle: String)
 
@@ -201,7 +201,7 @@ Scala
 
     val akkaTag = Hashtag("#akka")
 
-Java
+```
 
 
 #### Note
@@ -213,57 +213,57 @@ The example application we will be looking at is a simple Twitter feed stream fr
 
 In order to prepare our environment by creating an ActorSystem and ActorMaterializer, which will be responsible for materializing and running the streams we are about to create:
 
-Scala
+```scala
 
     implicit val system = ActorSystem("reactive-tweets")
     implicit val materializer = ActorMaterializer()
 
-Java
+```
 
 The ActorMaterializer can optionally take ActorMaterializerSettings which can be used to define materialization properties, such as default buffer sizes (see also Buffers for asynchronous stages), the dispatcher to be used by the pipeline etc. These can be overridden with withAttributes on Flow, Source, Sink and Graph.
 
 Let’s assume we have a stream of tweets readily available. In Akka this is expressed as a Source[Out, M]:
 
-Scala
+```scala
 
     val tweets: Source[Tweet, NotUsed]
 
-Java
+```
 
 Streams always start flowing from a Source[Out,M1] then can continue through Flow[In,Out,M2] elements or more advanced graph elements to finally be consumed by a Sink[In,M3] (ignore the type parameters M1, M2 and M3 for now, they are not relevant to the types of the elements produced/consumed by these classes – they are “materialized types”, which we’ll talk about below)
 
 The operations should look familiar to anyone who has used the Scala Collections library, however they operate on streams and not collections of data (which is a very important distinction, as some operations only make sense in streaming and vice versa):
 
-Scala
+```scala
 
     val authors: Source[Author, NotUsed] =
       tweets
         .filter(_.hashtags.contains(akkaTag))
         .map(_.author)
 
-Java
+```
 
 Finally in order to materialize and run the stream computation we need to attach the Flow to a Sink that will get the Flow running. The simplest way to do this is to call runWith(sink) on a Source. For convenience a number of common Sinks are predefined and collected as methods on the Sink companion object. For now let’s simply print each author:
 
-Scala
+```scala
 
     authors.runWith(Sink.foreach(println))
 
-Java
+```
 
 or by using the shorthand version (which are defined only for the most popular Sinks such as Sink.fold and Sink.foreach):
 
-Scala
+```scala
 
     authors.runForeach(println)
 
-Java
+```
 
 Materializing and running a stream always requires a Materializer to be in implicit scope (or passed in explicitly, like this: .run(materializer)).
 
 The complete snippet looks like this:
 
-Scala
+```scala
 
     implicit val system = ActorSystem("reactive-tweets")
     implicit val materializer = ActorMaterializer()
@@ -275,17 +275,17 @@ Scala
 
     authors.runWith(Sink.foreach(println))
 
-Java
+```
 
 Flattening sequences in streams
 
 In the previous section we were working on 1:1 relationships of elements which is the most common case, but sometimes we might want to map from one element to a number of elements and receive a “flattened” stream, similarly like flatMap works on Scala Collections. In order to get a flattened stream of hashtags from our stream of tweets we can use the mapConcat combinator:
 
-Scala
+```scala
 
     val hashtags: Source[Hashtag, NotUsed] = tweets.mapConcat(_.hashtags.toList)
 
-Java
+```
 
 
 #### Note
@@ -303,7 +303,7 @@ Akka Streams intentionally separate the linear stream structures (Flows) from th
 
 Graphs are constructed using GraphDSL like this:
 
-Scala
+```scala
 
     val writeAuthors: Sink[Author, NotUsed] = ???
     val writeHashtags: Sink[Hashtag, NotUsed] = ???
@@ -318,7 +318,7 @@ Scala
     })
     g.run()
 
-Java
+```
 
 As you can see, inside the GraphDSL we use an implicit graph builder b to mutably construct the graph using the ~> “edge operator” (also read as “connect” or “via” or “to”). The operator is provided implicitly by importing GraphDSL.Implicits._.
 
@@ -333,14 +333,14 @@ One of the main advantages of Akka Streams is that they always propagate back-pr
 
 A typical problem applications (not using Akka Streams) like this often face is that they are unable to process the incoming data fast enough, either temporarily or by design, and will start buffering incoming data until there’s no more space to buffer, resulting in either OutOfMemoryError s or other severe degradations of service responsiveness. With Akka Streams buffering can and must be handled explicitly. For example, if we are only interested in the “most recent tweets, with a buffer of 10 elements” this can be expressed using the buffer element:
 
-Scala
+```scala
 
     tweets
       .buffer(10, OverflowStrategy.dropHead)
       .map(slowComputation)
       .runWith(Sink.ignore)
 
-Java
+```
 
 The buffer element takes an explicit and required OverflowStrategy, which defines how the buffer should react when it receives another element while it is full. Strategies provided include dropping the oldest element (dropHead), dropping the entire buffer, signalling errors etc. Be sure to pick and choose the strategy that fits your use case best.
 Materialized values
@@ -349,7 +349,7 @@ So far we’ve been only processing data using Flows and consuming it into some 
 
 First, let’s write such an element counter using Sink.fold and see how the types look like:
 
-Scala
+```scala
 
     val count: Flow[Tweet, Int, NotUsed] = Flow[Tweet].map(_ ⇒ 1)
 
@@ -364,7 +364,7 @@ Scala
 
     sum.foreach(c ⇒ println(s"Total tweets processed: $c"))
 
-Java
+```
 
 First we prepare a reusable Flow that will change each incoming tweet into an integer of value 1. We’ll use this in order to combine those with a Sink.fold that will sum all Int elements of the stream and make its result available as a Future[Int]. Next we connect the tweets stream to count with via. Finally we connect the Flow to the previously prepared Sink using toMat.
 
@@ -374,7 +374,7 @@ This step does not yet materialize the processing pipeline, it merely prepares t
 
 A RunnableGraph may be reused and materialized multiple times, because it is just the “blueprint” of the stream. This means that if we materialize a stream, for example one that consumes a live stream of tweets within a minute, the materialized values for those two materializations will be different, as illustrated by this example:
 
-Scala
+```scala
 
     val sumSink = Sink.fold[Int, Int](0)(_ + _)
     val counterRunnableGraph: RunnableGraph[Future[Int]] =
@@ -388,15 +388,15 @@ Scala
     // and once in the evening, reusing the flow
     val eveningTweetsCount: Future[Int] = counterRunnableGraph.run()
 
-Java
+```
 
 Many elements in Akka Streams provide materialized values which can be used for obtaining either results of computation or steering these elements which will be discussed in detail in Stream Materialization. Summing up this section, now we know what happens behind the scenes when we run this one-liner, which is equivalent to the multi line version above:
 
-Scala
+```scala
 
     val sum: Future[Int] = tweets.map(t ⇒ 1).runWith(sumSink)
 
-Java
+```
 
 
 #### Note

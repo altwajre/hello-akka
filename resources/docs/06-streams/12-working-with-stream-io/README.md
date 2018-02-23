@@ -8,7 +8,7 @@ Akka Streams provides a way of handling File IO and TCP connections with Streams
 
 In order to implement a simple EchoServer we bind to a given address, which returns a Source[IncomingConnection, Future[ServerBinding]], which will emit an IncomingConnection element for each new connection that the Server should handle:
 
-Scala
+```scala
 
     val binding: Future[ServerBinding] =
       Tcp().bind("127.0.0.1", 8888).to(Sink.ignore).run()
@@ -19,13 +19,13 @@ Scala
       }
     }
 
-Java
+```
 
 tcp-stream-bind.png
 
 Next, we simply handle each incoming connection using a Flow which will be used as the processing stage to handle and emit ByteString s from and to the TCP Socket. Since one ByteString does not have to necessarily correspond to exactly one line of text (the client might be sending the line in chunks) we use the Framing.delimiter helper Flow to chunk the inputs up into actual lines of text. The last boolean argument indicates that we require an explicit line ending even for the last message before the connection is closed. In this example we simply add exclamation marks to each incoming text message and push it through the flow:
 
-Scala
+```scala
 
     import akka.stream.scaladsl.Framing
 
@@ -46,7 +46,7 @@ Scala
       connection.handleWith(echo)
     }
 
-Java
+```
 
 tcp-stream-run.png
 
@@ -55,16 +55,17 @@ Notice that while most building blocks in Akka Streams are reusable and freely s
 Closing connections is possible by cancelling the incoming connection Flow from your server logic (e.g. by connecting its downstream to a Sink.cancelled and its upstream to a Source.empty). It is also possible to shut down the server’s socket by cancelling the IncomingConnection source connections.
 
 We can then test the TCP server by sending data to the TCP Socket using netcat:
-
+```
 $ echo -n "Hello World" | netcat 127.0.0.1 8888
 Hello World!!!
+```
 
 
 ## Connecting: REPL Client
 
 In this example we implement a rather naive Read Evaluate Print Loop client over TCP. Let’s say we know a server has exposed a simple command line interface over TCP, and would like to interact with it using Akka Streams over TCP. To open an outgoing connection socket we use the outgoingConnection method:
 
-Scala
+```scala
 
     val connection = Tcp().outgoingConnection("127.0.0.1", 8888)
 
@@ -85,7 +86,7 @@ Scala
 
     connection.join(repl).run()
 
-Java
+```
 
 The repl flow we use to handle the server interaction first prints the servers response, then awaits on input from the command line (this blocking call is used here just for the sake of simplicity) and converts it to a ByteString which is then sent over the wire to the server. Then we simply connect the TCP pipeline to this processing stage–at this point it will be materialized and start processing data once the server responds with an initial message.
 
@@ -101,7 +102,7 @@ In case of back-pressured cycles (which can occur even between different systems
 
 To break this back-pressure cycle we need to inject some initial message, a “conversation starter”. First, we need to decide which side of the connection should remain passive and which active. Thankfully in most situations finding the right spot to start the conversation is rather simple, as it often is inherent to the protocol we are trying to implement using Streams. In chat-like applications, which our examples resemble, it makes sense to make the Server initiate the conversation by emitting a “hello” message:
 
-Scala
+```scala
 
 
     connections.runForeach { connection ⇒
@@ -128,7 +129,7 @@ Scala
       connection.handleWith(serverLogic)
     }
 
-Java
+```
 
 To emit the initial message we merge a Source with a single element, after the command processing but before the framing and transformation to ByteString s this way we do not have to repeat such logic.
 
@@ -144,7 +145,7 @@ Akka Streams provide simple Sources and Sinks that can work with ByteString inst
 
 Streaming data from a file is as easy as creating a FileIO.fromPath given a target path, and an optional chunkSize which determines the buffer size determined as one “element” in such stream:
 
-Scala
+```scala
 
     import akka.stream.scaladsl._
     val file = Paths.get("example.csv")
@@ -153,14 +154,14 @@ Scala
       .to(Sink.ignore)
       .run()
 
-Java
+```
 
 Please note that these processing stages are backed by Actors and by default are configured to run on a pre-configured threadpool-backed dispatcher dedicated for File IO. This is very important as it isolates the blocking file IO operations from the rest of the ActorSystem allowing each dispatcher to be utilised in the most efficient way. If you want to configure a custom dispatcher for file IO operations globally, you can do so by changing the akka.stream.blocking-io-dispatcher, or for a specific stage by specifying a custom Dispatcher in code, like this:
 
-Scala
+```scala
 
     FileIO.fromPath(file)
       .withAttributes(ActorAttributes.dispatcher("custom-blocking-io-dispatcher"))
 
-Java
+```
 

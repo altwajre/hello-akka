@@ -11,7 +11,7 @@ Messages can be sent to a stream with Source.queue or via the ActorRef that is m
 
 A nice way to delegate some processing of elements in a stream to an actor is to use ask in mapAsync. The back-pressure of the stream is maintained by the Future of the ask and the mailbox of the actor will not be filled with more messages than the given parallelism of the mapAsync stage.
 
-Scala
+```scala
 
     import akka.pattern.ask
     implicit val askTimeout = Timeout(5.seconds)
@@ -24,13 +24,13 @@ Scala
       .map(_.toLowerCase)
       .runWith(Sink.ignore)
 
-Java
+```
 
 Note that the messages received in the actor will be in the same order as the stream elements, i.e. the parallelism does not change the ordering of the messages. There is a performance advantage of using parallelism > 1 even though the actor will only process one message at a time because then there is already a message in the mailbox when the actor has completed previous message.
 
 The actor must reply to the sender() for each message from the stream. That reply will complete the Future of the ask and it will be the element that is emitted downstreams from mapAsync.
 
-Scala
+```scala
 
     class Translator extends Actor {
       def receive = {
@@ -41,7 +41,7 @@ Scala
       }
     }
 
-Java
+```
 
 The stream can be completed with failure by sending akka.actor.Status.Failure as reply from the actor.
 
@@ -89,47 +89,47 @@ Stream transformations and side effects involving external non-stream based serv
 
 For example, sending emails to the authors of selected tweets using an external email service:
 
-Scala
+```scala
 
     def send(email: Email): Future[Unit] = {
       // ...
     }
 
-Java
+```
 
 We start with the tweet stream of authors:
 
-Scala
+```scala
 
     val authors: Source[Author, NotUsed] =
       tweets
         .filter(_.hashtags.contains(akkaTag))
         .map(_.author)
 
-Java
+```
 
 Assume that we can lookup their email address using:
 
-Scala
+```scala
 
     def lookupEmail(handle: String): Future[Option[String]] =
 
-Java
+```
 
 Transforming the stream of authors to a stream of email addresses by using the lookupEmail service can be done with mapAsync:
 
-Scala
+```scala
 
     val emailAddresses: Source[String, NotUsed] =
       authors
         .mapAsync(4)(author ⇒ addressSystem.lookupEmail(author.handle))
         .collect { case Some(emailAddress) ⇒ emailAddress }
 
-Java
+```
 
 Finally, sending the emails:
 
-Scala
+```scala
 
     val sendEmails: RunnableGraph[NotUsed] =
       emailAddresses
@@ -141,7 +141,7 @@ Scala
 
     sendEmails.run()
 
-Java
+```
 
 mapAsync is applying the given function that is calling out to the external service to each of the elements as they pass through this processing step. The function returns a Future and the value of that future will be emitted downstreams. The number of Futures that shall run in parallel is given as the first argument to mapAsync. These Futures may complete in any order, but the elements that are emitted downstream are in the same order as received from upstream.
 
@@ -151,7 +151,7 @@ The final piece of this pipeline is to generate the demand that pulls the tweet 
 
 Note that mapAsync preserves the order of the stream elements. In this example the order is not important and then we can use the more efficient mapAsyncUnordered:
 
-Scala
+```scala
 
     val authors: Source[Author, NotUsed] =
       tweets.filter(_.hashtags.contains(akkaTag)).map(_.author)
@@ -171,11 +171,11 @@ Scala
 
     sendEmails.run()
 
-Java
+```
 
 In the above example the services conveniently returned a Future of the result. If that is not the case you need to wrap the call in a Future. If the service call involves blocking you must also make sure that you run it on a dedicated execution context, to avoid starvation and disturbance of other tasks in the system.
 
-Scala
+```scala
 
     val blockingExecutionContext = system.dispatchers.lookup("blocking-dispatcher")
 
@@ -191,10 +191,10 @@ Scala
 
     sendTextMessages.run()
 
-Java
+```
 
 The configuration of the "blocking-dispatcher" may look something like:
-
+```hocon
 blocking-dispatcher {
   executor = "thread-pool-executor"
   thread-pool-executor {
@@ -202,10 +202,11 @@ blocking-dispatcher {
     core-pool-size-max    = 10
   }
 }
+```
 
 An alternative for blocking calls is to perform them in a map operation, still using a dedicated dispatcher for that operation.
 
-Scala
+```scala
 
     val send = Flow[String]
       .map { phoneNo ⇒
@@ -217,13 +218,13 @@ Scala
 
     sendTextMessages.run()
 
-Java
+```
 
 However, that is not exactly the same as mapAsync, since the mapAsync may run several calls concurrently, but map performs them one at a time.
 
 For a service that is exposed as an actor, or if an actor is used as a gateway in front of an external service, you can use ask:
 
-Scala
+```scala
 
     import akka.pattern.ask
 
@@ -235,7 +236,7 @@ Scala
         .mapAsync(4)(tweet ⇒ database ? Save(tweet))
         .to(Sink.ignore)
 
-Java
+```
 
 Note that if the ask is not completed within the given timeout the stream is completed with failure. If that is not desired outcome you can use recover on the ask Future.
 
@@ -251,7 +252,7 @@ mapAsyncUnordered emits the future results as soon as they are completed, i.e. i
 
 Here is a fictive service that we can use to illustrate these aspects.
 
-Scala
+```scala
 
     class SometimesSlowService(implicit ec: ExecutionContext) {
 
@@ -270,13 +271,13 @@ Scala
       }
     }
 
-Java
+```
 
 Elements starting with a lower case character are simulated to take longer time to process.
 
 Here is how we can use it with mapAsync:
 
-Scala
+```scala
 
     implicit val blockingExecutionContext = system.dispatchers.lookup("blocking-dispatcher")
     val service = new SometimesSlowService
@@ -289,7 +290,7 @@ Scala
       .mapAsync(4)(service.convert)
       .runForeach(elem ⇒ println(s"after: $elem"))
 
-Java
+```
 
 The output may look like this:
 
@@ -340,7 +341,7 @@ The numbers in parenthesis illustrates how many calls that are in progress at th
 
 Here is how we can use the same service with mapAsyncUnordered:
 
-Scala
+```scala
 
     implicit val blockingExecutionContext = system.dispatchers.lookup("blocking-dispatcher")
     val service = new SometimesSlowService
@@ -353,7 +354,7 @@ Scala
       .mapAsyncUnordered(4)(service.convert)
       .runForeach(elem ⇒ println(s"after: $elem"))
 
-Java
+```
 
 The output may look like this:
 
@@ -415,32 +416,32 @@ An incomplete list of other implementations:
 
 The two most important interfaces in Reactive Streams are the Publisher and Subscriber.
 
-Scala
+```scala
 
     import org.reactivestreams.Publisher
     import org.reactivestreams.Subscriber
 
-Java
+```
 
 Let us assume that a library provides a publisher of tweets:
 
-Scala
+```scala
 
     def tweets: Publisher[Tweet]
 
-Java
+```
 
 and another library knows how to store author handles in a database:
 
-Scala
+```scala
 
     def storage: Subscriber[Author]
 
-Java
+```
 
 Using an Akka Streams Flow we can transform the stream and connect those:
 
-Scala
+```scala
 
     val authors = Flow[Tweet]
       .filter(_.hashtags.contains(akkaTag))
@@ -448,46 +449,46 @@ Scala
 
     Source.fromPublisher(tweets).via(authors).to(Sink.fromSubscriber(storage)).run()
 
-Java
+```
 
 The Publisher is used as an input Source to the flow and the Subscriber is used as an output Sink.
 
 A Flow can also be also converted to a RunnableGraph[Processor[In, Out]] which materializes to a Processor when run() is called. run() itself can be called multiple times, resulting in a new Processor instance each time.
 
-Scala
+```scala
 
     val processor: Processor[Tweet, Author] = authors.toProcessor.run()
 
     tweets.subscribe(processor)
     processor.subscribe(storage)
 
-Java
+```
 
 A publisher can be connected to a subscriber with the subscribe method.
 
 It is also possible to expose a Source as a Publisher by using the Publisher-Sink:
 
-Scala
+```scala
 
     val authorPublisher: Publisher[Author] =
       Source.fromPublisher(tweets).via(authors).runWith(Sink.asPublisher(fanout = false))
 
     authorPublisher.subscribe(storage)
 
-Java
+```
 
 A publisher that is created with Sink.asPublisher(fanout = false) supports only a single subscription. Additional subscription attempts will be rejected with an IllegalStateException.
 
 A publisher that supports multiple subscribers using fan-out/broadcasting is created as follows:
 
-Scala
+```scala
 
     def alert: Subscriber[Author]
     def storage: Subscriber[Author]
 
-Java
+```
 
-Scala
+```scala
 
     val authorPublisher: Publisher[Author] =
       Source.fromPublisher(tweets).via(authors)
@@ -496,31 +497,31 @@ Scala
     authorPublisher.subscribe(storage)
     authorPublisher.subscribe(alert)
 
-Java
+```
 
 The input buffer size of the stage controls how far apart the slowest subscriber can be from the fastest subscriber before slowing down the stream.
 
 To make the picture complete, it is also possible to expose a Sink as a Subscriber by using the Subscriber-Source:
 
-Scala
+```scala
 
     val tweetSubscriber: Subscriber[Tweet] =
       authors.to(Sink.fromSubscriber(storage)).runWith(Source.asSubscriber[Tweet])
 
     tweets.subscribe(tweetSubscriber)
 
-Java
+```
 
 It is also possible to use re-wrap Processor instances as a Flow by passing a factory function that will create the Processor instances:
 
-Scala
+```scala
 
     // An example Processor factory
     def createProcessor: Processor[Int, Int] = Flow[Int].toProcessor.run()
 
     val flow: Flow[Int, Int, NotUsed] = Flow.fromProcessor(() ⇒ createProcessor)
 
-Java
+```
 
 Please note that a factory is necessary to achieve reusability of the resulting Flow.
 
@@ -552,7 +553,7 @@ Extend akka.stream.actor.ActorPublisher in your Actor to make it a stream publis
 
 Here is an example of such an actor. It dispatches incoming jobs to the attached subscriber:
 
-Scala
+```scala
 
     object JobManager {
       def props: Props = Props[JobManager]
@@ -605,7 +606,7 @@ Scala
         }
     }
 
-Java
+```
 
 You send elements to the stream by calling onNext. You are allowed to send as many elements as have been requested by the stream subscriber. This amount can be inquired with totalDemand. It is only allowed to use onNext when isActive and totalDemand>0, otherwise onNext will throw IllegalStateException.
 
@@ -625,7 +626,7 @@ More detailed information can be found in the API documentation.
 
 This is how it can be used as input Source to a Flow:
 
-Scala
+```scala
 
     val jobManagerSource = Source.actorPublisher[JobManager.Job](JobManager.props)
     val ref = Flow[JobManager.Job]
@@ -638,7 +639,7 @@ Scala
     ref ! JobManager.Job("b")
     ref ! JobManager.Job("c")
 
-Java
+```
 
 A publisher that is created with Sink.asPublisher supports a specified number of subscribers. Additional subscription attempts will be rejected with an IllegalStateException.
 
@@ -654,7 +655,7 @@ Extend akka.stream.actor.ActorSubscriber in your Actor to make it a stream subsc
 
 Here is an example of such an actor. It dispatches incoming jobs to child worker actors:
 
-Scala
+```scala
 
     object WorkerPool {
       case class Msg(id: Int, replyTo: ActorRef)
@@ -710,7 +711,7 @@ Scala
       }
     }
 
-Java
+```
 
 Subclass must define the RequestStrategy to control stream back pressure. After each incoming message the ActorSubscriber will automatically invoke the RequestStrategy.requestDemand and propagate the returned demand to the stream.
 
@@ -722,11 +723,11 @@ More detailed information can be found in the API documentation.
 
 This is how it can be used as output Sink to a Flow:
 
-Scala
+```scala
 
     val N = 117
     val worker = Source(1 to N).map(WorkerPool.Msg(_, replyTo))
       .runWith(Sink.actorSubscriber(WorkerPool.props))
 
-Java
+```
 

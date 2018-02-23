@@ -12,11 +12,11 @@ Stages that create substreams are listed on Nesting and flattening stages
 
 A typical operation that generates substreams is groupBy.
 
-Scala
+```scala
 
     val source = Source(1 to 10).groupBy(3, _ % 3)
 
-Java
+```
 
 stream-substream-groupBy1.png
 
@@ -24,11 +24,11 @@ This operation splits the incoming stream into separate output streams, one for 
 
 If you add a Sink or Flow right after the groupBy stage, all transformations are applied to all encountered substreams in the same fashion. So, if you add the following Sink, that is added to each of the substreams as in the below diagram.
 
-Scala
+```scala
 
     Source(1 to 10).groupBy(3, _ % 3).to(Sink.ignore).run()
 
-Java
+```
 
 stream-substream-groupBy2.png
 
@@ -36,20 +36,20 @@ Also substreams, more precisely, SubFlow and SubSource have methods that allow y
 
 The mergeSubstreams method merges an unbounded number of substreams back to the master stream.
 
-Scala
+```scala
 
     Source(1 to 10)
       .groupBy(3, _ % 3)
       .mergeSubstreams
       .runWith(Sink.ignore)
 
-Java
+```
 
 stream-substream-groupBy3.png
 
 You can limit the number of active substreams running and being merged at a time, with either the mergeSubstreamsWithParallelism or concatSubstreams method.
 
-Scala
+```scala
 
     Source(1 to 10)
       .groupBy(3, _ % 3)
@@ -62,7 +62,7 @@ Scala
       .concatSubstreams
       .runWith(Sink.ignore)
 
-Java
+```
 
 However, since the number of running (i.e. not yet completed) substreams is capped, be careful so that these methods do not cause deadlocks with back pressure like in the below diagram.
 
@@ -78,17 +78,17 @@ The difference from groupBy is that, if the predicate for splitWhen and splitAft
 
 splitWhen flows the element on which the predicate returned true to a new substream, whereas splitAfter flows the next element to the new substream after the element on which predicate returned true.
 
-Scala
+```scala
 
     Source(1 to 10).splitWhen(SubstreamCancelStrategy.drain)(_ == 3)
 
     Source(1 to 10).splitAfter(SubstreamCancelStrategy.drain)(_ == 3)
 
-Java
+```
 
 These are useful when you scanned over something and you don’t need to care about anything behind it. A typical example is counting the number of characters for each line like below.
 
-Scala
+```scala
 
     val text =
       "This is the first line.\n" +
@@ -103,7 +103,7 @@ Scala
       .to(Sink.foreach(println))
       .run()
 
-Java
+```
 
 This prints out the following output.
 
@@ -121,13 +121,13 @@ flatMapConcat and flatMapMerge are substream operations different from groupBy a
 
 flatMapConcat takes a function, which is f in the following diagram. The function f of flatMapConcat transforms each input element into a Source that is then flattened into the output stream by concatenation.
 
-Scala
+```scala
 
     Source(1 to 2)
       .flatMapConcat(i ⇒ Source(List.fill(3)(i)))
       .runWith(Sink.ignore)
 
-Java
+```
 
 stream-substream-flatMapConcat1.png
 
@@ -141,12 +141,12 @@ stream-substream-flatMapConcat2.png
 
 flatMapMerge is similar to flatMapConcat, but it doesn’t wait for one Source to be fully consumed. Instead, up to breadth number of streams emit elements at any given time.
 
-Scala
+```scala
 
     Source(1 to 2)
       .flatMapMerge(2, i ⇒ Source(List.fill(3)(i)))
       .runWith(Sink.ignore)
 
-Java
+```
 
 stream-substream-flatMapMerge.png

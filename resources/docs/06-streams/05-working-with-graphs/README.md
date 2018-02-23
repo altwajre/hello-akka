@@ -30,7 +30,7 @@ simple-graph-example.png
 
 Such graph is simple to translate to the Graph DSL since each linear element corresponds to a Flow, and each circle corresponds to either a Junction or a Source or Sink if it is beginning or ending a Flow. Junctions must always be created with defined type parameters, as otherwise the Nothing type will be inferred.
 
-Scala
+```scala
 
     val g = RunnableGraph.fromGraph(GraphDSL.create() { implicit builder: GraphDSL.Builder[NotUsed] =>
       import GraphDSL.Implicits._
@@ -47,7 +47,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 
 #### Note
@@ -62,7 +62,7 @@ We have seen examples of such re-use already above: the merge and broadcast junc
 
 In the example below we prepare a graph that consists of two parallel streams, in which we re-use the same instance of Flow, yet it will properly be materialized as two connections between the corresponding Sources and Sinks:
 
-Scala
+```scala
 
 
     val topHeadSink = Sink.head[Int]
@@ -80,7 +80,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 
 # Constructing and combining Partial Graphs
@@ -91,7 +91,7 @@ This can be achieved by returning a different Shape than ClosedShape, for exampl
 
 Let’s imagine we want to provide users with a specialized element that given 3 inputs will pick the greatest int value of each zipped triple. We’ll want to expose 3 input ports (unconnected sources) and one output port (unconnected sink).
 
-Scala
+```scala
 
     val pickMaxOfThree = GraphDSL.create() { implicit b ⇒
       import GraphDSL.Implicits._
@@ -121,7 +121,7 @@ Scala
     val max: Future[Int] = g.run()
     Await.result(max, 300.millis) should equal(3)
 
-Java
+```
 
 As you can see, first we construct the partial graph that contains all the zipping and comparing of stream elements. This partial graph will have three inputs and one output, wherefore we use the UniformFanInShape. Then we import it (all of its nodes and connections) explicitly into the closed graph built in the second step in which all the undefined elements are rewired to real sources and sinks. The graph can then be run and yields the expected result.
 
@@ -147,7 +147,7 @@ In order to create a Source from a graph the method Source.fromGraph is used, to
 
 Refer to the example below, in which we create a Source that zips together two numbers, to see this graph construction in action:
 
-Scala
+```scala
 
     val pairs = Source.fromGraph(GraphDSL.create() { implicit b ⇒
       import GraphDSL.Implicits._
@@ -166,11 +166,11 @@ Scala
 
     val firstPair: Future[(Int, Int)] = pairs.runWith(Sink.head)
 
-Java
+```
 
 Similarly the same can be done for a Sink[T], using SinkShape.of in which case the provided value must be an Inlet[T]. For defining a Flow[T] we need to expose both an inlet and an outlet:
 
-Scala
+```scala
 
     val pairUpWithToString =
       Flow.fromGraph(GraphDSL.create() { implicit b ⇒
@@ -190,14 +190,14 @@ Scala
 
     pairUpWithToString.runWith(Source(List(1)), Sink.head)
 
-Java
+```
 
 
 # Combining Sources and Sinks with simplified API
 
 There is a simplified API you can use to combine sources and sinks with junctions like: Broadcast[T], Balance[T], Merge[In] and Concat[A] without the need for using the Graph DSL. The combine method takes care of constructing the necessary graph underneath. In following example we combine two sources into one (fan-in):
 
-Scala
+```scala
 
     val sourceOne = Source(List(1))
     val sourceTwo = Source(List(2))
@@ -205,11 +205,11 @@ Scala
 
     val mergedResult: Future[Int] = merged.runWith(Sink.fold(0)(_ + _))
 
-Java
+```
 
 The same can be done for a Sink[T] but in this case it will be fan-out:
 
-Scala
+```scala
 
     val sendRmotely = Sink.actorRef(actorRef, "Done")
     val localProcessing = Sink.foreach[Int](_ ⇒ /* do something usefull */ ())
@@ -218,7 +218,7 @@ Scala
 
     Source(List(0, 1, 2)).runWith(sink)
 
-Java
+```
 
 
 # Building reusable Graph components
@@ -229,7 +229,7 @@ As an example, we will build a graph junction that represents a pool of workers,
 
 Altogether, our junction will have two input ports of type I (for the normal and priority jobs) and an output port of type O. To represent this interface, we need to define a custom Shape. The following lines show how to do that.
 
-Scala
+```scala
 
     // A shape represents the input and output ports of a reusable
     // processing module
@@ -265,7 +265,7 @@ In general a custom Shape needs to be able to provide all its input and output p
 
 Since our shape has two input ports and one output port, we can just use the FanInShape DSL to define our custom shape:
 
-Scala
+```scala
 
     import FanInShape.{ Init, Name }
 
@@ -280,7 +280,7 @@ Scala
 
 Now that we have a Shape we can wire up a Graph that represents our worker pool. First, we will merge incoming normal and priority jobs using MergePreferred, then we will send the jobs to a Balance junction which will fan-out to a configurable number of workers (flows), finally we merge all these results together and send them out through our only output port. This is expressed by the following code:
 
-Scala
+```scala
 
     object PriorityWorkerPool {
       def apply[In, Out](
@@ -317,7 +317,7 @@ Scala
 
 All we need to do now is to use our custom junction in a graph. The following code simulates some simple workers and jobs using plain strings and prints out the results. Actually we used two instances of our worker pool junction using add() twice.
 
-Scala
+```scala
 
     val worker1 = Flow[String].map("step 1 " + _)
     val worker2 = Flow[String].map("step 2 " + _)
@@ -375,7 +375,7 @@ final case class BidiShape[-In1, +Out1, -In2, +Out2](
 
 A bidirectional flow is defined just like a unidirectional Flow as demonstrated for the codec mentioned above:
 
-Scala
+```scala
 
     trait Message
     case class Ping(id: Int) extends Message
@@ -411,11 +411,11 @@ Scala
     // this is the same as the above
     val codec = BidiFlow.fromFunctions(toBytes _, fromBytes _)
 
-Java
+```
 
 The first version resembles the partial graph constructor, while for the simple case of a functional 1:1 transformation there is a concise convenience method as shown on the last line. The implementation of the two functions is not difficult either:
 
-Scala
+```scala
 
     def toBytes(msg: Message): ByteString = {
       implicit val order = ByteOrder.LITTLE_ENDIAN
@@ -435,13 +435,13 @@ Scala
       }
     }
 
-Java
+```
 
 In this way you could easily integrate any other serialization library that turns an object into a sequence of bytes.
 
 The other stage that we talked about is a little more involved since reversing a framing protocol means that any received chunk of bytes may correspond to zero or more messages. This is best implemented using a GraphStage (see also Custom processing with GraphStage).
 
-Scala
+```scala
 
     val framing = BidiFlow.fromGraph(GraphDSL.create() { b ⇒
       implicit val order = ByteOrder.LITTLE_ENDIAN
@@ -519,11 +519,11 @@ Scala
       BidiShape.fromFlows(outbound, inbound)
     })
 
-Java
+```
 
 With these implementations we can build a protocol stack and test it:
 
-Scala
+```scala
 
     /* construct protocol stack
      *         +------------------------------------+
@@ -544,7 +544,7 @@ Scala
     val result = Source((0 to 9).map(Ping)).via(flow).limit(20).runWith(Sink.seq)
     Await.result(result, 1.second) should ===((0 to 9).map(Pong))
 
-Java
+```
 
 This example demonstrates how BidiFlow subgraphs can be hooked together and also turned around with the .reversed method. The test simulates both parties of a network communication protocol without actually having to open a network connection—the flows can just be connected directly.
 
@@ -552,18 +552,18 @@ This example demonstrates how BidiFlow subgraphs can be hooked together and also
 
 In certain cases it might be necessary to feed back the materialized value of a Graph (partial, closed or backing a Source, Sink, Flow or BidiFlow). This is possible by using builder.materializedValue which gives an Outlet that can be used in the graph as an ordinary source or outlet, and which will eventually emit the materialized value. If the materialized value is needed at more than one place, it is possible to call materializedValue any number of times to acquire the necessary number of outlets.
 
-Scala
+```scala
 
     import GraphDSL.Implicits._
     val foldFlow: Flow[Int, Int, Future[Int]] = Flow.fromGraph(GraphDSL.create(Sink.fold[Int, Int](0)(_ + _)) { implicit builder ⇒ fold ⇒
       FlowShape(fold.in, builder.materializedValue.mapAsync(4)(identity).outlet)
     })
 
-Java
+```
 
 Be careful not to introduce a cycle where the materialized value actually contributes to the materialized value. The following example demonstrates a case where the materialized Future of a fold is fed back to the fold itself.
 
-Scala
+```scala
 
     import GraphDSL.Implicits._
     // This cannot produce any value:
@@ -577,7 +577,7 @@ Scala
       SourceShape(builder.materializedValue.mapAsync(4)(identity).outlet)
     })
 
-Java
+```
 
 
 # Graph cycles, liveness and deadlocks
@@ -592,7 +592,7 @@ The first example demonstrates a graph that contains a naïve cycle. The graph t
 
 The graph DSL allows the connection arrows to be reversed, which is particularly handy when writing cycles—as we will see there are cases where this is very helpful.
 
-Scala
+```scala
 
     // WARNING! The graph below deadlocks!
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
@@ -606,7 +606,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 Running this we observe that after a few numbers have been printed, no more elements are logged to the console - all processing stops after some time. After some investigation we observe that:
 
@@ -617,7 +617,7 @@ Since Akka Streams (and Reactive Streams in general) guarantee bounded processin
 
 If we modify our feedback loop by replacing the Merge junction with a MergePreferred we can avoid the deadlock. MergePreferred is unfair as it always tries to consume from a preferred input port if there are elements available before trying the other lower priority input ports. Since we feed back through the preferred port it is always guaranteed that the elements in the cycles can flow.
 
-Scala
+```scala
 
     // WARNING! The graph below stops consuming from "source" after a few steps
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
@@ -631,7 +631,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 If we run the example we see that the same sequence of numbers are printed over and over again, but the processing does not stop. Hence, we avoided the deadlock, but source is still back-pressured forever, because buffer space is never recovered: the only action we see is the circulation of a couple of initial elements from source.
 
@@ -641,7 +641,7 @@ What we see here is that in certain cases we need to choose between boundedness 
 
 To make our cycle both live (not deadlocking) and fair we can introduce a dropping element on the feedback arc. In this case we chose the buffer() operation giving it a dropping strategy OverflowStrategy.dropHead.
 
-Scala
+```scala
 
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
@@ -654,7 +654,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 If we run this example we see that
 
@@ -665,7 +665,7 @@ This example highlights that one solution to avoid deadlocks in the presence of 
 
 As we discovered in the previous examples, the core problem was the unbalanced nature of the feedback loop. We circumvented this issue by adding a dropping element, but now we want to build a cycle that is balanced from the beginning instead. To achieve this we modify our first graph by replacing the Merge junction with a ZipWith. Since ZipWith takes one element from source and from the feedback arc to inject one element into the cycle, we maintain the balance of elements.
 
-Scala
+```scala
 
     // WARNING! The graph below never processes any elements
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
@@ -680,7 +680,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 Still, when we try to run the example it turns out that no element is printed at all! After some investigation we realize that:
 
@@ -689,7 +689,7 @@ Still, when we try to run the example it turns out that no element is printed at
 
 These two conditions are a typical “chicken-and-egg” problem. The solution is to inject an initial element into the cycle that is independent from source. We do this by using a Concat junction on the backwards arc that injects a single element using Source.single.
 
-Scala
+```scala
 
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
@@ -706,6 +706,6 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 When we run the above example we see that processing starts and never stops. The important takeaway from this example is that balanced cycles often need an initial “kick-off” element to be injected into the cycle.

@@ -10,7 +10,7 @@ We will illustrate through the example of pancake cooking how streams can be use
 
 Roland uses the two frying pans in an asymmetric fashion. The first pan is only used to fry one side of the pancake then the half-finished pancake is flipped into the second pan for the finishing fry on the other side. Once the first frying pan becomes available it gets a new scoop of batter. As an effect, most of the time there are two pancakes being cooked at the same time, one being cooked on its first side and the second being cooked to completion. This is how this setup would look like implemented as a stream:
 
-Scala
+```scala
 
     // Takes a scoop of batter and creates a pancake with one side cooked
     val fryingPan1: Flow[ScoopOfBatter, HalfCookedPancake, NotUsed] =
@@ -24,7 +24,7 @@ Scala
     val pancakeChef: Flow[ScoopOfBatter, Pancake, NotUsed] =
       Flow[ScoopOfBatter].via(fryingPan1.async).via(fryingPan2.async)
 
-Java
+```
 
 The two map stages in sequence (encapsulated in the “frying pan” flows) will be executed in a pipelined way, basically doing the same as Roland with his frying pans:
 
@@ -43,7 +43,7 @@ Asynchronous stream processing stages have internal buffers to make communicatio
 
 Patrik uses the two frying pans symmetrically. He uses both pans to fully fry a pancake on both sides, then puts the results on a shared plate. Whenever a pan becomes empty, he takes the next scoop from the shared bowl of batter. In essence he parallelizes the same process over multiple pans. This is how this setup will look like if implemented using streams:
 
-Scala
+```scala
 
     val fryingPan: Flow[ScoopOfBatter, Pancake, NotUsed] =
       Flow[ScoopOfBatter].map { batter ⇒ Pancake() }
@@ -63,7 +63,7 @@ Scala
       FlowShape(dispatchBatter.in, mergePancakes.out)
     })
 
-Java
+```
 
 The benefit of parallelizing is that it is easy to scale. In the pancake example it is easy to add a third frying pan with Patrik’s method, but Roland cannot add a third frying pan, since that would require a third processing step, which is not practically possible in the case of frying pancakes.
 
@@ -77,7 +77,7 @@ The two concurrency patterns that we demonstrated as means to increase throughpu
 
 First, let’s look at how we can parallelize pipelined processing stages. In the case of pancakes this means that we will employ two chefs, each working using Roland’s pipelining method, but we use the two chefs in parallel, just like Patrik used the two frying pans. This is how it looks like if expressed as streams:
 
-Scala
+```scala
 
     val pancakeChef: Flow[ScoopOfBatter, Pancake, NotUsed] =
       Flow.fromGraph(GraphDSL.create() { implicit builder ⇒
@@ -93,7 +93,7 @@ Scala
         FlowShape(dispatchBatter.in, mergePancakes.out)
       })
 
-Java
+```
 
 The above pattern works well if there are many independent jobs that do not depend on the results of each other, but the jobs themselves need multiple processing steps where each step builds on the result of the previous one. In our case individual pancakes do not depend on each other, they can be cooked in parallel, on the other hand it is not possible to fry both sides of the same pancake at the same time, so the two sides have to be fried in sequence.
 
@@ -104,7 +104,7 @@ It is also possible to organize parallelized stages into pipelines. This would m
 
 This is again straightforward to implement with the streams API:
 
-Scala
+```scala
 
     val pancakeChefs1: Flow[ScoopOfBatter, HalfCookedPancake, NotUsed] =
       Flow.fromGraph(GraphDSL.create() { implicit builder ⇒
@@ -134,7 +134,7 @@ Scala
 
     val kitchen: Flow[ScoopOfBatter, Pancake, NotUsed] = pancakeChefs1.via(pancakeChefs2)
 
-Java
+```
 
 This usage pattern is less common but might be usable if a certain step in the pipeline might take wildly different times to finish different jobs. The reason is that there are more balance-merge steps in this pattern compared to the parallel pipelines. This pattern rebalances after each step, while the previous pattern only balances at the entry point of the pipeline. This only matters however if the processing time distribution has a large deviation.
 

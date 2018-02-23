@@ -30,7 +30,7 @@ The above diagram contains one more shape that we have not seen yet, which is ca
 
 If we try to build a code snippet that corresponds to the above diagram, our first try might look like this:
 
-Scala
+```scala
 
     Source.single(0)
       .map(_ + 1)
@@ -40,13 +40,13 @@ Scala
 
     // ... where is the nesting?
 
-Java
+```
 
 It is clear however that there is no nesting present in our first attempt, since the library cannot figure out where we intended to put composite module boundaries, it is our responsibility to do that. If we are using the DSL provided by the Flow, Source, Sink classes then nesting can be achieved by calling one of the methods withAttributes() or named() (where the latter is just a shorthand for adding a name attribute).
 
 The following code demonstrates how to achieve the desired nesting:
 
-Scala
+```scala
 
     val nestedSource =
       Source.single(0) // An atomic source
@@ -65,7 +65,7 @@ Scala
     // Create a RunnableGraph
     val runnableGraph = nestedSource.to(nestedSink)
 
-Java
+```
 
 Once we have hidden the internals of our components, they act like any other built-in component of similar shape. If we hide some of the internals of our composites, the result looks just like if any other predefine component has been used:
 
@@ -73,7 +73,7 @@ compose_nested_flow_opaque.png
 
 If we look at usage of built-in components, and our custom components, there is no difference in usage as the code snippet below demonstrates.
 
-Scala
+```scala
 
     // Create a RunnableGraph from our components
     val runnableGraph = nestedSource.to(nestedSink)
@@ -81,7 +81,7 @@ Scala
     // Usage is uniform, no matter if modules are composite or atomic
     val runnableGraph2 = Source.single(0).to(Sink.fold(0)(_ + _))
 
-Java
+```
 
 
 # Composing complex systems
@@ -94,7 +94,7 @@ compose_graph.png
 
 The diagram shows a RunnableGraph (remember, if there are no unwired ports, the graph is closed, and therefore can be materialized) that encapsulates a non-trivial stream processing network. It contains fan-in, fan-out stages, directed and non-directed cycles. The runnable() method of the GraphDSL object allows the creation of a general, closed, and runnable graph. For example the network on the diagram can be realized like this:
 
-Scala
+```scala
 
     import GraphDSL.Implicits._
     RunnableGraph.fromGraph(GraphDSL.create() { implicit builder =>
@@ -114,11 +114,11 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 In the code above we used the implicit port numbering feature (to make the graph more readable and similar to the diagram) and we imported Source s, Sink s and Flow s explicitly. It is possible to refer to the ports explicitly, and it is not necessary to import our linear stages via add(), so another version might look like this:
 
-Scala
+```scala
 
     import GraphDSL.Implicits._
     RunnableGraph.fromGraph(GraphDSL.create() { implicit builder =>
@@ -135,7 +135,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 Similar to the case in the first section, so far we have not considered modularity. We created a complex graph, but the layout is flat, not modularized. We will modify our example, and create a reusable component with the graph DSL. The way to do it is to use the create() factory method on GraphDSL. If we remove the sources and sinks from the previous example, what remains is a partial graph:
 
@@ -143,7 +143,7 @@ compose_graph_partial.png
 
 We can recreate a similar graph in code, using the DSL in a similar way than before:
 
-Scala
+```scala
 
     import GraphDSL.Implicits._
     val partial = GraphDSL.create() { implicit builder =>
@@ -158,7 +158,7 @@ Scala
       FlowShape(B.in, E.out(1))
     }.named("partial")
 
-Java
+```
 
 The only new addition is the return value of the builder block, which is a Shape. All graphs (including Source, BidiFlow, etc) have a shape, which encodes the typed ports of the module. In our example there is exactly one input and output port left, so we can declare it to have a FlowShape by returning an instance of it. While it is possible to create new Shape types, it is usually recommended to use one of the matching built-in ones.
 
@@ -168,11 +168,11 @@ compose_graph_shape.png
 
 Since our partial graph has the right shape, it can be already used in the simpler, linear DSL:
 
-Scala
+```scala
 
     Source.single(0).via(partial).to(Sink.ignore)
 
-Java
+```
 
 It is not possible to use it as a Flow yet, though (i.e. we cannot call .filter() on it), but Flow has a fromGraph() method that just adds the DSL to a FlowShape. There are similar methods on Source, Sink and BidiShape, so it is easy to get back to the simpler DSL if a graph has the right shape. For convenience, it is also possible to skip the partial graph creation, and use one of the convenience creator methods. To demonstrate this, we will create the following graph:
 
@@ -180,7 +180,7 @@ compose_graph_flow.png
 
 The code version of the above closed graph might look like this:
 
-Scala
+```scala
 
     // Convert the partial graph of FlowShape to a Flow to get
     // access to the fluid DSL (for example to be able to call .filter())
@@ -205,7 +205,7 @@ Scala
     // Putting all together
     val closed = source.via(flow.filter(_ > 1)).to(sink)
 
-Java
+```
 
 
 #### Note
@@ -214,7 +214,7 @@ All graph builder sections check if the resulting graph has all ports connected 
 
 We are still in debt of demonstrating that RunnableGraph is a component just like any other, which can be embedded in graphs. In the following snippet we embed one closed graph in another:
 
-Scala
+```scala
 
     val closed1 = Source.single(0).to(Sink.foreach(println))
     val closed2 = RunnableGraph.fromGraph(GraphDSL.create() { implicit builder ⇒
@@ -223,7 +223,7 @@ Scala
       embeddedClosed
     })
 
-Java
+```
 
 The type of the imported module indicates that the imported module has a ClosedShape, and so we are not able to wire it to anything else inside the enclosing closed graph. Nevertheless, this “island” is embedded properly, and will be materialized just like any other module that is part of the graph.
 
@@ -248,7 +248,7 @@ compose_mat.png
 
 To implement the above, first, we create a composite Source, where the enclosed Source have a materialized type of Promise[[Option[Int]] . By using the combiner function Keep.left, the resulting materialized type is of the nested module (indicated by the color red on the diagram):
 
-Scala
+```scala
 
     // Materializes to Promise[Option[Int]]                                   (red)
     val source: Source[Int, Promise[Option[Int]]] = Source.maybe[Int]
@@ -260,11 +260,11 @@ Scala
     val nestedSource: Source[Int, Promise[Option[Int]]] =
       source.viaMat(flow1)(Keep.left).named("nestedSource")
 
-Java
+```
 
 Next, we create a composite Flow from two smaller components. Here, the second enclosed Flow has a materialized type of Future[OutgoingConnection] , and we propagate this to the parent by using Keep.right as the combiner function (indicated by the color yellow on the diagram):
 
-Scala
+```scala
 
     // Materializes to NotUsed                                                (orange)
     val flow2: Flow[Int, ByteString, NotUsed] = Flow[Int].map { i ⇒ ByteString(i.toString) }
@@ -277,11 +277,11 @@ Scala
     val nestedFlow: Flow[Int, ByteString, Future[OutgoingConnection]] =
       flow2.viaMat(flow3)(Keep.right).named("nestedFlow")
 
-Java
+```
 
 As a third step, we create a composite Sink, using our nestedFlow as a building block. In this snippet, both the enclosed Flow and the folding Sink has a materialized value that is interesting for us, so we use Keep.both to get a Pair of them as the materialized type of nestedSink (indicated by the color blue on the diagram)
 
-Scala
+```scala
 
     // Materializes to Future[String]                                         (green)
     val sink: Sink[ByteString, Future[String]] = Sink.fold("")(_ + _.utf8String)
@@ -290,11 +290,11 @@ Scala
     val nestedSink: Sink[Int, (Future[OutgoingConnection], Future[String])] =
       nestedFlow.toMat(sink)(Keep.both)
 
-Java
+```
 
 As the last example, we wire together nestedSource and nestedSink and we use a custom combiner function to create a yet another materialized type of the resulting RunnableGraph. This combiner function just ignores the Future[String] part, and wraps the other two values in a custom case class MyClass (indicated by color purple on the diagram):
 
-Scala
+```scala
 
     case class MyClass(private val p: Promise[Option[Int]], conn: OutgoingConnection) {
       def close() = p.trySuccess(None)
@@ -312,7 +312,7 @@ Scala
     val runnableGraph: RunnableGraph[Future[MyClass]] =
       nestedSource.toMat(nestedSink)(f)
 
-Java
+```
 
 
 #### Note
@@ -325,7 +325,7 @@ We have seen that we can use named() to introduce a nesting level in the fluid D
 
 The code below, a modification of an earlier example sets the inputBuffer attribute on certain modules, but not on others:
 
-Scala
+```scala
 
     import Attributes._
     val nestedSource =
@@ -342,7 +342,7 @@ Scala
       nestedFlow.to(Sink.fold(0)(_ + _)) // wire an atomic sink to the nestedFlow
         .withAttributes(name("nestedSink") and inputBuffer(3, 3)) // override
 
-Java
+```
 
 The effect is, that each module inherits the inputBuffer attribute from its enclosing parent, unless it has the same attribute explicitly set. nestedSource gets the default attributes from the materializer itself. nestedSink on the other hand has this attribute set, so it will be used by all nested modules. nestedFlow will inherit from nestedSink except the map stage which has again an explicitly provided attribute overriding the inherited one.
 

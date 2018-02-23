@@ -8,7 +8,7 @@ In this section we will discuss internal buffers that are introduced as an optim
 
 To run a stage asynchronously it has to be marked explicitly as such using the .async method. Being run asynchronously means that a stage, after handing out an element to its downstream consumer is able to immediately process the next message. To demonstrate what we mean by this, let’s take a look at the following example:
 
-Scala
+```scala
 
     Source(1 to 3)
       .map { i ⇒ println(s"A: $i"); i }.async
@@ -16,7 +16,7 @@ Scala
       .map { i ⇒ println(s"C: $i"); i }.async
       .runWith(Sink.ignore)
 
-Java
+```
 
 Running the above example, one of the possible outputs looks like this:
 
@@ -44,7 +44,7 @@ akka.stream.materializer.max-input-buffer-size = 16
 
 Alternatively they can be set by passing a ActorMaterializerSettings to the materializer:
 
-Scala
+```scala
 
     val materializer = ActorMaterializer(
       ActorMaterializerSettings(system)
@@ -52,21 +52,21 @@ Scala
           initialSize = 64,
           maxSize = 64))
 
-Java
+```
 
 If the buffer size needs to be set for segments of a Flow only, it is possible by defining a separate Flow with these attributes:
 
-Scala
+```scala
 
     val section = Flow[Int].map(_ * 2).async
       .addAttributes(Attributes.inputBuffer(initial = 1, max = 1)) // the buffer size of this map is 1
     val flow = section.via(Flow[Int].map(_ / 2)).async // the buffer size of this map is the default
 
-Java
+```
 
 Here is an example of a code that demonstrate some of the issues caused by internal buffers:
 
-Scala
+```scala
 
     import scala.concurrent.duration._
     case class Tick()
@@ -86,7 +86,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 Running the above example one would expect the number 3 to be printed in every 3 seconds (the conflateWithSeed step here is configured so that it counts the number of elements received before the downstream ZipWith consumes them). What is being printed is different though, we will see the number 1. The reason for this is the internal buffer which is by default 16 elements large, and prefetches elements before the ZipWith starts consuming them. It is possible to fix this issue by changing the buffer size of ZipWith to 1. We will still see a leading 1 though which is caused by an initial prefetch of the ZipWith element.
 
@@ -100,53 +100,53 @@ In this section we will discuss explicit user defined buffers that are part of t
 
 The example below will ensure that 1000 jobs (but not more) are dequeued from an external (imaginary) system and stored locally in memory - relieving the external system:
 
-Scala
+```scala
 
     // Getting a stream of jobs from an imaginary external system as a Source
     val jobs: Source[Job, NotUsed] = inboundJobsConnector()
     jobs.buffer(1000, OverflowStrategy.backpressure)
 
-Java
+```
 
 The next example will also queue up 1000 jobs locally, but if there are more jobs waiting in the imaginary external systems, it makes space for the new element by dropping one element from the tail of the buffer. Dropping from the tail is a very common strategy but it must be noted that this will drop the youngest waiting job. If some “fairness” is desired in the sense that we want to be nice to jobs that has been waiting for long, then this option can be useful.
 
-Scala
+```scala
 
     jobs.buffer(1000, OverflowStrategy.dropTail)
 
-Java
+```
 
 Instead of dropping the youngest element from the tail of the buffer a new element can be dropped without enqueueing it to the buffer at all.
 
-Scala
+```scala
 
     jobs.buffer(1000, OverflowStrategy.dropNew)
 
-Java
+```
 
 Here is another example with a queue of 1000 jobs, but it makes space for the new element by dropping one element from the head of the buffer. This is the oldest waiting job. This is the preferred strategy if jobs are expected to be resent if not processed in a certain period. The oldest element will be retransmitted soon, (in fact a retransmitted duplicate might be already in the queue!) so it makes sense to drop it first.
 
-Scala
+```scala
 
     jobs.buffer(1000, OverflowStrategy.dropHead)
 
-Java
+```
 
 Compared to the dropping strategies above, dropBuffer drops all the 1000 jobs it has enqueued once the buffer gets full. This aggressive strategy is useful when dropping jobs is preferred to delaying jobs.
 
-Scala
+```scala
 
     jobs.buffer(1000, OverflowStrategy.dropBuffer)
 
-Java
+```
 
 If our imaginary external job provider is a client using our API, we might want to enforce that the client cannot have more than 1000 queued jobs otherwise we consider it flooding and terminate the connection. This is easily achievable by the error strategy which simply fails the stream once the buffer gets full.
 
-Scala
+```scala
 
     jobs.buffer(1000, OverflowStrategy.fail)
 
-Java
+```
 
 
 # Rate transformation
@@ -157,7 +157,7 @@ When a fast producer can not be informed to slow down by backpressure or some ot
 
 Below is an example snippet that summarizes fast stream of elements to a standard deviation, mean and count of elements that have arrived while the stats have been calculated.
 
-Scala
+```scala
 
     val statsFlow = Flow[Double]
       .conflateWithSeed(Seq(_))(_ :+ _)
@@ -168,13 +168,13 @@ Scala
         (σ, μ, s.size)
       }
 
-Java
+```
 
 This example demonstrates that such flow’s rate is decoupled. The element rate at the start of the flow can be much higher than the element rate at the end of the flow.
 
 Another possible use of conflate is to not consider all elements for summary when the producer starts getting too fast. The example below demonstrates how conflate can be used to randomly drop elements when the consumer is not able to keep up with the producer.
 
-Scala
+```scala
 
     val p = 0.01
     val sampleFlow = Flow[Double]
@@ -184,7 +184,7 @@ Scala
       }
       .mapConcat(identity)
 
-Java
+```
 
 
 ## Understanding expand
@@ -193,20 +193,20 @@ Expand helps to deal with slow producers which are unable to keep up with the de
 
 As a simple use of expand here is a flow that sends the same element to consumer when producer does not send any new elements.
 
-Scala
+```scala
 
     val lastFlow = Flow[Double]
       .expand(Iterator.continually(_))
 
-Java
+```
 
 Expand also allows to keep some state between demand requests from the downstream. Leveraging this, here is a flow that tracks and reports a drift between fast consumer and slow producer.
 
-Scala
+```scala
 
     val driftFlow = Flow[Double]
       .expand(i ⇒ Iterator.from(0).map(i -> _))
 
-Java
+```
 
 Note that all of the elements coming from upstream will go through expand at least once. This means that the output of this flow is going to report a drift of zero if producer is fast enough, or a larger drift otherwise.

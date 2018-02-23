@@ -39,7 +39,7 @@ It is possible to attach a Flow to a Source resulting in a composite source, and
 
 It is important to remember that even after constructing the RunnableGraph by connecting all the source, sink and different processing stages, no data will flow through it until it is materialized. Materialization is the process of allocating all resources needed to run the computation described by a Graph (in Akka Streams this will often involve starting up Actors). Thanks to Flows being simply a description of the processing pipeline they are immutable, thread-safe, and freely shareable, which means that it is for example safe to share and send them between actors, to have one actor prepare the work, and then have it be materialized at some completely different place in the code.
 
-Scala
+```scala
 
     val source = Source(1 to 10)
     val sink = Sink.fold[Int, Int](0)(_ + _)
@@ -50,13 +50,13 @@ Scala
     // materialize the flow and get the value of the FoldSink
     val sum: Future[Int] = runnable.run()
 
-Java
+```
 
 After running (materializing) the RunnableGraph[T] we get back the materialized value of type T. Every stream processing stage can produce a materialized value, and it is the responsibility of the user to combine them to a new type. In the above example we used toMat to indicate that we want to transform the materialized value of the source and sink, and we used the convenience function Keep.right to say that we are only interested in the materialized value of the sink.
 
 In our example the FoldSink materializes a value of type Future which will represent the result of the folding process over the stream. In general, a stream can expose multiple materialized values, but it is quite common to be interested in only the value of the Source or the Sink in the stream. For this reason there is a convenience method called runWith() available for Sink, Source or Flow requiring, respectively, a supplied Source (in order to run a Sink), a Sink (in order to run a Source) or both a Source and a Sink (in order to run a Flow, since it has neither attached yet).
 
-Scala
+```scala
 
     val source = Source(1 to 10)
     val sink = Sink.fold[Int, Int](0)(_ + _)
@@ -64,11 +64,11 @@ Scala
     // materialize the flow, getting the Sinks materialized value
     val sum: Future[Int] = source.runWith(sink)
 
-Java
+```
 
 It is worth pointing out that since processing stages are immutable, connecting them returns a new processing stage, instead of modifying the existing instance, so while constructing long flows, remember to assign the new value to a variable or run it:
 
-Scala
+```scala
 
     val source = Source(1 to 10)
     source.map(_ ⇒ 0) // has no effect on source, since it's immutable
@@ -77,7 +77,7 @@ Scala
     val zeroes = source.map(_ ⇒ 0) // returns new Source[Int], with `map()` appended
     zeroes.runWith(Sink.fold(0)(_ + _)) // 0
 
-Java
+```
 
 
 #### Note
@@ -88,7 +88,7 @@ In the above example we used the runWith method, which both materializes the str
 
 Since a stream can be materialized multiple times, the materialized value will also be calculated anew for each such materialization, usually leading to different values being returned each time. In the example below we create two running materialized instance of the stream that we described in the runnable variable, and both materializations give us a different Future from the map even though we used the same sink to refer to the future:
 
-Scala
+```scala
 
     // connect the Source to the Sink, obtaining a RunnableGraph
     val sink = Sink.fold[Int, Int](0)(_ + _)
@@ -101,14 +101,14 @@ Scala
 
     // sum1 and sum2 are different Futures!
 
-Java
+```
 
 
 ## Defining sources, sinks and flows
 
 The objects Source and Sink define various ways to create sources and sinks of elements. The following examples show some of the most useful constructs (refer to the API documentation for more details):
 
-Scala
+```scala
 
     // Create a source from an Iterable
     Source(List(1, 2, 3))
@@ -136,11 +136,11 @@ Scala
     // A Sink that executes a side-effecting call for every element of the stream
     Sink.foreach[String](println(_))
 
-Java
+```
 
 There are various ways to wire up different parts of a stream, the following examples show some of the available options:
 
-Scala
+```scala
 
     // Explicitly creating and wiring up a Source, Sink and Flow
     Source(1 to 6).via(Flow[Int].map(_ * 2)).to(Sink.foreach(println(_)))
@@ -158,7 +158,7 @@ Scala
       Flow[Int].alsoTo(Sink.foreach(println(_))).to(Sink.ignore)
     Source(1 to 6).to(otherSink)
 
-Java
+```
 
 
 ## Illegal stream elements
@@ -225,14 +225,14 @@ By default Akka Streams will fuse the stream operators. This means that the proc
 
 To allow for parallel processing you will have to insert asynchronous boundaries manually into your flows and graphs by way of adding Attributes.asyncBoundary using the method async on Source, Sink and Flow to pieces that shall communicate with the rest of the graph in an asynchronous fashion.
 
-Scala
+```scala
 
     Source(List(1, 2, 3))
       .map(_ + 1).async
       .map(_ * 2)
       .to(Sink.ignore)
 
-Java
+```
 
 In this example we create two regions within the flow which will be executed in one Actor each—assuming that adding and multiplying integers is an extremely costly operation this will lead to a performance gain since two CPUs can work on the tasks in parallel. It is important to note that asynchronous boundaries are not singular places within a flow where elements are passed asynchronously (as in other streaming libraries), but instead attributes always work by adding information to the flow graph that has been constructed up to this point:
 
@@ -250,7 +250,7 @@ The new fusing behavior can be disabled by setting the configuration parameter a
 
 Since every processing stage in Akka Streams can provide a materialized value after being materialized, it is necessary to somehow express how these values should be composed to a final value when we plug these stages together. For this, many combinator methods have variants that take an additional argument, a function, that will be used to combine the resulting values. Some examples of using these combiners are illustrated in the example below.
 
-Scala
+```scala
 
     // An source that can be signalled explicitly from the outside
     val source: Source[Int, Promise[Option[Int]]] = Source.maybe[Int]
@@ -312,7 +312,7 @@ Scala
         ClosedShape
       })
 
-Java
+```
 
 
 #### Note
@@ -335,19 +335,19 @@ An important aspect of working with streams and actors is understanding an Actor
 
 The usual way of creating an ActorMaterializer is to create it next to your ActorSystem, which likely is in a “main” class of your application:
 
-Scala
+```scala
 
     implicit val system = ActorSystem("ExampleSystem")
 
     implicit val mat = ActorMaterializer() // created from `system`
 
-Java
+```
 
 In this case the streams run by the materializer will run until it is shut down. When the materializer is shut down before the streams have run to completion, they will be terminated abruptly. This is a little different than the usual way to terminate streams, which is by cancelling/completing them. The stream lifecycles are bound to the materializer like this to prevent leaks, and in normal operations you should not rely on the mechanism and rather use KillSwitch or normal completion signals to manage the lifecycles of your streams.
 
 If we look at the following example, where we create the ActorMaterializer within an Actor:
 
-Scala
+```scala
 
     final class RunWithMyself extends Actor {
       implicit val mat = ActorMaterializer()
@@ -364,7 +364,7 @@ Scala
       }
     }
 
-Java
+```
 
 In the above example we used the ActorContext to create the materializer. This binds its lifecycle to the surrounding Actor. In other words, while the stream we started there would under normal circumstances run forever, if we stop the Actor it would terminate the stream as well. We have bound the streams’ lifecycle to the surrounding actor’s lifecycle. This is a very useful technique if the stream is closely related to the actor, e.g. when the actor represents an user or other entity, that we continiously query using the created stream – and it would not make sense to keep the stream alive when the actor has terminated already. The streams termination will be signalled by an “Abrupt termination exception” signaled by the stream.
 
@@ -372,7 +372,7 @@ You may also cause an ActorMaterializer to shutdown by explicitly calling shutdo
 
 Sometimes however you may want to explicitly create a stream that will out-last the actor’s life. For example, if you want to continue pushing some large stream of data to an external service and are doing so via an Akka stream while you already want to eagerly stop the Actor since it has performed all of it’s duties already:
 
-Scala
+```scala
 
     final class RunForever(implicit val mat: Materializer) extends Actor {
 
@@ -388,7 +388,7 @@ Scala
       }
     }
 
-Java
+```
 
 In the above example we pass in a materializer to the Actor, which results in binding its lifecycle to the entire ActorSystem rather than the single enclosing actor. This can be useful if you want to share a materializer or group streams into specific materializers, for example because of the materializer’s settings etc.
 

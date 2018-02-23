@@ -17,7 +17,7 @@ recover allows you to emit a final element and then complete the stream on an up
 
 Recovering can be useful if you want to gracefully complete a stream on failure while letting downstream know that there was a failure.
 
-Scala
+```scala
 
     Source(0 to 6).map(n ⇒
       if (n < 5) n.toString
@@ -26,11 +26,11 @@ Scala
       case _: RuntimeException ⇒ "stream truncated"
     }.runForeach(println)
 
-Java
+```
 
 This will output:
 
-Scala
+```scala
 
     0
     1
@@ -39,7 +39,7 @@ Scala
     4
     stream truncated
 
-Java
+```
 
 
 # Recover with retries
@@ -48,7 +48,7 @@ recoverWithRetries allows you to put a new upstream in place of the failed one, 
 
 Deciding which exceptions should be recovered is done through a PartialFunction. If an exception does not have a matching case the stream is failed.
 
-Scala
+```scala
 
     val planB = Source(List("five", "six", "seven", "eight"))
 
@@ -59,11 +59,11 @@ Scala
       case _: RuntimeException ⇒ planB
     }).runForeach(println)
 
-Java
+```
 
 This will output:
 
-Scala
+```scala
 
     0
     1
@@ -75,7 +75,7 @@ Scala
     seven
     eight
 
-Java
+```
 
 
 # Delayed restarts with a backoff stage
@@ -86,7 +86,7 @@ This pattern is useful when the stage fails or completes because some external r
 
 The following snippet shows how to create a backoff supervisor using akka.stream.scaladsl.RestartSource which will supervise the given Source. The Source in this case is a stream of Server Sent Events, produced by akka-http. If the stream fails or completes at any point, the request will be made again, in increasing intervals of 3, 6, 12, 24 and finally 30 seconds (at which point it will remain capped due to the maxBackoff parameter):
 
-Scala
+```scala
 
     val restartSource = RestartSource.withBackoff(
       minBackoff = 3.seconds,
@@ -104,13 +104,13 @@ Scala
       }
     }
 
-Java
+```
 
 Using a randomFactor to add a little bit of additional variance to the backoff intervals is highly recommended, in order to avoid multiple streams re-start at the exact same point in time, for example because they were stopped due to a shared resource such as the same server going down and re-starting after the same configured interval. By adding additional randomness to the re-start intervals the streams will start in slightly different points in time, thus avoiding large spikes of traffic hitting the recovering server or other resource that they all need to contact.
 
 The above RestartSource will never terminate unless the Sink it’s fed into cancels. It will often be handy to use it in combination with a KillSwitch, so that you can terminate it when needed:
 
-Scala
+```scala
 
     val killSwitch = restartSource
       .viaMat(KillSwitches.single)(Keep.right)
@@ -121,7 +121,7 @@ Scala
 
     killSwitch.shutdown()
 
-Java
+```
 
 Sinks and flows can also be supervised, using akka.stream.scaladsl.RestartSink and akka.stream.scaladsl.RestartFlow . The RestartSink is restarted when it cancels, while the RestartFlow is restarted when either the in port cancels, the out port completes, or the out port sends an error.
 
@@ -145,7 +145,7 @@ There are three ways to handle exceptions from application code:
 
 By default the stopping strategy is used for all exceptions, i.e. the stream will be completed with failure when an exception is thrown.
 
-Scala
+```scala
 
     implicit val materializer = ActorMaterializer()
     val source = Source(0 to 5).map(100 / _)
@@ -153,11 +153,11 @@ Scala
     // division by zero will fail the stream and the
     // result here will be a Future completed with Failure(ArithmeticException)
 
-Java
+```
 
 The default supervision strategy for a stream can be defined on the settings of the materializer.
 
-Scala
+```scala
 
     val decider: Supervision.Decider = {
       case _: ArithmeticException ⇒ Supervision.Resume
@@ -170,7 +170,7 @@ Scala
     // the element causing division by zero will be dropped
     // result here will be a Future completed with Success(228)
 
-Java
+```
 
 Here you can see that all ArithmeticException will resume the processing, i.e. the elements that cause the division by zero are effectively dropped.
 
@@ -180,7 +180,7 @@ Be aware that dropping elements may result in deadlocks in graphs with cycles, a
 
 The supervision strategy can also be defined for all operators of a flow.
 
-Scala
+```scala
 
     implicit val materializer = ActorMaterializer()
     val decider: Supervision.Decider = {
@@ -196,11 +196,11 @@ Scala
     // the elements causing division by zero will be dropped
     // result here will be a Future completed with Success(150)
 
-Java
+```
 
 Restart works in a similar way as Resume with the addition that accumulated state, if any, of the failing processing stage will be reset.
 
-Scala
+```scala
 
     implicit val materializer = ActorMaterializer()
     val decider: Supervision.Decider = {
@@ -219,7 +219,7 @@ Scala
     // i.e. start from 0 again
     // result here will be a Future completed with Success(Vector(0, 1, 4, 0, 5, 12))
 
-Java
+```
 
 
 ## Errors from mapAsync
@@ -230,28 +230,28 @@ Let’s say that we use an external service to lookup email addresses and we wou
 
 We start with the tweet stream of authors:
 
-Scala
+```scala
 
     val authors: Source[Author, NotUsed] =
       tweets
         .filter(_.hashtags.contains(akkaTag))
         .map(_.author)
 
-Java
+```
 
 Assume that we can lookup their email address using:
 
-Scala
+```scala
 
     def lookupEmail(handle: String): Future[String] =
 
-Java
+```
 
 The Future is completed with Failure if the email is not found.
 
 Transforming the stream of authors to a stream of email addresses by using the lookupEmail service can be done with mapAsync and we use Supervision.resumingDecider to drop unknown email addresses:
 
-Scala
+```scala
 
     import ActorAttributes.supervisionStrategy
     import Supervision.resumingDecider
@@ -261,6 +261,6 @@ Scala
         Flow[Author].mapAsync(4)(author ⇒ addressSystem.lookupEmail(author.handle))
           .withAttributes(supervisionStrategy(resumingDecider)))
 
-Java
+```
 
 If we would not use Resume the default stopping strategy would complete the stream with failure on the first Future that was completed with Failure.

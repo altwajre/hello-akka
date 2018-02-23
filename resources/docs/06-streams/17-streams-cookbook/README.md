@@ -18,15 +18,15 @@ Situation: During development it is sometimes helpful to see what happens in a p
 
 The simplest solution is to simply use a map operation and use println to print the elements received to the console. While this recipe is rather simplistic, it is often suitable for a quick debug session.
 
-Scala
+```scala
 
     val loggedSource = mySource.map { elem ⇒ println(elem); elem }
 
-Java
+```
 
 Another approach to logging is to use log() operation which allows configuring logging for elements flowing through the stream as well as completion and erroring.
 
-Scala
+```scala
 
     // customise log levels
     mySource.log("before-map")
@@ -37,7 +37,7 @@ Scala
     implicit val adapter = Logging(system, "customLogger")
     mySource.log("custom")
 
-Java
+```
 
 
 ## Flattening a stream of sequences
@@ -46,12 +46,12 @@ Situation: A stream is given as a stream of sequence of elements, but a stream o
 
 The mapConcat operation can be used to implement a one-to-many transformation of elements using a mapper function in the form of In => immutable.Seq[Out] . In this case we want to map a Seq of elements to the elements in the collection itself, so we can just call mapConcat(identity) .
 
-Scala
+```scala
 
     val myData: Source[List[Message], NotUsed] = someDataSource
     val flattened: Source[Message, NotUsed] = myData.mapConcat(identity)
 
-Java
+```
 
 
 ## Draining a stream to a strict collection
@@ -64,16 +64,16 @@ The function limit or take should always be used in conjunction in order to guar
 
 For example, this is best avoided:
 
-Scala
+```scala
 
     // Dangerous: might produce a collection with 2 billion elements!
     val f: Future[Seq[String]] = mySource.runWith(Sink.seq)
 
-Java
+```
 
 Rather, use limit or take to ensure that the resulting Seq will contain only up to max elements:
 
-Scala
+```scala
 
     val MAX_ALLOWED_SIZE = 100
 
@@ -86,7 +86,7 @@ Scala
     val ignoreOverflow: Future[Seq[String]] =
       mySource.take(MAX_ALLOWED_SIZE).runWith(Sink.seq)
 
-Java
+```
 
 
 ## Calculating the digest of a ByteString stream
@@ -97,7 +97,7 @@ This recipe uses a GraphStage to host a mutable MessageDigest class (part of the
 
 Eventually the stream of ByteString s depletes and we get a notification about this event via onUpstreamFinish. At this point we want to emit the digest value, but we cannot do it with push in this handler directly since there may be no downstream demand. Instead we call emit which will temporarily replace the handlers, emit the provided value when demand comes in and then reset the stage state. It will then complete the stage.
 
-Scala
+```scala
 
     import akka.stream.stage._
     class DigestCalculator(algorithm: String) extends GraphStage[FlowShape[ByteString, ByteString]] {
@@ -131,7 +131,7 @@ Scala
     }
     val digest: Source[ByteString, NotUsed] = data.via(new DigestCalculator("SHA-256"))
 
-Java
+```
 
 
 ## Parsing lines from a stream of ByteStrings
@@ -140,14 +140,14 @@ Situation: A stream of bytes is given as a stream of ByteString s containing lin
 
 The Framing helper object contains a convenience method to parse messages from a stream of ByteString s:
 
-Scala
+```scala
 
     import akka.stream.scaladsl.Framing
     val linesStream = rawData.via(Framing.delimiter(
       ByteString("\r\n"), maximumFrameLength = 100, allowTruncation = true))
       .map(_.utf8String)
 
-Java
+```
 
 
 ## Dealing with compressed data streams
@@ -156,13 +156,13 @@ Situation: A gzipped stream of bytes is given as a stream of ByteString s, for e
 
 The Compression helper object contains convenience methods for decompressing data streams compressed with Gzip or Deflate.
 
-Scala
+```scala
 
     import akka.stream.scaladsl.Compression
     val uncompressed = compressed.via(Compression.gunzip())
       .map(_.utf8String)
 
-Java
+```
 
 
 ## Implementing reduce-by-key
@@ -175,7 +175,7 @@ To count the words, we need to process the stream of streams (the actual groups 
 
 One noteworthy detail pertains to the MaximumDistinctWords parameter: this defines the breadth of the groupBy and merge operations. Akka Streams is focused on bounded resource consumption and the number of concurrently open inputs to the merge operator describes the amount of resources needed by the merge itself. Therefore only a finite number of substreams can be active at any given time. If the groupBy operator encounters more keys than this number then the stream cannot continue without violating its resource bound, in this case groupBy will terminate with a failure.
 
-Scala
+```scala
 
     val counts: Source[(String, Int), NotUsed] = words
       // split the words into separate streams first
@@ -187,7 +187,7 @@ Scala
       // get a stream of word counts
       .mergeSubstreams
 
-Java
+```
 
 By extracting the parts specific to wordcount into
 
@@ -197,7 +197,7 @@ By extracting the parts specific to wordcount into
 
 we get a generalized version below:
 
-Scala
+```scala
 
     def reduceByKey[In, K, Out](
       maximumGroupSize: Int,
@@ -217,7 +217,7 @@ Scala
         groupKey = (word: String) ⇒ word,
         map = (word: String) ⇒ 1)((left: Int, right: Int) ⇒ left + right))
 
-Java
+```
 
 
 #### Note
@@ -233,7 +233,7 @@ To achieve the desired result, we attack the problem in two steps:
     first, using a function topicMapper that gives a list of topics (groups) a message belongs to, we transform our stream of Message to a stream of (Message, Topic) where for each topic the message belongs to a separate pair will be emitted. This is achieved by using mapConcat
     Then we take this new stream of message topic pairs (containing a separate pair for each topic a given message belongs to) and feed it into groupBy, using the topic as the group key.
 
-Scala
+```scala
 
     val topicMapper: (Message) ⇒ immutable.Seq[Topic] = extractTopics
 
@@ -250,7 +250,7 @@ Scala
           // do what needs to be done
       }
 
-Java
+```
 
 
 ## Adhoc source
@@ -259,7 +259,7 @@ Situation: The idea is that you have a source which you don’t want to start un
 
 You can achieve this behavior by combining lazily, backpressureTimeout and recoverWithRetries as follows:
 
-Scala
+```scala
 
     def adhocSource[T](source: Source[T, _], timeout: FiniteDuration, maxRetries: Int): Source[T, _] =
       Source.lazily(
@@ -269,7 +269,7 @@ Scala
         })
       )
 
-Java
+```
 
 
 # Working with Graphs
@@ -282,7 +282,7 @@ Situation: Given a stream of elements we want to control the emission of those e
 
 This recipe solves the problem by simply zipping the stream of Message elements with the stream of Trigger signals. Since Zip produces pairs, we simply map the output stream selecting the first element of the pair.
 
-Scala
+```scala
 
     val graph = RunnableGraph.fromGraph(GraphDSL.create() { implicit builder ⇒
       import GraphDSL.Implicits._
@@ -293,11 +293,11 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 Alternatively, instead of using a Zip, and then using map to get the first element of the pairs, we can avoid creating the pairs in the first place by using ZipWith which takes a two argument function to produce the output element. If this function would return a pair of the two argument it would be exactly the behavior of Zip so ZipWith is a generalization of zipping.
 
-Scala
+```scala
 
     val graph = RunnableGraph.fromGraph(GraphDSL.create() { implicit builder ⇒
       import GraphDSL.Implicits._
@@ -309,7 +309,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 
 ## Balancing jobs to a fixed pool of workers
@@ -322,7 +322,7 @@ The graph consists of a Balance node which is a special fan-out operation that t
 
 To make the worker stages run in parallel we mark them as asynchronous with async.
 
-Scala
+```scala
 
     def balancer[In, Out](worker: Flow[In, Out, Any], workerCount: Int): Flow[In, Out, NotUsed] = {
       import GraphDSL.Implicits._
@@ -343,7 +343,7 @@ Scala
 
     val processedJobs: Source[Result, NotUsed] = myJobs.via(balancer(worker, 3))
 
-Java
+```
 
 
 # Working with rate
@@ -358,12 +358,12 @@ This can be solved by using a versatile rate-transforming operation, conflate. C
 
 When the upstream is faster, the reducing process of the conflate starts. Our reducer function simply takes the freshest element. This in a simple dropping operation.
 
-Scala
+```scala
 
     val droppyStream: Flow[Message, Message, NotUsed] =
       Flow[Message].conflate((lastMessage, newMessage) ⇒ newMessage)
 
-Java
+```
 
 There is a more general version of conflate named conflateWithSeed that allows to express more complex aggregations, more similar to a fold.
 
@@ -373,7 +373,7 @@ Situation: The default Broadcast graph element is properly backpressured, but th
 
 One solution to this problem is to append a buffer element in front of all of the downstream consumers defining a dropping strategy instead of the default Backpressure. This allows small temporary rate differences between the different consumers (the buffer smooths out small rate variances), but also allows faster consumers to progress by dropping from the buffer of the slow consumers if necessary.
 
-Scala
+```scala
 
     val graph = RunnableGraph.fromGraph(GraphDSL.create(mySink1, mySink2, mySink3)((_, _, _)) { implicit b ⇒ (sink1, sink2, sink3) ⇒
       import GraphDSL.Implicits._
@@ -387,7 +387,7 @@ Scala
       ClosedShape
     })
 
-Java
+```
 
 
 ## Collecting missed ticks
@@ -401,13 +401,13 @@ We will use conflateWithSeed to solve the problem. The seed version of conflate 
 
 As a result, we have a flow of Int where the number represents the missed ticks. A number 0 means that we were able to consume the tick fast enough (i.e. zero means: 1 non-missed tick + 0 missed ticks)
 
-Scala
+```scala
 
     val missedTicks: Flow[Tick, Int, NotUsed] =
       Flow[Tick].conflateWithSeed(seed = (_) ⇒ 0)(
         (missedTicks, tick) ⇒ missedTicks + 1)
 
-Java
+```
 
 
 ## Create a stream processor that repeats the last element seen
@@ -416,7 +416,7 @@ Situation: Given a producer and consumer, where the rate of neither is known in 
 
 We have two options to implement this feature. In both cases we will use GraphStage to build our custom element. In the first version we will use a provided initial value initial that will be used to feed the downstream if no upstream element is ready yet. In the onPush() handler we just overwrite the currentValue variable and immediately relieve the upstream by calling pull(). The downstream onPull handler is very similar, we immediately relieve the downstream by emitting currentValue.
 
-Scala
+```scala
 
     import akka.stream._
     import akka.stream.stage._
@@ -447,13 +447,13 @@ Scala
 
     }
 
-Java
+```
 
 While it is relatively simple, the drawback of the first version is that it needs an arbitrary initial element which is not always possible to provide. Hence, we create a second version where the downstream might need to wait in one single case: if the very first element is not yet available.
 
 We introduce a boolean variable waitingFirstValue to denote whether the first element has been provided or not (alternatively an Option can be used for currentValue or if the element type is a subclass of AnyRef a null can be used with the same purpose). In the downstream onPull() handler the difference from the previous version is that we check if we have received the first value and only emit if we have. This leads to that when the first element comes in we must check if there possibly already was demand from downstream so that we in that case can push the element directly.
 
-Scala
+```scala
 
     import akka.stream._
     import akka.stream.stage._
@@ -488,7 +488,7 @@ Scala
       }
     }
 
-Java
+```
 
 
 ## Globally limiting the rate of a set of streams
@@ -499,7 +499,7 @@ One possible solution uses a shared actor as the global limiter combined with ma
 
 As the first step we define an actor that will do the accounting for the global rate limit. The actor maintains a timer, a counter for pending permit tokens and a queue for possibly waiting participants. The actor has an open and closed state. The actor is in the open state while it has still pending permits. Whenever a request for permit arrives as a WantToPass message to the actor the number of available permits is decremented and we notify the sender that it can pass by answering with a MayPass message. If the amount of permits reaches zero, the actor transitions to the closed state. In this state requests are not immediately answered, instead the reference of the sender is added to a queue. Once the timer for replenishing the pending permits fires by sending a ReplenishTokens message, we increment the pending permits counter and send a reply to each of the waiting senders. If there are more waiting senders than permits available we will stay in the closed state.
 
-Scala
+```scala
 
     object Limiter {
       case object WantToPass
@@ -561,11 +561,11 @@ Scala
       }
     }
 
-Java
+```
 
 To create a Flow that uses this global limiter actor we use the mapAsync function with the combination of the ask pattern. We also define a timeout, so if a reply is not received during the configured maximum wait period the returned future from ask will fail, which will fail the corresponding stream as well.
 
-Scala
+```scala
 
     def limitGlobal[T](limiter: ActorRef, maxAllowedWait: FiniteDuration): Flow[T, T, NotUsed] = {
       import akka.pattern.ask
@@ -579,7 +579,7 @@ Scala
 
     }
 
-Java
+```
 
 
 #### Note
@@ -599,7 +599,7 @@ This can be achieved with a single GraphStage. The main logic of our stage is in
 
 Both onPush() and onPull() calls emitChunk() the only difference is that the push handler also stores the incoming chunk by appending to the end of the buffer.
 
-Scala
+```scala
 
     import akka.stream.stage._
 
@@ -654,7 +654,7 @@ Scala
 
     val chunksStream = rawBytes.via(new Chunker(ChunkLimit))
 
-Java
+```
 
 
 ## Limit the number of bytes passing through a stream of ByteStrings
@@ -663,7 +663,7 @@ Situation: Given a stream of ByteString s we want to fail the stream if more tha
 
 This recipe uses a GraphStage to implement the desired feature. In the only handler we override, onPush() we just update a counter and see if it gets larger than maximumBytes. If a violation happens we signal failure, otherwise we forward the chunk we have received.
 
-Scala
+```scala
 
     import akka.stream.stage._
     class ByteLimiter(val maximumBytes: Long) extends GraphStage[FlowShape[ByteString, ByteString]] {
@@ -692,7 +692,7 @@ Scala
 
     val limiter = Flow[ByteString].via(new ByteLimiter(SizeLimit))
 
-Java
+```
 
 
 ## Compact ByteStrings in a stream of ByteStrings
@@ -701,11 +701,11 @@ Situation: After a long stream of transformations, due to their immutable, struc
 
 The recipe is a simple use of map, calling the compact() method of the ByteString elements. This does copying of the underlying arrays, so this should be the last element of a long chain if used.
 
-Scala
+```scala
 
     val compacted: Source[ByteString, NotUsed] = data.map(_.compact)
 
-Java
+```
 
 
 ## Injecting keep-alive messages into a stream of ByteStrings
@@ -714,11 +714,11 @@ Situation: Given a communication channel expressed as a stream of ByteString s w
 
 There is a built-in operation that allows to do this directly:
 
-Scala
+```scala
 
     import scala.concurrent.duration._
     val injectKeepAlive: Flow[ByteString, ByteString, NotUsed] =
       Flow[ByteString].keepAlive(1.second, () ⇒ keepaliveMessage)
 
-Java
+```
 

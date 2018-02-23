@@ -12,7 +12,7 @@ The GraphStage abstraction can be used to create arbitrary graph processing stag
 
 As a first motivating example, we will build a new Source that will simply emit numbers from 1 until it is cancelled. To start, we need to define the “interface” of our stage, which is called shape in Akka Streams terminology (this is explained in more detail in the section Modularity, Composition and Hierarchy). This is how this looks like:
 
-Scala
+```scala
 
     import akka.stream.SourceShape
     import akka.stream.stage.GraphStage
@@ -27,7 +27,7 @@ Scala
       override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = ???
     }
 
-Java
+```
 
 As you see, in itself the GraphStage only defines the ports of this stage and a shape that contains the ports. It also has, a currently unimplemented method called createLogic. If you recall, stages are reusable in multiple materializations, each resulting in a different executing entity. In the case of GraphStage the actual running logic is modeled as an instance of a GraphStageLogic which will be created by the materializer by calling the createLogic method. In other words, all we need to do is to create a suitable logic that will emit the numbers we want.
 
@@ -37,7 +37,7 @@ It is very important to keep the GraphStage object itself immutable and reusable
 
 In order to emit from a Source in a backpressured stream one needs first to have demand from downstream. To receive the necessary events one needs to register a subclass of OutHandler with the output port (Outlet). This handler will receive events related to the lifecycle of the port. In our case we need to override onPull() which indicates that we are free to emit a single element. There is another callback, onDownstreamFinish() which is called if the downstream cancelled. Since the default behavior of that callback is to stop the stage, we don’t need to override it. In the onPull callback we will simply emit the next number. This is how it looks like in the end:
 
-Scala
+```scala
 
     import akka.stream.SourceShape
     import akka.stream.Graph
@@ -65,10 +65,12 @@ Scala
           })
         }
     }
+    
+```
 
 Instances of the above GraphStage are subclasses of Graph[SourceShape[Int],NotUsed] which means that they are already usable in many situations, but do not provide the DSL methods we usually have for other Source s. In order to convert this Graph to a proper Source we need to wrap it using Source.fromGraph (see Modularity, Composition and Hierarchy for more details about graphs and DSLs). Now we can use the source as any other built-in one:
 
-Scala
+```scala
 
     // A GraphStage is a proper Graph, just like what GraphDSL.create would return
     val sourceGraph: Graph[SourceShape[Int], NotUsed] = new NumbersSource
@@ -82,11 +84,11 @@ Scala
     // The source is reusable. This returns 5050
     val result2: Future[Int] = mySource.take(100).runFold(0)(_ + _)
 
-Java
+```
 
 Similarly, to create a custom Sink one can register a subclass InHandler with the stage Inlet. The onPush() callback is used to signal the handler a new element has been pushed to the stage, and can hence be grabbed and used. onPush() can be overridden to provide custom behaviour. Please note, most Sinks would need to request upstream elements as soon as they are created: this can be done by calling pull(inlet) in the preStart() callback.
 
-Scala
+```scala
 
     import akka.stream.SinkShape
     import akka.stream.stage.GraphStage
@@ -111,7 +113,7 @@ Scala
         }
     }
 
-Java
+```
 
 
 ## Port states, InHandler and OutHandler
@@ -189,7 +191,7 @@ graph_stage_map.png
 
 Map calls push(out) from the onPush() handler and it also calls pull() from the onPull handler resulting in the conceptual wiring above, and fully expressed in code below:
 
-Scala
+```scala
 
     class Map[A, B](f: A ⇒ B) extends GraphStage[FlowShape[A, B]] {
 
@@ -213,7 +215,7 @@ Scala
         }
     }
 
-Java
+```
 
 Map is a typical example of a one-to-one transformation of a stream where demand is passed along upstream elements passed on downstream.
 
@@ -223,7 +225,7 @@ graph_stage_filter.png
 
 As we see above, if the given predicate matches the current element we are propagating it downwards, otherwise we return the “ball” to our upstream so that we get the new element. This is achieved by modifying the map example by adding a conditional in the onPush handler and decide between a pull(in) or push(out) call (and of course not having a mapping f function).
 
-Scala
+```scala
 
     class Filter[A](p: A ⇒ Boolean) extends GraphStage[FlowShape[A, A]] {
 
@@ -249,7 +251,7 @@ Scala
         }
     }
 
-Java
+```
 
 To complete the picture we define a one-to-many transformation as the next step. We chose a straightforward example stage that emits every upstream element twice downstream. The conceptual wiring of this stage looks like this:
 
@@ -257,7 +259,7 @@ graph_stage_duplicate.png
 
 This is a stage that has state: an option with the last element it has seen indicating if it has duplicated this last element already or not. We must also make sure to emit the extra element if the upstream completes.
 
-Scala
+```scala
 
     class Duplicator[A] extends GraphStage[FlowShape[A, A]] {
 
@@ -298,13 +300,13 @@ Scala
         }
     }
 
-Java
+```
 
 In this case a pull from downstream might be consumed by the stage itself rather than passed along upstream as the stage might contain an element it wants to push. Note that we also need to handle the case where the upstream closes while the stage still has elements it wants to push downstream. This is done by overriding onUpstreamFinish in the InHandler and provide custom logic that should happen when the upstream has been finished.
 
 This example can be simplified by replacing the usage of a mutable state with calls to emitMultiple which will replace the handlers, emit each of multiple elements and then reinstate the original handlers:
 
-Scala
+```scala
 
     class Duplicator[A] extends GraphStage[FlowShape[A, A]] {
 
@@ -332,7 +334,7 @@ Scala
         }
     }
 
-Java
+```
 
 Finally, to demonstrate all of the stages above, we put them together into a processing chain, which conceptually would correspond to the following structure:
 
@@ -340,7 +342,7 @@ graph_stage_chain.png
 
 In code this is only a few lines, using the via use our custom stages in a stream:
 
-Scala
+```scala
 
     val resultFuture = Source(1 to 5)
       .via(new Filter(_ % 2 == 0))
@@ -348,7 +350,7 @@ Scala
       .via(new Map(_ / 2))
       .runWith(sink)
 
-Java
+```
 
 If we attempt to draw the sequence of events, it shows that there is one “event token” in circulation in a potential chain of stages, just like our conceptual “railroad tracks” representation predicts.
 
@@ -372,7 +374,7 @@ Please note that you can always simply use a logging library directly inside a S
 
 The stage then gets access to the log field which it can safely use from any GraphStage callbacks:
 
-Scala
+```scala
 
     import akka.stream.stage.{ GraphStage, GraphStageLogic, OutHandler, StageLogging }
 
@@ -398,7 +400,7 @@ Scala
         ThreadLocalRandom.current().nextInt('a', 'z'.toInt + 1).toChar
     }
 
-Java
+```
 
 
 #### Note
@@ -413,7 +415,7 @@ Timers can not be scheduled from the constructor of the logic, but it is possibl
 
 In this sample the stage toggles between open and closed, where open means no elements are passed through. The stage starts out as closed but as soon as an element is pushed downstream the gate becomes open for a duration of time during which it will consume and drop upstream messages:
 
-Scala
+```scala
 
     // each time an event is pushed through it will trigger a period of silence
     class TimedGate[A](silencePeriod: FiniteDuration) extends GraphStage[FlowShape[A, A]] {
@@ -449,7 +451,7 @@ Scala
         }
     }
 
-Java
+```
 
 
 ## Using asynchronous side-channels
@@ -460,7 +462,7 @@ Sharing the AsyncCallback from the constructor risks race conditions, therefore 
 
 This example shows an asynchronous side channel graph stage that starts dropping elements when a future completes:
 
-Scala
+```scala
 
     // will close upstream in all materializations of the graph stage instance
     // when the future completes
@@ -490,7 +492,7 @@ Scala
         }
     }
 
-Java
+```
 
 
 ## Integration with actors
@@ -514,7 +516,7 @@ There is no built-in synchronization of accessing this value from both of the th
 
 In this sample the materialized value is a future containing the first element to go through the stream:
 
-Scala
+```scala
 
     class FirstValue[A] extends GraphStageWithMaterializedValue[FlowShape[A, A], Future[A]] {
 
@@ -554,7 +556,7 @@ Scala
       }
     }
 
-Java
+```
 
 
 ## Using attributes to affect the behavior of a stage
@@ -585,7 +587,7 @@ The first difference we can notice is that our Buffer stage is automatically pul
 
 The following code example demonstrates a buffer class corresponding to the message sequence chart above.
 
-Scala
+```scala
 
     class TwoBuffer[A] extends GraphStage[FlowShape[A, A]] {
 
@@ -647,7 +649,7 @@ Scala
 
     }
 
-Java
+```
 
 
 # Thread safety of custom processing stages
@@ -676,7 +678,7 @@ The most general way of extending any Source, Flow or SubFlow (e.g. from groupBy
 Advanced Scala users may wonder whether it is possible to write extension methods that enrich FlowOps to allow nicer syntax. The short answer is that Scala 2 does not support this in a fully generic fashion, the problem is that it is impossible to abstract over the kind of stream that is being extended because Source, Flow and SubFlow differ in the number and kind of their type parameters. While it would be possible to write an implicit class that enriches them generically, this class would require explicit instantiation with all type parameters due to SI-2712. For a partial workaround that unifies extensions to Source and Flow see this sketch by R. Kuhn.
 
 A lot simpler is the task of just adding an extension method to Source as shown below:
-
+```scala
 implicit class SourceDuplicator[Out, Mat](s: Source[Out, Mat]) {
   def duplicateElements: Source[Out, Mat] = s.via(new Duplicator)
 }
@@ -694,6 +696,7 @@ implicit class FlowDuplicator[In, Out, Mat](s: Flow[In, Out, Mat]) {
 val f = Flow[Int].duplicateElements
 
 Source(1 to 3).via(f).runWith(Sink.seq).futureValue should ===(Seq(1, 1, 2, 2, 3, 3))
+```
 
 If you try to write this for SubFlow, though, you will run into the same issue as when trying to unify the two solutions above, only on a higher level (the type constructors needed for that unification would have rank two, meaning that some of their type arguments are type constructors themselves—when trying to extend the solution shown in the linked sketch the author encountered such a density of compiler StackOverflowErrors and IDE failures that he gave up).
 
