@@ -3,10 +3,10 @@
 3  - Header 3
 4  - Notes
 5  - Warnings
-6  - Code blocks
-7  - Code snippets
+6  - Code blocks (triple backtick)
+7  - Images
 8  - Compact lines
+9  - Code snippets (single backtick)
 --------------------
-9  - Highlight
-10 - Links
-11 - Images
+10 - Highlight
+11 - Links

@@ -116,11 +116,11 @@ As mentioned before, if a node is unreachable then gossip convergence is not pos
 
 ### State Diagram for the Member States (akka.cluster.allow-weakly-up-members=off)
 
-member-states.png
+![member-states.png](https://doc.akka.io/docs/akka/current/images/member-states.png)
 
 ### State Diagram for the Member States (akka.cluster.allow-weakly-up-members=on)
 
-member-states-weakly-up.png
+![member-states-weakly-up.png](https://doc.akka.io/docs/akka/current/images/member-states-weakly-up.png)
 
 ### Member States
 
