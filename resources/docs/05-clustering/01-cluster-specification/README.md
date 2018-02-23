@@ -1,22 +1,24 @@
 # Cluster Specification - Overview
 
 #### Note
-
 This document describes the design concepts of the clustering.
-# Intro
 
+# Intro
 Akka Cluster provides a fault-tolerant decentralized peer-to-peer based cluster membership service with no single point of failure or single point of bottleneck.
 - It does this using gossip protocols and an automatic failure detector.
+
 # Terms
 
 ### node
-    A logical member of a cluster.
+A logical member of a cluster.
 - There could be multiple nodes on a physical machine.
 - Defined by a hostname:port:uid tuple.
+
 ### cluster
-    A set of nodes joined together through the membership service.
+A set of nodes joined together through the membership service.
+
 ### leader
-    A single node in the cluster that acts as the leader.
+A single node in the cluster that acts as the leader.
 - Managing cluster convergence and membership state transitions.
 
 # Membership
