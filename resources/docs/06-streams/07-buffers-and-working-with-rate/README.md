@@ -1,12 +1,15 @@
 # Buffers and working with rate - Overview
 
-When upstream and downstream rates differ, especially when the throughput has spikes, it can be useful to introduce buffers in a stream. In this chapter we cover how buffers are used in Akka Streams.
+When upstream and downstream rates differ, especially when the throughput has spikes, it can be useful to introduce buffers in a stream.
+- In this chapter we cover how buffers are used in Akka Streams.
 
 # Buffers for asynchronous stages
 
 In this section we will discuss internal buffers that are introduced as an optimization when using asynchronous stages.
 
-To run a stage asynchronously it has to be marked explicitly as such using the .async method. Being run asynchronously means that a stage, after handing out an element to its downstream consumer is able to immediately process the next message. To demonstrate what we mean by this, let’s take a look at the following example:
+To run a stage asynchronously it has to be marked explicitly as such using the .async method.
+- Being run asynchronously means that a stage, after handing out an element to its downstream consumer is able to immediately process the next message.
+- To demonstrate what we mean by this, let’s take a look at the following example:
 
 ```scala
 
@@ -30,15 +33,26 @@ B: 3
 C: 2
 C: 3
 
-Note that the order is not A:1, B:1, C:1, A:2, B:2, C:2, which would correspond to the normal fused synchronous execution model of flows where an element completely passes through the processing pipeline before the next element enters the flow. The next element is processed by an asynchronous stage as soon as it is emitted the previous one.
+Note that the order is not A:1, B:1, C:1, A:2, B:2, C:2, which would correspond to the normal fused synchronous execution model of flows where an element completely passes through the processing pipeline before the next element enters the flow.
+- The next element is processed by an asynchronous stage as soon as it is emitted the previous one.
 
-While pipelining in general increases throughput, in practice there is a cost of passing an element through the asynchronous (and therefore thread crossing) boundary which is significant. To amortize this cost Akka Streams uses a windowed, batching backpressure strategy internally. It is windowed because as opposed to a Stop-And-Wait protocol multiple elements might be “in-flight” concurrently with requests for elements. It is also batching because a new element is not immediately requested once an element has been drained from the window-buffer but multiple elements are requested after multiple elements have been drained. This batching strategy reduces the communication cost of propagating the backpressure signal through the asynchronous boundary.
+While pipelining in general increases throughput, in practice there is a cost of passing an element through the asynchronous (and therefore thread crossing) boundary which is significant.
+- To amortize this cost Akka Streams uses a windowed, batching backpressure strategy internally.
+- It is windowed because as opposed to a Stop-And-Wait protocol multiple elements might be “in-flight” concurrently with requests for elements.
+- It is also batching because a new element is not immediately requested once an element has been drained from the window-buffer but multiple elements are requested after multiple elements have been drained.
+- This batching strategy reduces the communication cost of propagating the backpressure signal through the asynchronous boundary.
 
-While this internal protocol is mostly invisible to the user (apart from its throughput increasing effects) there are situations when these details get exposed. In all of our previous examples we always assumed that the rate of the processing chain is strictly coordinated through the backpressure signal causing all stages to process no faster than the throughput of the connected chain. There are tools in Akka Streams however that enable the rates of different segments of a processing chain to be “detached” or to define the maximum throughput of the stream through external timing sources. These situations are exactly those where the internal batching buffering strategy suddenly becomes non-transparent.
+While this internal protocol is mostly invisible to the user (apart from its throughput increasing effects) there are situations when these details get exposed.
+- In all of our previous examples we always assumed that the rate of the processing chain is strictly coordinated through the backpressure signal causing all stages to process no faster than the throughput of the connected chain.
+- There are tools in Akka Streams however that enable the rates of different segments of a processing chain to be “detached” or to define the maximum throughput of the stream through external timing sources.
+- These situations are exactly those where the internal batching buffering strategy suddenly becomes non-transparent.
 
 ## Internal buffers and their effect
 
-As we have explained, for performance reasons Akka Streams introduces a buffer for every asynchronous processing stage. The purpose of these buffers is solely optimization, in fact the size of 1 would be the most natural choice if there would be no need for throughput improvements. Therefore it is recommended to keep these buffer sizes small, and increase them only to a level suitable for the throughput requirements of the application. Default buffer sizes can be set through configuration:
+As we have explained, for performance reasons Akka Streams introduces a buffer for every asynchronous processing stage.
+- The purpose of these buffers is solely optimization, in fact the size of 1 would be the most natural choice if there would be no need for throughput improvements.
+- Therefore it is recommended to keep these buffer sizes small, and increase them only to a level suitable for the throughput requirements of the application.
+- Default buffer sizes can be set through configuration:
 
 akka.stream.materializer.max-input-buffer-size = 16
 
@@ -88,7 +102,11 @@ Here is an example of a code that demonstrate some of the issues caused by inter
 
 ```
 
-Running the above example one would expect the number 3 to be printed in every 3 seconds (the conflateWithSeed step here is configured so that it counts the number of elements received before the downstream ZipWith consumes them). What is being printed is different though, we will see the number 1. The reason for this is the internal buffer which is by default 16 elements large, and prefetches elements before the ZipWith starts consuming them. It is possible to fix this issue by changing the buffer size of ZipWith to 1. We will still see a leading 1 though which is caused by an initial prefetch of the ZipWith element.
+Running the above example one would expect the number 3 to be printed in every 3 seconds (the conflateWithSeed step here is configured so that it counts the number of elements received before the downstream ZipWith consumes them).
+- What is being printed is different though, we will see the number 1.
+- The reason for this is the internal buffer which is by default 16 elements large, and prefetches elements before the ZipWith starts consuming them.
+- It is possible to fix this issue by changing the buffer size of ZipWith to 1.
+- We will still see a leading 1 though which is caused by an initial prefetch of the ZipWith element.
 
 #### Note
 
@@ -108,7 +126,9 @@ The example below will ensure that 1000 jobs (but not more) are dequeued from an
 
 ```
 
-The next example will also queue up 1000 jobs locally, but if there are more jobs waiting in the imaginary external systems, it makes space for the new element by dropping one element from the tail of the buffer. Dropping from the tail is a very common strategy but it must be noted that this will drop the youngest waiting job. If some “fairness” is desired in the sense that we want to be nice to jobs that has been waiting for long, then this option can be useful.
+The next example will also queue up 1000 jobs locally, but if there are more jobs waiting in the imaginary external systems, it makes space for the new element by dropping one element from the tail of the buffer.
+- Dropping from the tail is a very common strategy but it must be noted that this will drop the youngest waiting job.
+- If some “fairness” is desired in the sense that we want to be nice to jobs that has been waiting for long, then this option can be useful.
 
 ```scala
 
@@ -124,7 +144,10 @@ Instead of dropping the youngest element from the tail of the buffer a new eleme
 
 ```
 
-Here is another example with a queue of 1000 jobs, but it makes space for the new element by dropping one element from the head of the buffer. This is the oldest waiting job. This is the preferred strategy if jobs are expected to be resent if not processed in a certain period. The oldest element will be retransmitted soon, (in fact a retransmitted duplicate might be already in the queue!) so it makes sense to drop it first.
+Here is another example with a queue of 1000 jobs, but it makes space for the new element by dropping one element from the head of the buffer.
+- This is the oldest waiting job.
+- This is the preferred strategy if jobs are expected to be resent if not processed in a certain period.
+- The oldest element will be retransmitted soon, (in fact a retransmitted duplicate might be already in the queue!) so it makes sense to drop it first.
 
 ```scala
 
@@ -132,7 +155,8 @@ Here is another example with a queue of 1000 jobs, but it makes space for the ne
 
 ```
 
-Compared to the dropping strategies above, dropBuffer drops all the 1000 jobs it has enqueued once the buffer gets full. This aggressive strategy is useful when dropping jobs is preferred to delaying jobs.
+Compared to the dropping strategies above, dropBuffer drops all the 1000 jobs it has enqueued once the buffer gets full.
+- This aggressive strategy is useful when dropping jobs is preferred to delaying jobs.
 
 ```scala
 
@@ -140,7 +164,8 @@ Compared to the dropping strategies above, dropBuffer drops all the 1000 jobs it
 
 ```
 
-If our imaginary external job provider is a client using our API, we might want to enforce that the client cannot have more than 1000 queued jobs otherwise we consider it flooding and terminate the connection. This is easily achievable by the error strategy which simply fails the stream once the buffer gets full.
+If our imaginary external job provider is a client using our API, we might want to enforce that the client cannot have more than 1000 queued jobs otherwise we consider it flooding and terminate the connection.
+- This is easily achievable by the error strategy which simply fails the stream once the buffer gets full.
 
 ```scala
 
@@ -170,9 +195,11 @@ Below is an example snippet that summarizes fast stream of elements to a standar
 
 ```
 
-This example demonstrates that such flow’s rate is decoupled. The element rate at the start of the flow can be much higher than the element rate at the end of the flow.
+This example demonstrates that such flow’s rate is decoupled.
+- The element rate at the start of the flow can be much higher than the element rate at the end of the flow.
 
-Another possible use of conflate is to not consider all elements for summary when the producer starts getting too fast. The example below demonstrates how conflate can be used to randomly drop elements when the consumer is not able to keep up with the producer.
+Another possible use of conflate is to not consider all elements for summary when the producer starts getting too fast.
+- The example below demonstrates how conflate can be used to randomly drop elements when the consumer is not able to keep up with the producer.
 
 ```scala
 
@@ -189,7 +216,8 @@ Another possible use of conflate is to not consider all elements for summary whe
 
 ## Understanding expand
 
-Expand helps to deal with slow producers which are unable to keep up with the demand coming from consumers. Expand allows to extrapolate a value to be sent as an element to a consumer.
+Expand helps to deal with slow producers which are unable to keep up with the demand coming from consumers.
+- Expand allows to extrapolate a value to be sent as an element to a consumer.
 
 As a simple use of expand here is a flow that sends the same element to consumer when producer does not send any new elements.
 
@@ -200,7 +228,8 @@ As a simple use of expand here is a flow that sends the same element to consumer
 
 ```
 
-Expand also allows to keep some state between demand requests from the downstream. Leveraging this, here is a flow that tracks and reports a drift between fast consumer and slow producer.
+Expand also allows to keep some state between demand requests from the downstream.
+- Leveraging this, here is a flow that tracks and reports a drift between fast consumer and slow producer.
 
 ```scala
 
@@ -209,4 +238,5 @@ Expand also allows to keep some state between demand requests from the downstrea
 
 ```
 
-Note that all of the elements coming from upstream will go through expand at least once. This means that the output of this flow is going to report a drift of zero if producer is fast enough, or a larger drift otherwise.
+Note that all of the elements coming from upstream will go through expand at least once.
+- This means that the output of this flow is going to report a drift of zero if producer is fast enough, or a larger drift otherwise.

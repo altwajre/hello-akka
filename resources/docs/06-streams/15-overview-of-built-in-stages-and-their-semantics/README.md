@@ -7,7 +7,8 @@ These built-in sources are available from akka.stream.scaladsl.Source :
 
 ## fromIterator
 
-Stream the values from an Iterator, requesting the next value when there is demand. The iterator will be created anew for each materialization, which is the reason the method takes a function rather than an Iterator directly.
+Stream the values from an Iterator, requesting the next value when there is demand.
+- The iterator will be created anew for each materialization, which is the reason the method takes a function rather than an Iterator directly.
 
 If the iterator perform blocking operations, make sure to run it on a separate dispatcher.
 
@@ -41,7 +42,9 @@ completes never
 
 ## cycle
 
-Stream iterator in cycled manner. Internally new iterator is being created to cycle the one provided via argument meaning when original iterator runs out of elements process will start all over again from the beginning of the iterator provided by the evaluation of provided parameter. If method argument provides empty iterator stream will be terminated with exception.
+Stream iterator in cycled manner.
+- Internally new iterator is being created to cycle the one provided via argument meaning when original iterator runs out of elements process will start all over again from the beginning of the iterator provided by the evaluation of provided parameter.
+- If method argument provides empty iterator stream will be terminated with exception.
 
 emits the next value returned from cycled iterator
 
@@ -49,7 +52,8 @@ completes never
 
 ## tick
 
-A periodical repetition of an arbitrary object. Delay of first tick is specified separately from interval of the following ticks.
+A periodical repetition of an arbitrary object.
+- Delay of first tick is specified separately from interval of the following ticks.
 
 emits periodically, if there is downstream backpressure ticks are skipped
 
@@ -57,7 +61,8 @@ completes never
 
 ## fromFuture
 
-Send the single value of the Future when it completes and there is demand. If the future fails the stream is failed with that exception.
+Send the single value of the Future when it completes and there is demand.
+- If the future fails the stream is failed with that exception.
 
 emits the future completes
 
@@ -65,7 +70,8 @@ completes after the future has completed
 
 ## fromCompletionStage
 
-Send the single value of the CompletionStage when it completes and there is demand. If the future fails the stream is failed with that exception.
+Send the single value of the CompletionStage when it completes and there is demand.
+- If the future fails the stream is failed with that exception.
 
 emits the future completes
 
@@ -73,7 +79,8 @@ completes after the future has completed
 
 ## fromFutureSource
 
-Streams the elements of the given future source once it successfully completes. If the future fails the stream is failed.
+Streams the elements of the given future source once it successfully completes.
+- If the future fails the stream is failed.
 
 emits the next value from the future source, once it has completed
 
@@ -81,7 +88,8 @@ completes after the future source completes
 
 ## fromSourceCompletionStage
 
-Streams the elements of an asynchronous source once its given completion stage completes. If the completion fails the stream is failed with that exception.
+Streams the elements of an asynchronous source once its given completion stage completes.
+- If the completion fails the stream is failed with that exception.
 
 emits the next value from the asynchronous source, once its completion stage has completed
 
@@ -89,7 +97,8 @@ completes after the asynchronous source completes
 
 ## unfold
 
-Stream the result of a function as long as it returns a Some , the value inside the option consists of a tuple where the first value is a state passed back into the next call to the function allowing to pass a state. The first invocation of the provided fold function will receive the zero state.
+Stream the result of a function as long as it returns a Some , the value inside the option consists of a tuple where the first value is a state passed back into the next call to the function allowing to pass a state.
+- The first invocation of the provided fold function will receive the zero state.
 
 Can be used to implement many stateful sources without having to touch the more low level GraphStage API.
 
@@ -109,7 +118,8 @@ completes when the future returned by the unfold function completes with an empt
 
 ## empty
 
-Complete right away without ever emitting any elements. Useful when you have to provide a source to an API but there are no elements to emit.
+Complete right away without ever emitting any elements.
+- Useful when you have to provide a source to an API but there are no elements to emit.
 
 emits never
 
@@ -149,7 +159,9 @@ completes when the actor stops
 
 ## actorRef
 
-Materialize an ActorRef, sending messages to it will emit them on the stream. The actor contain a buffer but since communication is one way, there is no back pressure. Handling overflow is done by either dropping elements or failing the stream, the strategy is chosen by the user.
+Materialize an ActorRef, sending messages to it will emit them on the stream.
+- The actor contain a buffer but since communication is one way, there is no back pressure.
+- Handling overflow is done by either dropping elements or failing the stream, the strategy is chosen by the user.
 
 emits when there is demand and there are messages in the buffer or a message is sent to the actorref
 
@@ -181,7 +193,8 @@ completes when read function returns None
 
 ## unfoldResourceAsync
 
-Wrap any resource that can be opened, queried for next element (in a blocking way) and closed using three distinct functions into a source. Functions return Future to achieve asynchronous processing
+Wrap any resource that can be opened, queried for next element (in a blocking way) and closed using three distinct functions into a source.
+- Functions return Future to achieve asynchronous processing
 
 emits when there is demand and Future from read function returns value
 
@@ -189,7 +202,9 @@ completes when Future from read function returns None
 
 ## queue
 
-Materialize a SourceQueue onto which elements can be pushed for emitting from the source. The queue contains a buffer, if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user. Functionality for tracking when an element has been emitted is available through SourceQueue.offer.
+Materialize a SourceQueue onto which elements can be pushed for emitting from the source.
+- The queue contains a buffer, if elements are pushed onto the queue faster than the source is consumed the overflow will be handled with a strategy specified by the user.
+- Functionality for tracking when an element has been emitted is available through SourceQueue.offer.
 
 emits when there is demand and the queue contains elements
 
@@ -226,7 +241,8 @@ These built-in sinks are available from akka.stream.scaladsl.Sink :
 
 ## head
 
-Materializes into a Future which completes with the first value arriving, after this the stream is canceled. If no element is emitted, the Future is failed.
+Materializes into a Future which completes with the first value arriving, after this the stream is canceled.
+- If no element is emitted, the Future is failed.
 
 cancels after receiving one element
 
@@ -242,7 +258,8 @@ backpressures never
 
 ## last
 
-Materializes into a Future which will complete with the last value emitted when the stream completes. If the stream completes with no elements the Future is failed.
+Materializes into a Future which will complete with the last value emitted when the stream completes.
+- If the stream completes with no elements the Future is failed.
 
 cancels never
 
@@ -250,7 +267,8 @@ backpressures never
 
 ## lastOption
 
-Materialize a Future[Option[T]] which completes with the last value emitted wrapped in an Some when the stream completes. if the stream completes with no elements the CompletionStage is completed with None .
+Materialize a Future[Option[T]] which completes with the last value emitted wrapped in an Some when the stream completes.
+- if the stream completes with no elements the CompletionStage is completed with None .
 
 cancels never
 
@@ -258,7 +276,8 @@ backpressures never
 
 ## ignore
 
-Consume all elements but discards them. Useful when a stream has to be consumed but there is no use to actually do anything with the elements.
+Consume all elements but discards them.
+- Useful when a stream has to be consumed but there is no use to actually do anything with the elements.
 
 cancels never
 
@@ -272,13 +291,15 @@ cancels immediately
 
 ## seq
 
-Collect values emitted from the stream into a collection, the collection is available through a Future or which completes when the stream completes. Note that the collection is bounded to Int.MaxValue , if more element are emitted the sink will cancel the stream
+Collect values emitted from the stream into a collection, the collection is available through a Future or which completes when the stream completes.
+- Note that the collection is bounded to Int.MaxValue , if more element are emitted the sink will cancel the stream
 
 cancels If too many values are collected
 
 ## foreach
 
-Invoke a given procedure for each element received. Note that it is not safe to mutate shared state from the procedure.
+Invoke a given procedure for each element received.
+- Note that it is not safe to mutate shared state from the procedure.
 
 The sink materializes into a Future[Option[Done]] which completes when the stream completes, or fails if the stream fails.
 
@@ -306,7 +327,9 @@ backpressures never
 
 ## lazyInit
 
-Invoke sinkFactory function to create a real sink upon receiving the first element. Internal Sink will not be created if there are no elements, because of completion or error. fallback will be invoked if there was no elements and completed is received from upstream.
+Invoke sinkFactory function to create a real sink upon receiving the first element.
+- Internal Sink will not be created if there are no elements, because of completion or error.
+- fallback will be invoked if there was no elements and completed is received from upstream.
 
 cancels never
 
@@ -314,7 +337,8 @@ backpressures when initialized and when created sink backpressures
 
 ## queue
 
-Materialize a SinkQueue that can be pulled to trigger demand through the sink. The queue contains a buffer in case stream emitting elements faster than queue pulling them.
+Materialize a SinkQueue that can be pulled to trigger demand through the sink.
+- The queue contains a buffer in case stream emitting elements faster than queue pulling them.
 
 cancels when SinkQueue.cancel is called
 
@@ -322,7 +346,8 @@ backpressures when buffer has some space
 
 ## fold
 
-Fold over emitted element with a function, where each invocation will get the new element and the result from the previous fold invocation. The first invocation will be provided the zero value.
+Fold over emitted element with a function, where each invocation will get the new element and the result from the previous fold invocation.
+- The first invocation will be provided the zero value.
 
 Materializes into a Future that will complete with the last state when the stream has completed.
 
@@ -334,7 +359,8 @@ backpressures when the previous fold function invocation has not yet completed
 
 ## reduce
 
-Apply a reduction function on the incoming elements and pass the result to the next invocation. The first invocation receives the two first elements of the flow.
+Apply a reduction function on the incoming elements and pass the result to the next invocation.
+- The first invocation receives the two first elements of the flow.
 
 Materializes into a Future that will be completed by the last result of the reduction function.
 
@@ -352,7 +378,8 @@ backpressures depends on the strategy
 
 ## actorRef
 
-Send the elements from the stream to an ActorRef. No backpressure so care must be taken to not overflow the inbox.
+Send the elements from the stream to an ActorRef.
+- No backpressure so care must be taken to not overflow the inbox.
 
 cancels when the actor terminates
 
@@ -387,11 +414,15 @@ Integration with Reactive Streams, wraps a org.reactivestreams.Subscriber as a s
 
 # Additional Sink and Source converters
 
-Sources and sinks for integrating with java.io.InputStream and java.io.OutputStream can be found on StreamConverters. As they are blocking APIs the implementations of these stages are run on a separate dispatcher configured through the akka.stream.blocking-io-dispatcher.
+Sources and sinks for integrating with java.io.InputStream and java.io.OutputStream can be found on StreamConverters.
+- As they are blocking APIs the implementations of these stages are run on a separate dispatcher configured through the akka.stream.blocking-io-dispatcher.
 
 #### Warning
 
-Be aware that asInputStream and asOutputStream materialize InputStream and OutputStream respectively as blocking API implementation. They will block tread until data will be available from upstream. Because of blocking nature these objects cannot be used in mapMaterializeValue section as it causes deadlock of the stream materialization process. For example, following snippet will fall with timeout exception:
+Be aware that asInputStream and asOutputStream materialize InputStream and OutputStream respectively as blocking API implementation.
+- They will block tread until data will be available from upstream.
+- Because of blocking nature these objects cannot be used in mapMaterializeValue section as it causes deadlock of the stream materialization process.
+- For example, following snippet will fall with timeout exception:
 
 ...
 .toMat(StreamConverters.asInputStream().mapMaterializedValue { inputStream ⇒
@@ -402,7 +433,8 @@ Be aware that asInputStream and asOutputStream materialize InputStream and Outpu
 
 ## fromOutputStream
 
-Create a sink that wraps an OutputStream. Takes a function that produces an OutputStream, when the sink is materialized the function will be called and bytes sent to the sink will be written to the returned OutputStream.
+Create a sink that wraps an OutputStream.
+- Takes a function that produces an OutputStream, when the sink is materialized the function will be called and bytes sent to the sink will be written to the returned OutputStream.
 
 Materializes into a Future which will complete with a IOResult when the stream completes.
 
@@ -412,13 +444,15 @@ The OutputStream will be closed when the stream that flows into the Sink is comp
 
 ## asInputStream
 
-Create a sink which materializes into an InputStream that can be read to trigger demand through the sink. Bytes emitted through the stream will be available for reading through the InputStream
+Create a sink which materializes into an InputStream that can be read to trigger demand through the sink.
+- Bytes emitted through the stream will be available for reading through the InputStream
 
 The InputStream will be ended when the stream flowing into this Sink completes, and the closing the InputStream will cancel the inflow of this Sink.
 
 ## fromInputStream
 
-Create a source that wraps an InputStream. Takes a function that produces an InputStream, when the source is materialized the function will be called and bytes from the InputStream will be emitted into the stream.
+Create a source that wraps an InputStream.
+- Takes a function that produces an InputStream, when the source is materialized the function will be called and bytes from the InputStream will be emitted into the stream.
 
 Materializes into a Future which will complete with a IOResult when the stream completes.
 
@@ -428,31 +462,45 @@ The InputStream will be closed when the Source is canceled from its downstream, 
 
 ## asOutputStream
 
-Create a source that materializes into an OutputStream. When bytes are written to the OutputStream they are emitted from the source.
+Create a source that materializes into an OutputStream.
+- When bytes are written to the OutputStream they are emitted from the source.
 
 The OutputStream will no longer be writable when the Source has been canceled from its downstream, and closing the OutputStream will complete the Source.
 
 ## asJavaStream
 
-Create a sink which materializes into Java 8 Stream that can be run to trigger demand through the sink. Elements emitted through the stream will be available for reading through the Java 8 Stream.
+Create a sink which materializes into Java 8 Stream that can be run to trigger demand through the sink.
+- Elements emitted through the stream will be available for reading through the Java 8 Stream.
 
-The Java 8 Stream will be ended when the stream flowing into this Sink completes, and closing the Java Stream will cancel the inflow of this Sink. Java Stream throws exception in case reactive stream failed.
+The Java 8 Stream will be ended when the stream flowing into this Sink completes, and closing the Java Stream will cancel the inflow of this Sink.
+- Java Stream throws exception in case reactive stream failed.
 
 Be aware that Java Stream blocks current thread while waiting on next element from downstream.
 
 ## fromJavaStream
 
-Create a source that wraps a Java 8 Stream. Source uses a stream iterator to get all its elements and send them downstream on demand.
+Create a source that wraps a Java 8 Stream.
+- Source uses a stream iterator to get all its elements and send them downstream on demand.
 
 ## javaCollector
 
-Create a sink which materializes into a Future which will be completed with a result of the Java 8 Collector transformation and reduction operations. This allows usage of Java 8 streams transformations for reactive streams. The Collector will trigger demand downstream. Elements emitted through the stream will be accumulated into a mutable result container, optionally transformed into a final representation after all input elements have been processed. The Collector can also do reduction at the end. Reduction processing is performed sequentially
+Create a sink which materializes into a Future which will be completed with a result of the Java 8 Collector transformation and reduction operations.
+- This allows usage of Java 8 streams transformations for reactive streams.
+- The Collector will trigger demand downstream.
+- Elements emitted through the stream will be accumulated into a mutable result container, optionally transformed into a final representation after all input elements have been processed.
+- The Collector can also do reduction at the end.
+- Reduction processing is performed sequentially
 
 Note that a flow can be materialized multiple times, so the function producing the Collector must be able to handle multiple invocations.
 
 ## javaCollectorParallelUnordered
 
-Create a sink which materializes into a Future which will be completed with a result of the Java 8 Collector transformation and reduction operations. This allows usage of Java 8 streams transformations for reactive streams. The Collector is triggering demand downstream. Elements emitted through the stream will be accumulated into a mutable result container, optionally transformed into a final representation after all input elements have been processed. The Collector can also do reduction at the end. Reduction processing is performed in parallel based on graph Balance.
+Create a sink which materializes into a Future which will be completed with a result of the Java 8 Collector transformation and reduction operations.
+- This allows usage of Java 8 streams transformations for reactive streams.
+- The Collector is triggering demand downstream.
+- Elements emitted through the stream will be accumulated into a mutable result container, optionally transformed into a final representation after all input elements have been processed.
+- The Collector can also do reduction at the end.
+- Reduction processing is performed in parallel based on graph Balance.
 
 Note that a flow can be materialized multiple times, so the function producing the Collector must be able to handle multiple invocations.
 
@@ -472,14 +520,20 @@ Create a sink which will write incoming ByteString s to a given file path.
 
 # Flow stages
 
-All flows by default backpressure if the computation they encapsulate is not fast enough to keep up with the rate of incoming elements from the preceding stage. There are differences though how the different stages handle when some of their downstream stages backpressure them.
+All flows by default backpressure if the computation they encapsulate is not fast enough to keep up with the rate of incoming elements from the preceding stage.
+- There are differences though how the different stages handle when some of their downstream stages backpressure them.
 
-Most stages stop and propagate the failure downstream as soon as any of their upstreams emit a failure. This happens to ensure reliable teardown of streams and cleanup when failures happen. Failures are meant to be to model unrecoverable conditions, therefore they are always eagerly propagated. For in-band error handling of normal errors (dropping elements if a map fails for example) you should use the supervision support, or explicitly wrap your element types in a proper container that can express error or success states (for example Try in Scala).
+Most stages stop and propagate the failure downstream as soon as any of their upstreams emit a failure.
+- This happens to ensure reliable teardown of streams and cleanup when failures happen.
+- Failures are meant to be to model unrecoverable conditions, therefore they are always eagerly propagated.
+- For in-band error handling of normal errors (dropping elements if a map fails for example) you should use the supervision support, or explicitly wrap your element types in a proper container that can express error or success states (for example Try in Scala).
 
 
 # Simple processing stages
 
-These stages can transform the rate of incoming elements since there are stages that emit multiple elements for a single input (e.g. mapConcat) or consume multiple elements before emitting one output (e.g. filter). However, these rate transformations are data-driven, i.e. it is the incoming elements that define how the rate is affected. This is in contrast with detached stages which can change their processing behavior depending on being backpressured by downstream or not.
+These stages can transform the rate of incoming elements since there are stages that emit multiple elements for a single input (e.g. mapConcat) or consume multiple elements before emitting one output (e.g. filter).
+- However, these rate transformations are data-driven, i.e. it is the incoming elements that define how the rate is affected.
+- This is in contrast with detached stages which can change their processing behavior depending on being backpressured by downstream or not.
 
 ## alsoTo
 
@@ -513,7 +567,8 @@ completes when upstream completes and all remaining elements has been emitted
 
 ## statefulMapConcat
 
-Transform each element into zero or more elements that are individually passed downstream. The difference to mapConcat is that the transformation function is created from a factory for every materialization of the flow.
+Transform each element into zero or more elements that are individually passed downstream.
+- The difference to mapConcat is that the transformation function is created from a factory for every materialization of the flow.
 
 emits when the mapping function returns an element or there are still remaining elements from the previously calculated collection
 
@@ -523,7 +578,8 @@ completes when upstream completes and all remaining elements has been emitted
 
 ## filter
 
-Filter the incoming elements using a predicate. If the predicate returns true the element is passed downstream, if it returns false the element is discarded.
+Filter the incoming elements using a predicate.
+- If the predicate returns true the element is passed downstream, if it returns false the element is discarded.
 
 emits when the given predicate returns true for the element
 
@@ -533,7 +589,8 @@ completes when upstream completes
 
 ## filterNot
 
-Filter the incoming elements using a predicate. If the predicate returns false the element is passed downstream, if it returns true the element is discarded.
+Filter the incoming elements using a predicate.
+- If the predicate returns false the element is passed downstream, if it returns true the element is discarded.
 
 emits when the given predicate returns false for the element
 
@@ -543,7 +600,8 @@ completes when upstream completes
 
 ## collect
 
-Apply a partial function to each incoming element, if the partial function is defined for a value the returned value is passed downstream. Can often replace filter followed by map to achieve the same in one single stage.
+Apply a partial function to each incoming element, if the partial function is defined for a value the returned value is passed downstream.
+- Can often replace filter followed by map to achieve the same in one single stage.
 
 emits when the provided partial function is defined for the element
 
@@ -617,7 +675,8 @@ completes when upstream completes and the last Future is resolved
 
 ## reduce
 
-Start with first element and then apply the current and next value to the given function, when upstream complete the current value is emitted downstream. Similar to fold.
+Start with first element and then apply the current and next value to the given function, when upstream complete the current value is emitted downstream.
+- Similar to fold.
 
 emits when upstream completes
 
@@ -691,9 +750,13 @@ completes upstream completes or upstream failed with exception pf can handle
 
 ## recoverWithRetries
 
-RecoverWithRetries allows to switch to alternative Source on flow failure. It will stay in effect after a failure has been recovered up to attempts number of times so that each time there is a failure it is fed into the pf and a new Source may be materialized. Note that if you pass in 0, this won’t attempt to recover at all. A negative attempts number is interpreted as “infinite”, which results in the exact same behavior as recoverWith.
+RecoverWithRetries allows to switch to alternative Source on flow failure.
+- It will stay in effect after a failure has been recovered up to attempts number of times so that each time there is a failure it is fed into the pf and a new Source may be materialized.
+- Note that if you pass in 0, this won’t attempt to recover at all.
+- A negative attempts number is interpreted as “infinite”, which results in the exact same behavior as recoverWith.
 
-Since the underlying failure signal onError arrives out-of-band, it might jump over existing elements. This stage can recover the failure signal, but not the skipped elements, which will be dropped.
+Since the underlying failure signal onError arrives out-of-band, it might jump over existing elements.
+- This stage can recover the failure signal, but not the skipped elements, which will be dropped.
 
 emits when element is available from the upstream or upstream is failed and element is available from alternative Source
 
@@ -703,9 +766,11 @@ completes when upstream completes or upstream failed with exception pf can handl
 
 ## mapError
 
-While similar to recover this stage can be used to transform an error signal to a different one without logging it as an error in the process. So in that sense it is NOT exactly equivalent to recover(t => throw t2) since recover would log the t2 error.
+While similar to recover this stage can be used to transform an error signal to a different one without logging it as an error in the process.
+- So in that sense it is NOT exactly equivalent to recover(t => throw t2) since recover would log the t2 error.
 
-Since the underlying failure signal onError arrives out-of-band, it might jump over existing elements. This stage can recover the failure signal, but not the skipped elements, which will be dropped.
+Since the underlying failure signal onError arrives out-of-band, it might jump over existing elements.
+- This stage can recover the failure signal, but not the skipped elements, which will be dropped.
 
 Similarily to recover throwing an exception inside mapError will be logged on ERROR level automatically.
 
@@ -733,7 +798,8 @@ completes when upstream completes
 
 ## intersperse
 
-Intersperse stream with provided element similar to List.mkString. It can inject start and end marker elements to stream.
+Intersperse stream with provided element similar to List.mkString.
+- It can inject start and end marker elements to stream.
 
 emits when upstream emits an element or before with the start element if provided
 
@@ -753,7 +819,8 @@ completes when upstream completes and the number of emitted elements has not rea
 
 ## limitWeighted
 
-Ensure stream boundedness by evaluating the cost of incoming elements using a cost function. Evaluated cost of each element defines how many elements will be allowed to travel downstream.
+Ensure stream boundedness by evaluating the cost of incoming elements using a cost function.
+- Evaluated cost of each element defines how many elements will be allowed to travel downstream.
 
 emits when upstream emits and the number of emitted elements has not reached max
 
@@ -763,7 +830,9 @@ completes when upstream completes and the number of emitted elements has not rea
 
 ## log
 
-Log elements flowing through the stream as well as completion and erroring. By default element and completion signals are logged on debug level, and errors are logged on Error level. This can be changed by calling Attributes.logLevels(...) on the given Flow.
+Log elements flowing through the stream as well as completion and erroring.
+- By default element and completion signals are logged on debug level, and errors are logged on Error level.
+- This can be changed by calling Attributes.logLevels(...) on the given Flow.
 
 emits when upstream emits
 
@@ -778,13 +847,16 @@ completes when upstream completes
 
 Creates a Flow from a Sink and a Source where the Flow’s input will be sent to the Sink and the Flow ’s output will come from the Source.
 
-Note that termination events, like completion and cancelation is not automatically propagated through to the “other-side” of the such-composed Flow. Use Flow.fromSinkAndSourceCoupled if you want to couple termination of both of the ends, for example most useful in handling websocket connections.
+Note that termination events, like completion and cancelation is not automatically propagated through to the “other-side” of the such-composed Flow.
+- Use Flow.fromSinkAndSourceCoupled if you want to couple termination of both of the ends, for example most useful in handling websocket connections.
 
 ## Flow.fromSinkAndSourceCoupled
 
-Allows coupling termination (cancellation, completion, erroring) of Sinks and Sources while creating a Flow them them. Similar to Flow.fromSinkAndSource however couples the termination of these two stages.
+Allows coupling termination (cancellation, completion, erroring) of Sinks and Sources while creating a Flow them them.
+- Similar to Flow.fromSinkAndSource however couples the termination of these two stages.
 
-E.g. if the emitted Flow gets a cancellation, the Source of course is cancelled, however the Sink will also be completed. The table below illustrates the effects in detail:
+E.g. if the emitted Flow gets a cancellation, the Source of course is cancelled, however the Sink will also be completed.
+- The table below illustrates the effects in detail:
 Returned Flow 	Sink (in) 	Source (out)
 cause: upstream (sink-side) receives completion 	effect: receives completion 	effect: receives cancel
 cause: upstream (sink-side) receives error 	effect: receives error 	effect: receives cancel
@@ -802,7 +874,10 @@ These stages encapsulate an asynchronous computation, properly handling backpres
 
 ## mapAsync
 
-Pass incoming elements to a function that return a Future result. When the Future arrives the result is passed downstream. Up to n elements can be processed concurrently, but regardless of their completion time the incoming order will be kept when results complete. For use cases where order does not matter mapAsyncUnordered can be used.
+Pass incoming elements to a function that return a Future result.
+- When the Future arrives the result is passed downstream.
+- Up to n elements can be processed concurrently, but regardless of their completion time the incoming order will be kept when results complete.
+- For use cases where order does not matter mapAsyncUnordered can be used.
 
 If a Future fails, the stream also fails (unless a different supervision strategy is applied)
 
@@ -851,7 +926,9 @@ completes upstream completes
 
 ## groupedWithin
 
-Chunk up this stream into groups of elements received within a time window, or limited by the number of the elements, whatever happens first. Empty groups will not be emitted if no elements are received from upstream. The last group before end-of-stream will contain the buffered elements since the previously emitted group.
+Chunk up this stream into groups of elements received within a time window, or limited by the number of the elements, whatever happens first.
+- Empty groups will not be emitted if no elements are received from upstream.
+- The last group before end-of-stream will contain the buffered elements since the previously emitted group.
 
 emits when the configured time elapses since the last group has been emitted, but not if no elements has been grouped (i.e: no empty groups), or when limit has been reached.
 
@@ -861,7 +938,9 @@ completes when upstream completes
 
 ## groupedWeightedWithin
 
-Chunk up this stream into groups of elements received within a time window, or limited by the weight of the elements, whatever happens first. Empty groups will not be emitted if no elements are received from upstream. The last group before end-of-stream will contain the buffered elements since the previously emitted group.
+Chunk up this stream into groups of elements received within a time window, or limited by the weight of the elements, whatever happens first.
+- Empty groups will not be emitted if no elements are received from upstream.
+- The last group before end-of-stream will contain the buffered elements since the previously emitted group.
 
 emits when the configured time elapses since the last group has been emitted, but not if no elements has been grouped (i.e: no empty groups), or when weight limit has been reached.
 
@@ -896,7 +975,8 @@ These stages are aware of the backpressure provided by their downstreams and abl
 
 ## conflate
 
-Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure. The summary value must be of the same type as the incoming elements, for example the sum or average of incoming numbers, if aggregation should lead to a different type conflateWithSeed can be used:
+Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure.
+- The summary value must be of the same type as the incoming elements, for example the sum or average of incoming numbers, if aggregation should lead to a different type conflateWithSeed can be used:
 
 emits when downstream stops backpressuring and there is a conflated element available
 
@@ -906,7 +986,8 @@ completes when upstream completes
 
 ## conflateWithSeed
 
-Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure. When backpressure starts or there is no backpressure element is passed into a seed function to transform it to the summary type.
+Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure.
+- When backpressure starts or there is no backpressure element is passed into a seed function to transform it to the summary type.
 
 emits when downstream stops backpressuring and there is a conflated element available
 
@@ -916,7 +997,8 @@ completes when upstream completes
 
 ## batch
 
-Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure and a maximum number of batched elements is not yet reached. When the maximum number is reached and downstream still backpressures batch will also backpressure.
+Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure and a maximum number of batched elements is not yet reached.
+- When the maximum number is reached and downstream still backpressures batch will also backpressure.
 
 When backpressure starts or there is no backpressure element is passed into a seed function to transform it to the summary type.
 
@@ -930,7 +1012,9 @@ completes when upstream completes and a “possibly pending” element was drain
 
 ## batchWeighted
 
-Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure and a maximum weight batched elements is not yet reached. The weight of each element is determined by applying costFn. When the maximum total weight is reached and downstream still backpressures batch will also backpressure.
+Allow for a slower downstream by passing incoming elements and a summary into an aggregate function as long as there is backpressure and a maximum weight batched elements is not yet reached.
+- The weight of each element is determined by applying costFn.
+- When the maximum total weight is reached and downstream still backpressures batch will also backpressure.
 
 Will eagerly pull elements, this behavior may result in a single pending (i.e. buffered) element which cannot be aggregated to the batched value.
 
@@ -942,7 +1026,8 @@ completes upstream completes and a “possibly pending” element was drained
 
 ## expand
 
-Allow for a faster downstream by expanding the last incoming element to an Iterator. For example Iterator.continually(element) to keep repeating the last incoming element.
+Allow for a faster downstream by expanding the last incoming element to an Iterator.
+- For example Iterator.continually(element) to keep repeating the last incoming element.
 
 emits when downstream stops backpressuring
 
@@ -952,7 +1037,8 @@ completes when upstream completes
 
 ## buffer (Backpressure)
 
-Allow for a temporarily faster upstream events by buffering size elements. When the buffer is full backpressure is applied.
+Allow for a temporarily faster upstream events by buffering size elements.
+- When the buffer is full backpressure is applied.
 
 emits when downstream stops backpressuring and there is a pending element in the buffer
 
@@ -962,7 +1048,8 @@ completes when upstream completes and buffered elements has been drained
 
 ## buffer (Drop)
 
-Allow for a temporarily faster upstream events by buffering size elements. When the buffer is full elements are dropped according to the specified OverflowStrategy:
+Allow for a temporarily faster upstream events by buffering size elements.
+- When the buffer is full elements are dropped according to the specified OverflowStrategy:
 
     dropHead drops the oldest element in the buffer to make space for the new element
     dropTail drops the youngest element in the buffer to make space for the new element
@@ -977,7 +1064,8 @@ completes upstream completes and buffered elements has been drained
 
 ## buffer (Fail)
 
-Allow for a temporarily faster upstream events by buffering size elements. When the buffer is full the stage fails the flow with a BufferOverflowException.
+Allow for a temporarily faster upstream events by buffering size elements.
+- When the buffer is full the stage fails the flow with a BufferOverflowException.
 
 emits when downstream stops backpressuring and there is a pending element in the buffer
 
@@ -996,7 +1084,8 @@ See the Substreams page for more detail and code samples.
 
 Take up to n elements from the stream (less than n only if the upstream completes before emitting n elements) and returns a pair containing a strict sequence of the taken element and a stream representing the remaining elements.
 
-emits when the configured number of prefix elements are available. Emits this prefix, and the rest as a substream
+emits when the configured number of prefix elements are available.
+- Emits this prefix, and the rest as a substream
 
 backpressures when downstream backpressures or substream backpressures
 
@@ -1006,7 +1095,8 @@ completes when prefix elements has been consumed and substream has been consumed
 
 Demultiplex the incoming stream into separate output streams.
 
-emits an element for which the grouping function returns a group that has not yet been created. Emits the new group there is an element pending for a group whose substream backpressures
+emits an element for which the grouping function returns a group that has not yet been created.
+- Emits the new group there is an element pending for a group whose substream backpressures
 
 completes when upstream completes (Until the end of stream it is not possible to know whether new substreams will be needed or not)
 
@@ -1024,7 +1114,8 @@ completes when upstream completes (Until the end of stream it is not possible to
 
 End the current substream whenever a predicate returns true, starting a new substream for the next element.
 
-emits when an element passes through. When the provided predicate is true it emits the element * and opens a new substream for subsequent element
+emits when an element passes through.
+- When the provided predicate is true it emits the element * and opens a new substream for subsequent element
 
 backpressures when there is an element pending for the next substream, but the previous is not fully consumed yet, or the substream backpressures
 
@@ -1032,7 +1123,8 @@ completes when upstream completes (Until the end of stream it is not possible to
 
 ## flatMapConcat
 
-Transform each input element into a Source whose elements are then flattened into the output stream through concatenation. This means each source is fully consumed before consumption of the next source starts.
+Transform each input element into a Source whose elements are then flattened into the output stream through concatenation.
+- This means each source is fully consumed before consumption of the next source starts.
 
 emits when the current consumed substream has an element available
 
@@ -1042,7 +1134,8 @@ completes when upstream completes and all consumed substreams complete
 
 ## flatMapMerge
 
-Transform each input element into a Source whose elements are then flattened into the output stream through merging. The maximum number of merged sources has to be specified.
+Transform each input element into a Source whose elements are then flattened into the output stream through merging.
+- The maximum number of merged sources has to be specified.
 
 emits when one of the currently consumed substreams has an element available
 
@@ -1081,7 +1174,8 @@ cancels when downstream cancels
 
 ## idleTimeout
 
-If the time between two processed elements exceeds the provided timeout, the stream is failed with a TimeoutException. The timeout is checked periodically, so the resolution of the check is one period (equals to timeout value).
+If the time between two processed elements exceeds the provided timeout, the stream is failed with a TimeoutException.
+- The timeout is checked periodically, so the resolution of the check is one period (equals to timeout value).
 
 emits when upstream emits an element
 
@@ -1093,7 +1187,8 @@ cancels when downstream cancels
 
 ## backpressureTimeout
 
-If the time between the emission of an element and the following downstream demand exceeds the provided timeout, the stream is failed with a TimeoutException. The timeout is checked periodically, so the resolution of the check is one period (equals to timeout value).
+If the time between the emission of an element and the following downstream demand exceeds the provided timeout, the stream is failed with a TimeoutException.
+- The timeout is checked periodically, so the resolution of the check is one period (equals to timeout value).
 
 emits when upstream emits an element
 
@@ -1134,7 +1229,8 @@ These stages take multiple streams as their input and provide a single output co
 
 ## merge
 
-Merge multiple sources. Picks elements randomly if all sources has elements ready.
+Merge multiple sources.
+- Picks elements randomly if all sources has elements ready.
 
 emits when one of the inputs has an element available
 
@@ -1144,7 +1240,8 @@ completes when all upstreams complete (This behavior is changeable to completing
 
 ## mergeSorted
 
-Merge multiple sources. Waits for one element to be ready from each input stream and emits the smallest element.
+Merge multiple sources.
+- Waits for one element to be ready from each input stream and emits the smallest element.
 
 emits when all of the inputs have an element available
 
@@ -1154,7 +1251,8 @@ completes when all upstreams complete
 
 ## mergePreferred
 
-Merge multiple sources. Prefer one source if all sources has elements ready.
+Merge multiple sources.
+- Prefer one source if all sources has elements ready.
 
 emits when one of the inputs has an element available, preferring a defined input if multiple have elements available
 
@@ -1164,7 +1262,9 @@ completes when all upstreams complete (This behavior is changeable to completing
 
 ## mergePrioritized
 
-Merge multiple sources. Prefer sources depending on priorities if all sources has elements ready. If a subset of all sources has elements ready the relative priorities for those sources are used to prioritise.
+Merge multiple sources.
+- Prefer sources depending on priorities if all sources has elements ready.
+- If a subset of all sources has elements ready the relative priorities for those sources are used to prioritise.
 
 emits when one of the inputs has an element available, preferring inputs based on their priorities if multiple have elements available
 
@@ -1236,7 +1336,8 @@ completes when all upstreams complete
 
 ## orElse
 
-If the primary source completes without emitting any elements, the elements from the secondary source are emitted. If the primary source emits any elements the secondary source is cancelled.
+If the primary source completes without emitting any elements, the elements from the secondary source are emitted.
+- If the primary source emits any elements the secondary source is cancelled.
 
 Note that both sources are materialized directly and the secondary source is backpressured until it becomes the source of elements or is cancelled.
 
@@ -1250,7 +1351,8 @@ completes the primary stream completes after emitting at least one element, when
 
 ## interleave
 
-Emits a specifiable number of elements from the original source, then from the provided source and repeats. If one source completes the rest of the other stream will be emitted.
+Emits a specifiable number of elements from the original source, then from the provided source and repeats.
+- If one source completes the rest of the other stream will be emitted.
 
 emits when element is available from the currently consumed upstream
 
@@ -1261,7 +1363,8 @@ completes when both upstreams have completed
 
 # Fan-out stages
 
-These have one input and multiple outputs. They might route the elements between different outputs, or emit elements on multiple outputs at the same time.
+These have one input and multiple outputs.
+- They might route the elements between different outputs, or emit elements on multiple outputs at the same time.
 
 ## unzip
 
@@ -1295,7 +1398,8 @@ completes when upstream completes
 
 ## balance
 
-Fan-out the stream to several streams. Each upstream element is emitted to the first available downstream consumer.
+Fan-out the stream to several streams.
+- Each upstream element is emitted to the first available downstream consumer.
 
 emits when any of the outputs stops backpressuring; emits the element to the first available output
 
@@ -1305,7 +1409,8 @@ completes when upstream completes
 
 ## partition
 
-Fan-out the stream to several streams. Each upstream element is emitted to one downstream consumer according to the partitioner function applied to the element.
+Fan-out the stream to several streams.
+- Each upstream element is emitted to one downstream consumer according to the partitioner function applied to the element.
 
 emits when the chosen output stops backpressuring and there is an input element available
 
@@ -1318,7 +1423,8 @@ completes when upstream completes and no output is pending
 
 ## watchTermination
 
-Materializes to a Future that will be completed with Done or failed depending whether the upstream of the stage has been completed or failed. The stage otherwise passes through elements unchanged.
+Materializes to a Future that will be completed with Done or failed depending whether the upstream of the stage has been completed or failed.
+- The stage otherwise passes through elements unchanged.
 
 emits when input has an element available
 
@@ -1328,7 +1434,9 @@ completes when upstream completes
 
 ## monitor
 
-Materializes to a FlowMonitor that monitors messages flowing through or completion of the stage. The stage otherwise passes through elements unchanged. Note that the FlowMonitor inserts a memory barrier every time it processes an event, and may therefore affect performance.
+Materializes to a FlowMonitor that monitors messages flowing through or completion of the stage.
+- The stage otherwise passes through elements unchanged.
+- Note that the FlowMonitor inserts a memory barrier every time it processes an event, and may therefore affect performance.
 
 emits when upstream emits an element
 

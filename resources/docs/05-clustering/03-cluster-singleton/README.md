@@ -9,17 +9,36 @@ Some examples:
     single master, many workers
     centralized naming service, or routing logic
 
-Using a singleton should not be the first design choice. It has several drawbacks, such as single-point of bottleneck. Single-point of failure is also a relevant concern, but for some cases this feature takes care of that by making sure that another singleton instance will eventually be started.
+Using a singleton should not be the first design choice.
+- It has several drawbacks, such as single-point of bottleneck.
+- Single-point of failure is also a relevant concern, but for some cases this feature takes care of that by making sure that another singleton instance will eventually be started.
 
-The cluster singleton pattern is implemented by akka.cluster.singleton.ClusterSingletonManager. It manages one singleton actor instance among all cluster nodes or a group of nodes tagged with a specific role. ClusterSingletonManager is an actor that is supposed to be started on all nodes, or all nodes with specified role, in the cluster. The actual singleton actor is started by the ClusterSingletonManager on the oldest node by creating a child actor from supplied Props. ClusterSingletonManager makes sure that at most one singleton instance is running at any point in time.
+The cluster singleton pattern is implemented by akka.cluster.singleton.ClusterSingletonManager.
+- It manages one singleton actor instance among all cluster nodes or a group of nodes tagged with a specific role.
+- ClusterSingletonManager is an actor that is supposed to be started on all nodes, or all nodes with specified role, in the cluster.
+- The actual singleton actor is started by the ClusterSingletonManager on the oldest node by creating a child actor from supplied Props.
+- ClusterSingletonManager makes sure that at most one singleton instance is running at any point in time.
 
-The singleton actor is always running on the oldest member with specified role. The oldest member is determined by akka.cluster.Member#isOlderThan. This can change when removing that member from the cluster. Be aware that there is a short time period when there is no active singleton during the hand-over process.
+The singleton actor is always running on the oldest member with specified role.
+- The oldest member is determined by akka.cluster.Member#isOlderThan.
+- This can change when removing that member from the cluster.
+- Be aware that there is a short time period when there is no active singleton during the hand-over process.
 
-The cluster failure detector will notice when oldest node becomes unreachable due to things like JVM crash, hard shut down, or network failure. Then a new oldest node will take over and a new singleton actor is created. For these failure scenarios there will not be a graceful hand-over, but more than one active singletons is prevented by all reasonable means. Some corner cases are eventually resolved by configurable timeouts.
+The cluster failure detector will notice when oldest node becomes unreachable due to things like JVM crash, hard shut down, or network failure.
+- Then a new oldest node will take over and a new singleton actor is created.
+- For these failure scenarios there will not be a graceful hand-over, but more than one active singletons is prevented by all reasonable means.
+- Some corner cases are eventually resolved by configurable timeouts.
 
-You can access the singleton actor by using the provided akka.cluster.singleton.ClusterSingletonProxy, which will route all messages to the current instance of the singleton. The proxy will keep track of the oldest node in the cluster and resolve the singleton’s ActorRef by explicitly sending the singleton’s actorSelection the akka.actor.Identify message and waiting for it to reply. This is performed periodically if the singleton doesn’t reply within a certain (configurable) time. Given the implementation, there might be periods of time during which the ActorRef is unavailable, e.g., when a node leaves the cluster. In these cases, the proxy will buffer the messages sent to the singleton and then deliver them when the singleton is finally available. If the buffer is full the ClusterSingletonProxy will drop old messages when new messages are sent via the proxy. The size of the buffer is configurable and it can be disabled by using a buffer size of 0.
+You can access the singleton actor by using the provided akka.cluster.singleton.ClusterSingletonProxy, which will route all messages to the current instance of the singleton.
+- The proxy will keep track of the oldest node in the cluster and resolve the singleton’s ActorRef by explicitly sending the singleton’s actorSelection the akka.actor.Identify message and waiting for it to reply.
+- This is performed periodically if the singleton doesn’t reply within a certain (configurable) time.
+- Given the implementation, there might be periods of time during which the ActorRef is unavailable, e.g., when a node leaves the cluster.
+- In these cases, the proxy will buffer the messages sent to the singleton and then deliver them when the singleton is finally available.
+- If the buffer is full the ClusterSingletonProxy will drop old messages when new messages are sent via the proxy.
+- The size of the buffer is configurable and it can be disabled by using a buffer size of 0.
 
-It’s worth noting that messages can always be lost because of the distributed nature of these actors. As always, additional logic should be implemented in the singleton (acknowledgement) and in the client (retry) actors to ensure at-least-once message delivery.
+It’s worth noting that messages can always be lost because of the distributed nature of these actors.
+- As always, additional logic should be implemented in the singleton (acknowledgement) and in the client (retry) actors to ensure at-least-once message delivery.
 
 The singleton instance will not run on members with status WeaklyUp.
 
@@ -39,7 +58,9 @@ Don’t use Cluster Singleton together with Automatic Downing, since it allows t
 
 # An Example
 
-Assume that we need one single entry point to an external system. An actor that receives messages from a JMS queue with the strict requirement that only one JMS consumer must exist to make sure that the messages are processed in order. That is perhaps not how one would like to design things, but a typical real-world scenario when integrating with external systems.
+Assume that we need one single entry point to an external system.
+- An actor that receives messages from a JMS queue with the strict requirement that only one JMS consumer must exist to make sure that the messages are processed in order.
+- That is perhaps not how one would like to design things, but a typical real-world scenario when integrating with external systems.
 
 Before explaining how to create a cluster singleton actor, let’s define message classes which will be used by the singleton.
 
@@ -72,7 +93,8 @@ On each node in the cluster you need to start the ClusterSingletonManager and su
 
 Here we limit the singleton to nodes tagged with the "worker" role, but all nodes, independent of role, can be used by not specifying withRole.
 
-We use an application specific terminationMessage to be able to close the resources before actually stopping the singleton actor. Note that PoisonPill is a perfectly fine terminationMessage if you only need to stop the actor.
+We use an application specific terminationMessage to be able to close the resources before actually stopping the singleton actor.
+- Note that PoisonPill is a perfectly fine terminationMessage if you only need to stop the actor.
 
 Here is how the singleton actor handles the terminationMessage in this example.
 
@@ -112,7 +134,9 @@ To use the Cluster Singleton you must add the following dependency in your proje
 
 # Configuration
 
-The following configuration properties are read by the ClusterSingletonManagerSettings when created with a ActorSystem parameter. It is also possible to amend the ClusterSingletonManagerSettings or create it from another config section with the same layout as below. ClusterSingletonManagerSettings is a parameter to the ClusterSingletonManager.props factory method, i.e. each singleton can be configured with different settings if needed.
+The following configuration properties are read by the ClusterSingletonManagerSettings when created with a ActorSystem parameter.
+- It is also possible to amend the ClusterSingletonManagerSettings or create it from another config section with the same layout as below.
+- ClusterSingletonManagerSettings is a parameter to the ClusterSingletonManager.props factory method, i.e. each singleton can be configured with different settings if needed.
 ```hocon
 akka.cluster.singleton {
   # The actor name of the child singleton actor.
@@ -135,7 +159,9 @@ akka.cluster.singleton {
 }
 ```
 
-The following configuration properties are read by the ClusterSingletonProxySettings when created with a ActorSystem parameter. It is also possible to amend the ClusterSingletonProxySettings or create it from another config section with the same layout as below. ClusterSingletonProxySettings is a parameter to the ClusterSingletonProxy.props factory method, i.e. each singleton proxy can be configured with different settings if needed.
+The following configuration properties are read by the ClusterSingletonProxySettings when created with a ActorSystem parameter.
+- It is also possible to amend the ClusterSingletonProxySettings or create it from another config section with the same layout as below.
+- ClusterSingletonProxySettings is a parameter to the ClusterSingletonProxy.props factory method, i.e. each singleton proxy can be configured with different settings if needed.
 ```hocon
 akka.cluster.singleton-proxy {
   # The actor name of the singleton actor that is started by the ClusterSingletonManager

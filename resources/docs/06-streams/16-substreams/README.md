@@ -20,9 +20,12 @@ A typical operation that generates substreams is groupBy.
 
 ![stream-substream-groupBy1.png](https://doc.akka.io/docs/akka/current/images/stream-substream-groupBy1.png)
 
-This operation splits the incoming stream into separate output streams, one for each element key. The key is computed for each element using the given function, which is f in the above diagram. When a new key is encountered for the first time a new substream is opened and subsequently fed with all elements belonging to that key.
+This operation splits the incoming stream into separate output streams, one for each element key.
+- The key is computed for each element using the given function, which is f in the above diagram.
+- When a new key is encountered for the first time a new substream is opened and subsequently fed with all elements belonging to that key.
 
-If you add a Sink or Flow right after the groupBy stage, all transformations are applied to all encountered substreams in the same fashion. So, if you add the following Sink, that is added to each of the substreams as in the below diagram.
+If you add a Sink or Flow right after the groupBy stage, all transformations are applied to all encountered substreams in the same fashion.
+- So, if you add the following Sink, that is added to each of the substreams as in the below diagram.
 
 ```scala
 
@@ -86,7 +89,8 @@ splitWhen flows the element on which the predicate returned true to a new substr
 
 ```
 
-These are useful when you scanned over something and you don’t need to care about anything behind it. A typical example is counting the number of characters for each line like below.
+These are useful when you scanned over something and you don’t need to care about anything behind it.
+- A typical example is counting the number of characters for each line like below.
 
 ```scala
 
@@ -119,7 +123,8 @@ This prints out the following output.
 
 flatMapConcat and flatMapMerge are substream operations different from groupBy and splitWhen/After.
 
-flatMapConcat takes a function, which is f in the following diagram. The function f of flatMapConcat transforms each input element into a Source that is then flattened into the output stream by concatenation.
+flatMapConcat takes a function, which is f in the following diagram.
+- The function f of flatMapConcat transforms each input element into a Source that is then flattened into the output stream by concatenation.
 
 ```scala
 
@@ -131,15 +136,18 @@ flatMapConcat takes a function, which is f in the following diagram. The functio
 
 ![stream-substream-flatMapConcat1.png](https://doc.akka.io/docs/akka/current/images/stream-substream-flatMapConcat1.png)
 
-Like the concat operation on Flow, it fully consumes one Source after the other. So, there is only one substream actively running at a given time.
+Like the concat operation on Flow, it fully consumes one Source after the other.
+- So, there is only one substream actively running at a given time.
 
-Then once the active substream is fully consumed, the next substream can start running. Elements from all the substreams are concatenated to the sink.
+Then once the active substream is fully consumed, the next substream can start running.
+- Elements from all the substreams are concatenated to the sink.
 
 ![stream-substream-flatMapConcat2.png](https://doc.akka.io/docs/akka/current/images/stream-substream-flatMapConcat2.png)
 
 ## flatMapMerge
 
-flatMapMerge is similar to flatMapConcat, but it doesn’t wait for one Source to be fully consumed. Instead, up to breadth number of streams emit elements at any given time.
+flatMapMerge is similar to flatMapConcat, but it doesn’t wait for one Source to be fully consumed.
+- Instead, up to breadth number of streams emit elements at any given time.
 
 ```scala
 
