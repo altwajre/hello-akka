@@ -45,17 +45,14 @@ akka {
     # auto-down-unreachable-after = 10s
   }
 }
-```
 
 # Enable metrics extension in akka-cluster-metrics.
-```hocon
 akka.extensions=["akka.cluster.metrics.ClusterMetricsExtension"]
 
 # Sigar native library extract location during tests.
-```
-
 # Note: use per-jvm-instance folder when running multiple jvm on one host.
 akka.cluster.metrics.native-library-extract-folder=${user.dir}/target/native
+```
 
 To enable cluster capabilities in your Akka project you should, at a minimum, add the Remoting settings, but with cluster.
 - The akka.cluster.seed-nodes should normally also be added to your application.conf file.
