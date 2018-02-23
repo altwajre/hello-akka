@@ -46,7 +46,7 @@ The data center membership is implemented by adding the data center name prefixe
 
 You can retrieve information about what data center a member belongs to:
 
-Scala
+```scala
 
     val cluster = Cluster(system)
     // this node's data center
@@ -57,7 +57,7 @@ Scala
     val aMember = cluster.state.members.head
     val aDc = aMember.dataCenter
 
-Java
+```
 
 
 # Failure Detection
@@ -89,7 +89,7 @@ The ClusterSingletonProxy is by default routing messages to the singleton in the
 
 This is how to create a singleton proxy for a specific data center:
 
-Scala
+```scala
 
     val proxyDcB = system.actorOf(
       ClusterSingletonProxy.props(
@@ -99,7 +99,7 @@ Scala
           .withDataCenter("B")),
       name = "consumerProxyDcB")
 
-Java
+```
 
 If using the own data center as the withDataCenter parameter that would be a proxy for the singleton in the own data center, which is also the default if withDataCenter is not given.
 
@@ -115,7 +115,7 @@ The Cluster Sharding proxy is by default routing messages to the shard regions i
 
 This is how to create a sharding proxy for a specific data center:
 
-Scala
+```scala
 
     val counterProxyDcB: ActorRef = ClusterSharding(system).startProxy(
       typeName = "Counter",
@@ -124,6 +124,6 @@ Scala
       extractEntityId = extractEntityId,
       extractShardId = extractShardId)
 
-Java
+```
 
 Another way to manage global entities is to make sure that certain entity ids are located in only one data center by routing the messages to the right region. For example, the routing function could be that odd entity ids are routed to data center A and even entity ids to data center B. Before sending the message to the local region actor you make the decision of which data center it should be routed to. Messages for another data center can be sent with a sharding proxy as explained above and messages for the own data center are sent to the local region.
