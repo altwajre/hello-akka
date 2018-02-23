@@ -133,9 +133,8 @@ This can also be defined as Java system properties when starting the JVM using t
 ```
 
 Such configuration is typically created dynamically by external tools, see for example:
-
-    Deploying clustered Akka applications on Kubernetes
-    ConstructR
+- Deploying clustered Akka applications on Kubernetes.
+- ConstructR.
 
 The seed nodes can be started in any order and it is not necessary to have all seed nodes running, but the node configured as the first element in the seed-nodes configuration list must be started when initially starting a cluster, otherwise the other seed-nodes will not become initialized and no other node can join the cluster.
 - The reason for the special first seed node is to avoid forming separated islands when starting from an empty cluster.
@@ -283,14 +282,13 @@ If you find it inconvenient to handle the CurrentClusterState you can use Cluste
 ```
 
 The events to track the life-cycle of members are:
-
-    ClusterEvent.MemberJoined - A new member has joined the cluster and its status has been changed to Joining
-    ClusterEvent.MemberUp - A new member has joined the cluster and its status has been changed to Up
-    ClusterEvent.MemberExited - A member is leaving the cluster and its status has been changed to Exiting Note that the node might already have been shutdown when this event is published on another node.
-    ClusterEvent.MemberRemoved - Member completely removed from the cluster.
-    ClusterEvent.UnreachableMember - A member is considered as unreachable, detected by the failure detector of at least one other node.
-    ClusterEvent.ReachableMember - A member is considered as reachable again, after having been unreachable.
-- All nodes that previously detected it as unreachable has detected it as reachable again.
+- **`ClusterEvent.MemberJoined`**: A new member has joined the cluster and its status has been changed to Joining.
+- **`ClusterEvent.MemberUp`**: A new member has joined the cluster and its status has been changed to Up.
+- **`ClusterEvent.MemberExited`**: A member is leaving the cluster and its status has been changed to Exiting Note that the node might already have been shutdown when this event is published on another node.
+- **`ClusterEvent.MemberRemoved`**: Member completely removed from the cluster.
+- **`ClusterEvent.UnreachableMember`**: A member is considered as unreachable, detected by the failure detector of at least one other node.
+- **`ClusterEvent.ReachableMember`**: A member is considered as reachable again, after having been unreachable.
+    - All nodes that previously detected it as unreachable has detected it as reachable again.
 
 There are more types of change events, consult the API documentation of classes that extends akka.cluster.ClusterEvent.ClusterDomainEvent for details about the events.
 
