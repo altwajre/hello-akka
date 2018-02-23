@@ -54,12 +54,12 @@ akka.extensions=["akka.cluster.metrics.ClusterMetricsExtension"]
 akka.cluster.metrics.native-library-extract-folder=${user.dir}/target/native
 ```
 
-To enable cluster capabilities in your Akka project you should, at a minimum, add the Remoting settings, but with cluster.
-- The akka.cluster.seed-nodes should normally also be added to your application.conf file.
+To enable cluster capabilities in your Akka project you should, at a minimum, add the Remoting settings, but with `cluster`.
+- The `akka.cluster.seed-nodes` should normally also be added to your `application.conf` file.
 
 #### Note
-
 If you are running Akka in a Docker container or the nodes for some other reason have separate internal and external ip addresses you must configure remoting according to Akka behind NAT or in a Docker container
+##
 
 The seed nodes are configured contact points for initial, automatic, join of the cluster.
 
