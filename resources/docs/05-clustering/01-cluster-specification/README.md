@@ -137,10 +137,9 @@ While the cluster is in a converged state the gossiper only sends a small gossip
 - As soon as there is a change to the cluster (meaning non-convergence) then it goes back to biased gossip again.
 
 The recipient of the gossip state or the gossip status can use the gossip version (vector clock) to determine whether:
-
-    it has a newer version of the gossip state, in which case it sends that back to the gossiper
-    it has an outdated version of the state, in which case the recipient requests the current state from the gossiper by sending back its version of the gossip state
-    it has conflicting gossip versions, in which case the different versions are merged and sent back
+- It has a newer version of the gossip state, in which case it sends that back to the gossiper.
+- It has an outdated version of the state, in which case the recipient requests the current state from the gossiper by sending back its version of the gossip state.
+- It has conflicting gossip versions, in which case the different versions are merged and sent back.
 
 If the recipient and the gossip have the same version then the gossip state is not sent or requested.
 
@@ -187,18 +186,23 @@ As mentioned before, if a node is unreachable then gossip convergence is not pos
 ![member-states-weakly-up.png](https://doc.akka.io/docs/akka/current/images/member-states-weakly-up.png)
 
 ### Member States
+#### joining: 
+transient state when joining a cluster
 
-    joining - transient state when joining a cluster
+#### weakly up: 
+transient state while network split (only if akka.cluster.allow-weakly-up-members=on)
 
-    weakly up - transient state while network split (only if akka.cluster.allow-weakly-up-members=on)
+#### up: 
+normal operating state
 
-    up - normal operating state
+#### leaving: 
+exiting - states during graceful removal
 
-    leaving / exiting - states during graceful removal
+#### down: 
+marked as down (no longer part of cluster decisions)
 
-    down - marked as down (no longer part of cluster decisions)
-
-    removed - tombstone state (no longer a member)
+#### removed: 
+tombstone state (no longer a member)
 
 
 ### User Actions
