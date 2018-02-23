@@ -5,39 +5,60 @@
 This document describes the design concepts of the clustering.
 # Intro
 
-Akka Cluster provides a fault-tolerant decentralized peer-to-peer based cluster membership service with no single point of failure or single point of bottleneck. It does this using gossip protocols and an automatic failure detector.
+Akka Cluster provides a fault-tolerant decentralized peer-to-peer based cluster membership service with no single point of failure or single point of bottleneck.
+- It does this using gossip protocols and an automatic failure detector.
 # Terms
 
 ### node
-    A logical member of a cluster. There could be multiple nodes on a physical machine. Defined by a hostname:port:uid tuple.
+    A logical member of a cluster.
+- There could be multiple nodes on a physical machine.
+- Defined by a hostname:port:uid tuple.
 ### cluster
     A set of nodes joined together through the membership service.
 ### leader
-    A single node in the cluster that acts as the leader. Managing cluster convergence and membership state transitions.
+    A single node in the cluster that acts as the leader.
+- Managing cluster convergence and membership state transitions.
 
 # Membership
 
-A cluster is made up of a set of member nodes. The identifier for each node is a hostname:port:uid tuple. An Akka application can be distributed over a cluster with each node hosting some part of the application. Cluster membership and the actors running on that node of the application are decoupled. A node could be a member of a cluster without hosting any actors. Joining a cluster is initiated by issuing a Join command to one of the nodes in the cluster to join.
+A cluster is made up of a set of member nodes.
+- The identifier for each node is a hostname:port:uid tuple.
+- An Akka application can be distributed over a cluster with each node hosting some part of the application.
+- Cluster membership and the actors running on that node of the application are decoupled.
+- A node could be a member of a cluster without hosting any actors.
+- Joining a cluster is initiated by issuing a Join command to one of the nodes in the cluster to join.
 
-The node identifier internally also contains a UID that uniquely identifies this actor system instance at that hostname:port. Akka uses the UID to be able to reliably trigger remote death watch. This means that the same actor system can never join a cluster again once it’s been removed from that cluster. To re-join an actor system with the same hostname:port to a cluster you have to stop the actor system and start a new one with the same hostname:port which will then receive a different UID.
+The node identifier internally also contains a UID that uniquely identifies this actor system instance at that hostname:port.
+- Akka uses the UID to be able to reliably trigger remote death watch.
+- This means that the same actor system can never join a cluster again once it’s been removed from that cluster.
+- To re-join an actor system with the same hostname:port to a cluster you have to stop the actor system and start a new one with the same hostname:port which will then receive a different UID.
 
-The cluster membership state is a specialized CRDT, which means that it has a monotonic merge function. When concurrent changes occur on different nodes the updates can always be merged and converge to the same end result.
+The cluster membership state is a specialized CRDT, which means that it has a monotonic merge function.
+- When concurrent changes occur on different nodes the updates can always be merged and converge to the same end result.
 
 ## Gossip
 
-The cluster membership used in Akka is based on Amazon’s Dynamo system and particularly the approach taken in Basho’s’ Riak distributed database. Cluster membership is communicated using a Gossip Protocol, where the current state of the cluster is gossiped randomly through the cluster, with preference to members that have not seen the latest version.
+The cluster membership used in Akka is based on Amazon’s Dynamo system and particularly the approach taken in Basho’s’ Riak distributed database.
+- Cluster membership is communicated using a Gossip Protocol, where the current state of the cluster is gossiped randomly through the cluster, with preference to members that have not seen the latest version.
 
 ### Vector Clocks
 
 Vector clocks are a type of data structure and algorithm for generating a partial ordering of events in a distributed system and detecting causality violations.
 
-We use vector clocks to reconcile and merge differences in cluster state during gossiping. A vector clock is a set of (node, counter) pairs. Each update to the cluster state has an accompanying update to the vector clock.
+We use vector clocks to reconcile and merge differences in cluster state during gossiping.
+- A vector clock is a set of (node, counter) pairs.
+- Each update to the cluster state has an accompanying update to the vector clock.
 
 ### Gossip Convergence
 
-Information about the cluster converges locally at a node at certain points in time. This is when a node can prove that the cluster state he is observing has been observed by all other nodes in the cluster. Convergence is implemented by passing a set of nodes that have seen current state version during gossip. This information is referred to as the seen set in the gossip overview. When all nodes are included in the seen set there is convergence.
+Information about the cluster converges locally at a node at certain points in time.
+- This is when a node can prove that the cluster state he is observing has been observed by all other nodes in the cluster.
+- Convergence is implemented by passing a set of nodes that have seen current state version during gossip.
+- This information is referred to as the seen set in the gossip overview.
+- When all nodes are included in the seen set there is convergence.
 
-Gossip convergence cannot occur while any nodes are unreachable. The nodes need to become reachable again, or moved to the down and removed states (see the Membership Lifecycle section below). This only blocks the leader from performing its cluster membership management and does not influence the application running on top of the cluster. For example this means that during a network partition it is not possible to add more nodes to the cluster. The nodes can join, but they will not be moved to the up state until the partition has healed or the unreachable nodes have been downed.
+Gossip convergence cannot occur while any nodes are unreachable.
+- The nodes need to become reachable again, or moved to the down and removed states (see the Membership Lifecycle section below). This only blocks the leader from performing its cluster membership management and does not influence the application running on top of the cluster. For example this means that during a network partition it is not possible to add more nodes to the cluster. The nodes can join, but they will not be moved to the up state until the partition has healed or the unreachable nodes have been downed.
 
 ### Failure Detector
 
