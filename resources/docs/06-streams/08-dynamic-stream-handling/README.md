@@ -26,7 +26,8 @@ After the first call to either shutdown or abort, all subsequent calls to any of
     cancelling (in case of shutdown) or failing (in case of abort) its upstream.
 
 A KillSwitch can control the completion of one or multiple streams, and therefore comes in two different flavours.
-UniqueKillSwitch
+
+## UniqueKillSwitch
 
 UniqueKillSwitch allows to control the completion of one materialized Graph of FlowShape. Refer to the below for usage examples.
 
@@ -68,7 +69,8 @@ Scala
 
 Java
 
-SharedKillSwitch
+
+## SharedKillSwitch
 
 A SharedKillSwitch allows to control the completion of an arbitrary number graphs of FlowShape. It can be materialized multiple times via its flow method, and all materialized graphs linked to it are controlled by the switch. Refer to the below for usage examples.
 
@@ -124,7 +126,8 @@ A UniqueKillSwitch is always a result of a materialization, whilst SharedKillSwi
 # Dynamic fan-in and fan-out with MergeHub, BroadcastHub and PartitionHub
 
 There are many cases when consumers or producers of a certain service (represented as a Sink, Source, or possibly Flow) are dynamic and not known in advance. The Graph DSL does not allow to represent this, all connections of the graph must be known in advance and must be connected upfront. To allow dynamic fan-in and fan-out streaming, the Hubs should be used. They provide means to construct Sink and Source pairs that are “attached” to each other, but one of them can be materialized multiple times to implement dynamic fan-in or fan-out.
-Using the MergeHub
+
+## Using the MergeHub
 
 A MergeHub allows to implement a dynamic fan-in junction point in a graph where elements coming from different producers are emitted in a First-Comes-First-Served fashion. If the consumer cannot keep up then all of the producers are backpressured. The hub itself comes as a Source to which the single consumer can be attached. It is not possible to attach any producers until this Source has been materialized (started). This is ensured by the fact that we only get the corresponding Sink as a materialized value. Usage might look like this:
 
@@ -151,7 +154,8 @@ Scala
 Java
 
 This sequence, while might look odd at first, ensures proper startup order. Once we get the Sink, we can use it as many times as wanted. Everything that is fed to it will be delivered to the consumer we attached previously until it cancels.
-Using the BroadcastHub
+
+## Using the BroadcastHub
 
 A BroadcastHub can be used to consume elements from a common producer by a dynamic set of consumers. The rate of the producer will be automatically adapted to the slowest consumer. In this case, the hub is a Sink to which the single producer must be attached first. Consumers can only be attached once the Sink has been materialized (i.e. the producer has been started). One example of using the BroadcastHub:
 
@@ -178,7 +182,8 @@ Scala
 Java
 
 The resulting Source can be materialized any number of times, each materialization effectively attaching a new subscriber. If there are no subscribers attached to this hub then it will not drop any elements but instead backpressure the upstream producer until subscribers arrive. This behavior can be tweaked by using the combinators .buffer for example with a drop strategy, or just attaching a subscriber that drops all messages. If there are no other subscribers, this will ensure that the producer is kept drained (dropping all elements) and once a new subscriber arrives it will adaptively slow down, ensuring no more messages are dropped.
-Combining dynamic stages to build a simple Publish-Subscribe service
+
+## Combining dynamic stages to build a simple Publish-Subscribe service
 
 The features provided by the Hub implementations are limited by default. This is by design, as various combinations can be used to express additional features like unsubscribing producers or consumers externally. We show here an example that builds a Flow representing a publish-subscribe channel. The input of the Flow is published to all subscribers while the output streams all the elements published.
 
@@ -234,7 +239,8 @@ Scala
 
 Java
 
-Using the PartitionHub
+
+## Using the PartitionHub
 
 This is a may change feature*
 

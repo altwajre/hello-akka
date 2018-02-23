@@ -16,7 +16,8 @@ From this follows that the principles implemented by Akka Streams are:
     exhaustive model of the domain of distributed bounded stream processing
 
 This means that we provide all the tools necessary to express any stream processing topology, that we model all the essential aspects of this domain (back-pressure, buffering, transformations, failure recovery, etc.) and that whatever the user builds is reusable in a larger context.
-Akka Streams does not send dropped stream elements to the dead letter office
+
+## Akka Streams does not send dropped stream elements to the dead letter office
 
 One important consequence of offering only features that can be relied upon is the restriction that Akka Streams cannot ensure that all objects sent through a processing topology will be processed. Elements can be dropped for a number of reasons:
 
@@ -26,7 +27,8 @@ One important consequence of offering only features that can be relied upon is t
     stream cancellation will propagate upstream (e.g. from a take operator) leading to upstream processing steps being terminated without having processed all of their inputs
 
 This means that sending JVM objects into a stream that need to be cleaned up will require the user to ensure that this happens outside of the Akka Streams facilities (e.g. by cleaning them up after a timeout or when their results are observed on the stream output, or by using other means like finalizers etc.).
-Resulting Implementation Constraints
+
+## Resulting Implementation Constraints
 
 Compositionality entails reusability of partial stream topologies, which led us to the lifted approach of describing data flows as (partial) graphs that can act as composite sources, flows (a.k.a. pipes) and sinks of data. These building blocks shall then be freely shareable, with the ability to combine them freely to form larger graphs. The representation of these pieces must therefore be an immutable blueprint that is materialized in an explicit step in order to start the stream processing. The resulting stream processing engine is then also immutable in the sense of having a fixed topology that is prescribed by the blueprint. Dynamic networks need to be modeled by explicitly using the Reactive Streams interfaces for plugging different engines together.
 
@@ -55,7 +57,8 @@ Note
 One important consequence of this is that a reusable flow description cannot be bound to “live” resources, any connection to or allocation of such resources must be deferred until materialization time. Examples of “live” resources are already existing TCP connections, a multicast Publisher, etc.; a TickSource does not fall into this category if its timer is created only upon materialization (as is the case for our implementation).
 
 Exceptions from this need to be well-justified and carefully documented.
-Resulting Implementation Constraints
+
+## Resulting Implementation Constraints
 
 Akka Streams must enable a library to express any stream processing utility in terms of immutable blueprints. The most common building blocks are
 
@@ -79,7 +82,8 @@ Unfortunately the method name for signaling failure to a Subscriber is called on
 There is only limited support for treating onError in Akka Streams compared to the operators that are available for the transformation of data elements, which is intentional in the spirit of the previous paragraph. Since onError signals that the stream is collapsing, its ordering semantics are not the same as for stream completion: transformation stages of any kind will just collapse with the stream, possibly still holding elements in implicit or explicit buffers. This means that data elements emitted before a failure can still be lost if the onError overtakes them.
 
 The ability for failures to propagate faster than data elements is essential for tearing down streams that are back-pressured—especially since back-pressure can be the failure mode (e.g. by tripping upstream buffers which then abort because they cannot do anything else; or if a dead-lock occurred).
-The semantics of stream recovery
+
+## The semantics of stream recovery
 
 A recovery element (i.e. any transformation that absorbs an onError signal and turns that into possibly more data elements followed normal stream completion) acts as a bulkhead that confines a stream collapse to a given region of the stream topology. Within the collapsed region buffered elements may be lost, but the outside is not affected by the failure.
 

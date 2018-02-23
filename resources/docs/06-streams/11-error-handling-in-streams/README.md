@@ -219,7 +219,8 @@ Scala
 
 Java
 
-Errors from mapAsync
+
+## Errors from mapAsync
 
 Stream supervision can also be applied to the futures of mapAsync and mapAsyncUnordered even if such failures happen in the future rather than inside the stage itself.
 

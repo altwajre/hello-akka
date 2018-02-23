@@ -11,7 +11,8 @@ If you need a quick reference of the available processing stages used in the rec
 # Working with Flows
 
 In this collection we show simple recipes that involve linear flows. The recipes in this section are rather general, more targeted recipes are available as separate sections (Buffers and working with rate, Working with streaming IO).
-Logging elements of a stream
+
+## Logging elements of a stream
 
 Situation: During development it is sometimes helpful to see what happens in a particular section of a stream.
 
@@ -38,7 +39,8 @@ Scala
 
 Java
 
-Flattening a stream of sequences
+
+## Flattening a stream of sequences
 
 Situation: A stream is given as a stream of sequence of elements, but a stream of elements needed instead, streaming all the nested elements inside the sequences separately.
 
@@ -51,7 +53,8 @@ Scala
 
 Java
 
-Draining a stream to a strict collection
+
+## Draining a stream to a strict collection
 
 Situation: A possibly unbounded sequence of elements is given as a stream, which needs to be collected into a Scala collection while ensuring boundedness
 
@@ -85,7 +88,8 @@ Scala
 
 Java
 
-Calculating the digest of a ByteString stream
+
+## Calculating the digest of a ByteString stream
 
 Situation: A stream of bytes is given as a stream of ByteString s and we want to calculate the cryptographic digest of the stream.
 
@@ -129,7 +133,8 @@ Scala
 
 Java
 
-Parsing lines from a stream of ByteStrings
+
+## Parsing lines from a stream of ByteStrings
 
 Situation: A stream of bytes is given as a stream of ByteString s containing lines terminated by line ending characters (or, alternatively, containing binary frames delimited by a special delimiter byte sequence) which needs to be parsed.
 
@@ -144,7 +149,8 @@ Scala
 
 Java
 
-Dealing with compressed data streams
+
+## Dealing with compressed data streams
 
 Situation: A gzipped stream of bytes is given as a stream of ByteString s, for example from a FileIO source.
 
@@ -158,7 +164,8 @@ Scala
 
 Java
 
-Implementing reduce-by-key
+
+## Implementing reduce-by-key
 
 Situation: Given a stream of elements, we want to calculate some aggregated value on different subgroups of the elements.
 
@@ -215,7 +222,8 @@ Java
 Note
 
 Please note that the reduce-by-key version we discussed above is sequential in reading the overall input stream, in other words it is NOT a parallelization pattern like MapReduce and similar frameworks.
-Sorting elements to multiple groups with groupBy
+
+## Sorting elements to multiple groups with groupBy
 
 Situation: The groupBy operation strictly partitions incoming elements, each element belongs to exactly one group. Sometimes we want to map elements into multiple groups simultaneously.
 
@@ -243,7 +251,8 @@ Scala
 
 Java
 
-Adhoc source
+
+## Adhoc source
 
 Situation: The idea is that you have a source which you don’t want to start until you have a demand. Also, you want to shutdown it down when there is no more demand, and start it up again there is new demand again.
 
@@ -265,7 +274,8 @@ Java
 # Working with Graphs
 
 In this collection we show recipes that use stream graph elements to achieve various goals.
-Triggering the flow of elements programmatically
+
+## Triggering the flow of elements programmatically
 
 Situation: Given a stream of elements we want to control the emission of those elements according to a trigger signal. In other words, even if the stream would be able to flow (not being backpressured) we want to hold back elements until a trigger signal arrives.
 
@@ -300,7 +310,8 @@ Scala
 
 Java
 
-Balancing jobs to a fixed pool of workers
+
+## Balancing jobs to a fixed pool of workers
 
 Situation: Given a stream of jobs and a worker process expressed as a Flow create a pool of workers that automatically balances incoming jobs to available workers, then merges the results.
 
@@ -337,7 +348,8 @@ Java
 # Working with rate
 
 This collection of recipes demonstrate various patterns where rate differences between upstream and downstream needs to be handled by other strategies than simple backpressure.
-Dropping elements
+
+## Dropping elements
 
 Situation: Given a fast producer and a slow consumer, we want to drop elements if necessary to not slow down the producer too much.
 
@@ -353,7 +365,8 @@ Scala
 Java
 
 There is a more general version of conflate named conflateWithSeed that allows to express more complex aggregations, more similar to a fold.
-Dropping broadcast
+
+## Dropping broadcast
 
 Situation: The default Broadcast graph element is properly backpressured, but that means that a slow downstream consumer can hold back the other downstream consumers resulting in lowered throughput. In other words the rate of Broadcast is the rate of its slowest downstream consumer. In certain cases it is desirable to allow faster consumers to progress independently of their slower siblings by dropping elements if necessary.
 
@@ -375,7 +388,8 @@ Scala
 
 Java
 
-Collecting missed ticks
+
+## Collecting missed ticks
 
 Situation: Given a regular (stream) source of ticks, instead of trying to backpressure the producer of the ticks we want to keep a counter of the missed ticks instead and pass it down when possible.
 
@@ -394,7 +408,8 @@ Scala
 
 Java
 
-Create a stream processor that repeats the last element seen
+
+## Create a stream processor that repeats the last element seen
 
 Situation: Given a producer and consumer, where the rate of neither is known in advance, we want to ensure that none of them is slowing down the other by dropping earlier unconsumed elements from the upstream if necessary, and repeating the last value for the downstream if necessary.
 
@@ -474,7 +489,8 @@ Scala
 
 Java
 
-Globally limiting the rate of a set of streams
+
+## Globally limiting the rate of a set of streams
 
 Situation: Given a set of independent streams that we cannot merge, we want to globally limit the aggregate throughput of the set of streams.
 
@@ -569,7 +585,8 @@ Note
 The global actor used for limiting introduces a global bottleneck. You might want to assign a dedicated dispatcher for this actor.
 
 # Working with IO
-Chunking up a stream of ByteStrings into limited size ByteStrings
+
+## Chunking up a stream of ByteStrings into limited size ByteStrings
 
 Situation: Given a stream of ByteString s we want to produce a stream of ByteString s containing the same bytes in the same sequence, but capping the size of ByteString s. In other words we want to slice up ByteString s into smaller chunks if they exceed a size threshold.
 
@@ -637,7 +654,8 @@ Scala
 
 Java
 
-Limit the number of bytes passing through a stream of ByteStrings
+
+## Limit the number of bytes passing through a stream of ByteStrings
 
 Situation: Given a stream of ByteString s we want to fail the stream if more than a given maximum of bytes has been consumed.
 
@@ -674,7 +692,8 @@ Scala
 
 Java
 
-Compact ByteStrings in a stream of ByteStrings
+
+## Compact ByteStrings in a stream of ByteStrings
 
 Situation: After a long stream of transformations, due to their immutable, structural sharing nature ByteString s may refer to multiple original ByteString instances unnecessarily retaining memory. As the final step of a transformation chain we want to have clean copies that are no longer referencing the original ByteString s.
 
@@ -686,7 +705,8 @@ Scala
 
 Java
 
-Injecting keep-alive messages into a stream of ByteStrings
+
+## Injecting keep-alive messages into a stream of ByteStrings
 
 Situation: Given a communication channel expressed as a stream of ByteString s we want to inject keep-alive messages but only if this does not interfere with normal traffic.
 

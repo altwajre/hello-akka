@@ -6,7 +6,8 @@
 For piping the elements of a stream as messages to an ordinary actor you can use ask in a mapAsync or use Sink.actorRefWithAck.
 
 Messages can be sent to a stream with Source.queue or via the ActorRef that is materialized by Source.actorRef.
-mapAsync + ask
+
+## mapAsync + ask
 
 A nice way to delegate some processing of elements in a stream to an actor is to use ask in mapAsync. The back-pressure of the stream is maintained by the Future of the ask and the mailbox of the actor will not be filled with more messages than the given parallelism of the mapAsync stage.
 
@@ -49,7 +50,8 @@ If the ask fails due to timeout the stream will be completed with TimeoutExcepti
 If you don’t care about the reply values and only use them as back-pressure signals you can use Sink.ignore after the mapAsync stage and then actor is effectively a sink of the stream.
 
 The same pattern can be used with Actor routers. Then you can use mapAsyncUnordered for better efficiency if you don’t care about the order of the emitted downstream elements (the replies).
-Sink.actorRefWithAck
+
+## Sink.actorRefWithAck
 
 The sink sends the elements of the stream to the given ActorRef that sends back back-pressure signal. First element is always onInitMessage, then stream is waiting for the given acknowledgement message from the given actor which means that it is ready to process elements. It also requires the given acknowledgement message after each stream element to make back-pressure work.
 
@@ -57,7 +59,8 @@ If the target actor terminates the stream will be cancelled. When the stream is 
 Note
 
 Using Sink.actorRef or ordinary tell from a map or foreach stage means that there is no back-pressure signal from the destination actor, i.e. if the actor is not consuming the messages fast enough the mailbox of the actor will grow, unless you use a bounded mailbox with zero mailbox-push-timeout-time or use a rate limiting stage in front. It’s often better to use Sink.actorRefWithAck or ask in mapAsync, though.
-Source.queue
+
+## Source.queue
 
 Source.queue can be used for emitting elements to a stream from an actor (or from anything running outside the stream). The elements will be buffered until the stream can process them. You can offer elements to the queue and they will be emitted to the stream if there is demand from downstream, otherwise they will be buffered until request for demand is received.
 
@@ -66,7 +69,8 @@ Use overflow strategy akka.stream.OverflowStrategy.backpressure to avoid droppin
 SourceQueue.offer returns Future[QueueOfferResult] which completes with QueueOfferResult.Enqueued if element was added to buffer or sent downstream. It completes with QueueOfferResult.Dropped if element was dropped. Can also complete with QueueOfferResult.Failure - when stream failed or QueueOfferResult.QueueClosed when downstream is completed.
 
 When used from an actor you typically pipe the result of the Future back to the actor to continue processing.
-Source.actorRef
+
+## Source.actorRef
 
 Messages sent to the actor that is materialized by Source.actorRef will be emitted to the stream if there is demand from downstream, otherwise they will be buffered until request for demand is received.
 
@@ -233,7 +237,8 @@ Scala
 Java
 
 Note that if the ask is not completed within the given timeout the stream is completed with failure. If that is not desired outcome you can use recover on the ask Future.
-Illustrating ordering and parallelism
+
+## Illustrating ordering and parallelism
 
 Let us look at another example to get a better understanding of the ordering and parallelism characteristics of mapAsync and mapAsyncUnordered.
 
@@ -517,7 +522,8 @@ Scala
 Java
 
 Please note that a factory is necessary to achieve reusability of the resulting Flow.
-Implementing Reactive Streams Publisher or Subscriber
+
+## Implementing Reactive Streams Publisher or Subscriber
 
 As described above any Akka Streams Source can be exposed as a Reactive Streams Publisher and any Sink can be exposed as a Reactive Streams Subscriber. Therefore we recommend that you implement Reactive Streams integrations with built-in stages or custom stages.
 
@@ -530,7 +536,8 @@ ActorPublisher and ActorSubscriber will probably be deprecated in future version
 Warning
 
 ActorPublisher and ActorSubscriber cannot be used with remote actors, because if signals of the Reactive Streams protocol (e.g. request) are lost the the stream may deadlock.
-ActorPublisher
+
+### ActorPublisher
 Warning
 
 Deprecation warning: ActorPublisher is deprecated in favour of the vastly more type-safe and safe to implement akka.stream.stage.GraphStage. It can also expose a “stage actor ref” is needed to be addressed as-if an Actor. Custom stages implemented using GraphStage are also automatically fusable.
@@ -630,7 +637,8 @@ Scala
 Java
 
 A publisher that is created with Sink.asPublisher supports a specified number of subscribers. Additional subscription attempts will be rejected with an IllegalStateException.
-ActorSubscriber
+
+### ActorSubscriber
 Warning
 
 Deprecation warning: ActorSubscriber is deprecated in favour of the vastly more type-safe and safe to implement akka.stream.stage.GraphStage. It can also expose a “stage actor ref” is needed to be addressed as-if an Actor. Custom stages implemented using GraphStage are also automatically fusable.

@@ -7,17 +7,17 @@ Akka Streams is a library to process and transfer a sequence of elements using b
 
 Before we move on, let’s define some basic terminology which will be used throughout the entire documentation:
 
-Stream
+### Stream
     An active process that involves moving and transforming data.
-Element
+### Element
     An element is the processing unit of streams. All operations transform and transfer elements from upstream to downstream. Buffer sizes are always expressed as number of elements independently from the actual size of the elements.
-Back-pressure
+### Back-pressure
     A means of flow-control, a way for consumers of data to notify a producer about their current availability, effectively slowing down the upstream producer to match their consumption speeds. In the context of Akka Streams back-pressure is always understood as non-blocking and asynchronous.
-Non-Blocking
+### Non-Blocking
     Means that a certain operation does not hinder the progress of the calling thread, even if it takes a long time to finish the requested operation.
-Graph
+### Graph
     A description of a stream processing topology, defining the pathways through which elements shall flow when the stream is running.
-Processing Stage
+### Processing Stage
     The common name for all building blocks that build up a Graph. Examples of a processing stage would be operations like map(), filter(), custom GraphStage s and graph junctions like Merge or Broadcast. For the full list of built-in processing stages see stages overview
 
 When we talk about asynchronous, non-blocking backpressure we mean that the processing stages available in Akka Streams will not use blocking calls but asynchronous message passing to exchange messages between each other, and they will use asynchronous means to slow down a fast producer, without blocking its thread. This is a thread-pool friendly design, since entities that need to wait (a fast producer waiting on a slow consumer) will not block the thread but can hand it back for further use to an underlying thread-pool.
@@ -26,13 +26,13 @@ When we talk about asynchronous, non-blocking backpressure we mean that the proc
 
 Linear processing pipelines can be expressed in Akka Streams using the following core abstractions:
 
-Source
+### Source
     A processing stage with exactly one output, emitting data elements whenever downstream processing stages are ready to receive them.
-Sink
+### Sink
     A processing stage with exactly one input, requesting and accepting data elements possibly slowing down the upstream producer of elements
-Flow
+### Flow
     A processing stage which has exactly one input and output, which connects its upstream and downstream by transforming the data elements flowing through it.
-RunnableGraph
+### RunnableGraph
     A Flow that has both ends “attached” to a Source and Sink respectively, and is ready to be run().
 
 It is possible to attach a Flow to a Source resulting in a composite source, and it is also possible to prepend a Flow to a Sink to get a new sink. After a stream is properly terminated by having both a source and a sink, it will be represented by the RunnableGraph type, indicating that it is ready to be executed.
@@ -102,7 +102,8 @@ Scala
 
 Java
 
-Defining sources, sinks and flows
+
+## Defining sources, sinks and flows
 
 The objects Source and Sink define various ways to create sources and sinks of elements. The following examples show some of the most useful constructs (refer to the API documentation for more details):
 
@@ -158,7 +159,8 @@ Scala
 
 Java
 
-Illegal stream elements
+
+## Illegal stream elements
 
 In accordance to the Reactive Streams specification (Rule 2.13) Akka Streams do not allow null to be passed through the stream as an element. In case you want to model the concept of absence of a value we recommend using scala.Option or scala.util.Either .
 
@@ -178,14 +180,16 @@ Akka Streams implements these concepts as Source, Flow (referred to as Processor
 The mode in which Reactive Streams back-pressure works can be colloquially described as “dynamic push / pull mode”, since it will switch between push and pull based back-pressure models depending on the downstream being able to cope with the upstream production rate or not.
 
 To illustrate this further let us consider both problem situations and how the back-pressure protocol handles them:
-Slow Publisher, fast Subscriber
+
+## Slow Publisher, fast Subscriber
 
 This is the happy case of course – we do not need to slow down the Publisher in this case. However signalling rates are rarely constant and could change at any point in time, suddenly ending up in a situation where the Subscriber is now slower than the Publisher. In order to safeguard from these situations, the back-pressure protocol must still be enabled during such situations, however we do not want to pay a high penalty for this safety net being enabled.
 
 The Reactive Streams protocol solves this by asynchronously signalling from the Subscriber to the Publisher Request(n:Int) signals. The protocol guarantees that the Publisher will never signal more elements than the signalled demand. Since the Subscriber however is currently faster, it will be signalling these Request messages at a higher rate (and possibly also batching together the demand - requesting multiple elements in one Request signal). This means that the Publisher should not ever have to wait (be back-pressured) with publishing its incoming elements.
 
 As we can see, in this scenario we effectively operate in so called push-mode since the Publisher can continue producing elements as fast as it can, since the pending demand will be recovered just-in-time while it is emitting elements.
-Fast Publisher, slow Subscriber
+
+## Fast Publisher, slow Subscriber
 
 This is the case when back-pressuring the Publisher is required, because the Subscriber is not able to cope with the rate at which its upstream would like to emit data elements.
 
@@ -208,7 +212,8 @@ Materialization is currently performed synchronously on the materializing thread
 Note
 
 Reusing instances of linear computation stages (Source, Sink, Flow) inside composite Graphs is legal, yet will materialize that stage multiple times.
-Operator Fusion
+
+## Operator Fusion
 
 By default Akka Streams will fuse the stream operators. This means that the processing steps of a flow or stream graph can be executed within the same Actor and has two consequences:
 
@@ -236,7 +241,8 @@ Warning
 Without fusing (i.e. up to version 2.0-M2) each stream processing stage had an implicit input buffer that holds a few elements for efficiency reasons. If your flow graphs contain cycles then these buffers may have been crucial in order to avoid deadlocks. With fusing these implicit buffers are no longer there, data elements are passed without buffering between fused stages. In those cases where buffering is needed in order to allow the stream to run at all, you will have to insert explicit buffers with the .buffer() combinator—typically a buffer of size 2 is enough to allow a feedback loop to function.
 
 The new fusing behavior can be disabled by setting the configuration parameter akka.stream.materializer.auto-fusing=off. In that case you can still manually fuse those graphs which shall run on less Actors. With the exception of the SslTlsStage and the groupBy operator all built-in processing stages can be fused.
-Combining materialized values
+
+## Combining materialized values
 
 Since every processing stage in Akka Streams can provide a materialized value after being materialized, it is necessary to somehow express how these values should be composed to a final value when we plug these stages together. For this, many combinator methods have variants that take an additional argument, a function, that will be used to combine the resulting values. Some examples of using these combiners are illustrated in the example below.
 

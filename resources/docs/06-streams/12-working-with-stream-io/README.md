@@ -3,7 +3,8 @@
 Akka Streams provides a way of handling File IO and TCP connections with Streams. While the general approach is very similar to the Actor based TCP handling using Akka IO, by using Akka Streams you are freed of having to manually react to back-pressure signals, as the library does it transparently for you.
 
 # Streaming TCP
-Accepting connections: Echo Server
+
+## Accepting connections: Echo Server
 
 In order to implement a simple EchoServer we bind to a given address, which returns a Source[IncomingConnection, Future[ServerBinding]], which will emit an IncomingConnection element for each new connection that the Server should handle:
 
@@ -58,7 +59,8 @@ We can then test the TCP server by sending data to the TCP Socket using netcat:
 $ echo -n "Hello World" | netcat 127.0.0.1 8888
 Hello World!!!
 
-Connecting: REPL Client
+
+## Connecting: REPL Client
 
 In this example we implement a rather naive Read Evaluate Print Loop client over TCP. Let’s say we know a server has exposed a simple command line interface over TCP, and would like to interact with it using Akka Streams over TCP. To open an outgoing connection socket we use the outgoingConnection method:
 
@@ -88,7 +90,8 @@ Java
 The repl flow we use to handle the server interaction first prints the servers response, then awaits on input from the command line (this blocking call is used here just for the sake of simplicity) and converts it to a ByteString which is then sent over the wire to the server. Then we simply connect the TCP pipeline to this processing stage–at this point it will be materialized and start processing data once the server responds with an initial message.
 
 A resilient REPL client would be more sophisticated than this, for example it should split out the input reading into a separate mapAsync step and have a way to let the server write more data than one ByteString chunk at any given time, these improvements however are left as exercise for the reader.
-Avoiding deadlocks and liveness issues in back-pressured cycles
+
+## Avoiding deadlocks and liveness issues in back-pressured cycles
 
 When writing such end-to-end back-pressured systems you may sometimes end up in a situation of a loop, in which either side is waiting for the other one to start the conversation. One does not need to look far to find examples of such back-pressure loops. In the two examples shown previously, we always assumed that the side we are connecting to would start the conversation, which effectively means both sides are back-pressured and can not get the conversation started. There are multiple ways of dealing with this which are explained in depth in Graph cycles, liveness and deadlocks, however in client-server scenarios it is often the simplest to make either side simply send an initial message.
 Note
@@ -129,7 +132,8 @@ Java
 To emit the initial message we merge a Source with a single element, after the command processing but before the framing and transformation to ByteString s this way we do not have to repeat such logic.
 
 In this example both client and server may need to close the stream based on a parsed command - BYE in the case of the server, and q in the case of the client. This is implemented by taking from the stream until q and and concatenating a Source with a single BYE element which will then be sent after the original source completed.
-Using framing in your protocol
+
+## Using framing in your protocol
 
 Streaming transport protocols like TCP just pass streams of bytes, and does not know what is a logical chunk of bytes from the application’s point of view. Often when implementing network protocols you will want to introduce your own framing. This can be done in two ways: An end-of-frame marker, e.g. end line \n, can do framing via Framing.delimiter. Or a length-field can be used to build a framing protocol. There is a bidi implementing this protocol provided by Framing.simpleFramingProtocol, see ScalaDoc for more information.
 

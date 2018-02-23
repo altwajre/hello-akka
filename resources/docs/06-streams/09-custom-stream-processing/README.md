@@ -111,7 +111,8 @@ Scala
 
 Java
 
-Port states, InHandler and OutHandler
+
+## Port states, InHandler and OutHandler
 
 In order to interact with a port (Inlet or Outlet) of the stage we need to be able to receive events and generate new events belonging to the port. From the GraphStageLogic the following operations are available on an output port:
 
@@ -171,7 +172,8 @@ The operations of this part of the GraphStage API are:
 Note that since the above methods are implemented by temporarily replacing the handlers of the stage you should never call setHandler while they are running emit or read as that interferes with how they are implemented. The following methods are safe to call after invoking emit and read (and will lead to actually running the operation when those are done): complete(out), completeStage(), emit, emitMultiple, abortEmitting() and abortReading()
 
 An example of how this API simplifies a stage can be found below in the second version of the Duplicator.
-Custom linear processing stages using GraphStage
+
+## Custom linear processing stages using GraphStage
 
 Graph stages allows for custom linear processing stages through letting them have one input and one output and using FlowShape as their shape.
 
@@ -349,12 +351,14 @@ Java
 If we attempt to draw the sequence of events, it shows that there is one “event token” in circulation in a potential chain of stages, just like our conceptual “railroad tracks” representation predicts.
 
 graph_stage_tracks_1.png
-Completion
+
+## Completion
 
 Completion handling usually (but not exclusively) comes into the picture when processing stages need to emit a few more elements after their upstream source has been completed. We have seen an example of this in our first Duplicator implementation where the last element needs to be doubled even after the upstream neighbor stage has been completed. This can be done by overriding the onUpstreamFinish method in InHandler.
 
 Stages by default automatically stop once all of their ports (input and output) have been closed externally or internally. It is possible to opt out from this behavior by invoking setKeepGoing(true) (which is not supported from the stage’s constructor and usually done in preStart). In this case the stage must be explicitly closed by calling completeStage() or failStage(exception). This feature carries the risk of leaking streams and actors, therefore it should be used with care.
-Logging inside GraphStages
+
+## Logging inside GraphStages
 
 Logging debug or other important information in your stages is often a very good idea, especially when developing more advanced stages which may need to be debugged at some point.
 
@@ -396,7 +400,8 @@ Java
 Note
 
 SPI Note: If you’re implementing a Materializer, you can add this ability to your materializer by implementing MaterializerLoggingProvider in your Materializer.
-Using timers
+
+## Using timers
 
 It is possible to use timers in GraphStages by using TimerGraphStageLogic as the base class for the returned logic. Timers can be scheduled by calling one of scheduleOnce(key,delay), schedulePeriodically(key,period) or schedulePeriodicallyWithInitialDelay(key,delay,period) and passing an object as a key for that timer (can be any object, for example a String). The onTimer(key) method needs to be overridden and it will be called once the timer of key fires. It is possible to cancel a timer using cancelTimer(key) and check the status of a timer with isTimerActive(key). Timers will be automatically cleaned up when the stage completes.
 
@@ -442,7 +447,8 @@ Scala
 
 Java
 
-Using asynchronous side-channels
+
+## Using asynchronous side-channels
 
 In order to receive asynchronous events that are not arriving as stream elements (for example a completion of a future or a callback from a 3rd party API) one must acquire a AsyncCallback by calling getAsyncCallback() from the stage logic. The method getAsyncCallback takes as a parameter a callback that will be called once the asynchronous event fires. It is important to not call the callback directly, instead, the external API must call the invoke(event) method on the returned AsyncCallback. The execution engine will take care of calling the provided callback in a thread-safe way. The callback can safely access the state of the GraphStageLogic implementation.
 
@@ -482,7 +488,8 @@ Scala
 
 Java
 
-Integration with actors
+
+## Integration with actors
 
 This section is a stub and will be extended in the next release This is a may change feature*
 
@@ -492,7 +499,8 @@ It is possible to acquire an ActorRef that can be addressed from the outside of 
     they cannot be returned as materialized values.
     they cannot be accessed from the constructor of the GraphStageLogic, but they can be accessed from the preStart() method.
 
-Custom materialized values
+
+## Custom materialized values
 
 Custom stages can return materialized values instead of NotUsed by inheriting from GraphStageWithMaterializedValue instead of the simpler GraphStage. The difference is that in this case the method createLogicAndMaterializedValue(inheritedAttributes) needs to be overridden, and in addition to the stage logic the materialized value must be provided
 Warning
@@ -543,14 +551,16 @@ Scala
 
 Java
 
-Using attributes to affect the behavior of a stage
+
+## Using attributes to affect the behavior of a stage
 
 This section is a stub and will be extended in the next release
 
 Stages can access the Attributes object created by the materializer. This contains all the applied (inherited) attributes applying to the stage, ordered from least specific (outermost) towards the most specific (innermost) attribute. It is the responsibility of the stage to decide how to reconcile this inheritance chain to a final effective decision.
 
 See Modularity, Composition and Hierarchy for an explanation on how attributes work.
-Rate decoupled graph stages
+
+## Rate decoupled graph stages
 
 Sometimes it is desirable to decouple the rate of the upstream and downstream of a stage, synchronizing only when needed.
 

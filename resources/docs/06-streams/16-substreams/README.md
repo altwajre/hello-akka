@@ -7,7 +7,8 @@ SubFlows cannot contribute to the super-flow’s materialized value since they a
 Stages that create substreams are listed on Nesting and flattening stages
 
 # Nesting stages
-groupBy
+
+## groupBy
 
 A typical operation that generates substreams is groupBy.
 
@@ -68,7 +69,8 @@ However, since the number of running (i.e. not yet completed) substreams is capp
 Element one and two leads to two created substreams, but since the number of substreams are capped to 2 when element 3 comes in it cannot lead to creation of a new substream until one of the previous two are completed and this leads to the stream being deadlocked.
 
 stream-substream-groupBy4.png
-splitWhen and splitAfter
+
+## splitWhen and splitAfter
 
 splitWhen and splitAfter are two other operations which generate substreams.
 
@@ -112,7 +114,8 @@ This prints out the following output.
 stream-substream-splitWhen-splitAfter.png
 
 # Flattening stages
-flatMapConcat
+
+## flatMapConcat
 
 flatMapConcat and flatMapMerge are substream operations different from groupBy and splitWhen/After.
 
@@ -133,7 +136,8 @@ Like the concat operation on Flow, it fully consumes one Source after the other.
 Then once the active substream is fully consumed, the next substream can start running. Elements from all the substreams are concatenated to the sink.
 
 stream-substream-flatMapConcat2.png
-flatMapMerge
+
+## flatMapMerge
 
 flatMapMerge is similar to flatMapConcat, but it doesn’t wait for one Source to be fully consumed. Instead, up to breadth number of streams emit elements at any given time.
 

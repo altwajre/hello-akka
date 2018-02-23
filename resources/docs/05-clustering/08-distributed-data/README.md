@@ -71,7 +71,8 @@ Scala
 
 Java
 
-Update
+
+## Update
 
 To modify and replicate a data value you send a Replicator.Update message to the local Replicator.
 
@@ -156,7 +157,8 @@ Scala
 
 Java
 
-Get
+
+## Get
 
 To retrieve the current value of a data you send Replicator.Get message to the Replicator. You supply a consistency level which has the following meaning:
 
@@ -235,7 +237,8 @@ Scala
 
 Java
 
-Consistency
+
+## Consistency
 
 The consistency level that is supplied in the Update and Get specifies per request how many replicas that must respond successfully to a write and read request.
 
@@ -336,7 +339,8 @@ Java
 Warning
 
 Caveat: Even if you use WriteMajority and ReadMajority there is small risk that you may read stale data if the cluster membership has changed between the Update and the Get. For example, in cluster of 5 nodes when you Update and that change is written to 3 nodes: n1, n2, n3. Then 2 more nodes are added and a Get request is reading from 4 nodes, which happens to be n4, n5, n6, n7, i.e. the value on n1, n2, n3 is not seen in the response of the Get request.
-Subscribe
+
+## Subscribe
 
 You may also register interest in change notifications by sending Replicator.Subscribe message to the Replicator. It will send Replicator.Changed messages to the registered subscriber when the data for the subscribed key is updated. Subscribers will be notified periodically with the configured notify-subscribers-interval, and it is also possible to send an explicit Replicator.FlushChanges message to the Replicator to notify the subscribers immediately.
 
@@ -360,7 +364,8 @@ Scala
 
 Java
 
-Delete
+
+## Delete
 
 A data entry can be deleted by sending a Replicator.Delete message to the local local Replicator. As reply of the Delete a Replicator.DeleteSuccess is sent to the sender of the Delete if the value was successfully deleted according to the supplied consistency level within the supplied timeout. Otherwise a Replicator.ReplicationDeleteFailure is sent. Note that ReplicationDeleteFailure does not mean that the delete completely failed or was rolled back. It may still have been replicated to some nodes, and may eventually be replicated to all nodes.
 
@@ -384,7 +389,8 @@ Java
 Warning
 
 As deleted keys continue to be included in the stored data on each node as well as in gossip messages, a continuous series of updates and deletes of top-level entities will result in growing memory usage until an ActorSystem runs out of memory. To use Akka Distributed Data where frequent adds and removes are required, you should use a fixed number of top-level data types that support both updates and removals, for example ORMap or ORSet.
-delta-CRDT
+
+## delta-CRDT
 
 Delta State Replicated Data Types are supported. delta-CRDT is a way to reduce the need for sending the full state for updates. For example adding element 'c' and 'd' to set {'a', 'b'} would result in sending the delta {'c', 'd'} and merge that with the state on the receiving side, resulting in set {'a', 'b', 'c', 'd'}.
 
@@ -408,7 +414,8 @@ You can use your own custom ReplicatedData or DeltaReplicatedData types, and sev
     Maps: ORMap, ORMultiMap, LWWMap, PNCounterMap
     Registers: LWWRegister, Flag
 
-Counters
+
+## Counters
 
 GCounter is a “grow only counter”. It only supports increments, no decrements.
 
@@ -445,7 +452,8 @@ Scala
 
 Java
 
-Sets
+
+## Sets
 
 If you only need to add elements to a set and not remove elements the GSet (grow-only set) is the data type to use. The elements can be any type of values that can be serialized. Merge is simply the union of the two sets.
 
@@ -477,7 +485,8 @@ Scala
 Java
 
 ORSet has support for delta-CRDT and it requires causal delivery of deltas.
-Maps
+
+## Maps
 
 ORMap (observed-remove map) is a map with keys of Any type and the values are ReplicatedData types themselves. It supports add, update and remove any number of times for a map entry.
 
@@ -516,7 +525,8 @@ However, this behaviour has not been made default for ORMultiMap and if you wish
 Please also note, that despite having the same Scala type, ORMultiMap.emptyWithValueDeltas is not compatible with ‘vanilla’ ORMultiMap, because of different replication mechanism. One needs to be extra careful not to mix the two, as they have the same type, so compiler will not hint the error. Nonetheless ORMultiMap.emptyWithValueDeltas uses the same ORMultiMapKey type as the ‘vanilla’ ORMultiMap for referencing.
 
 Note that LWWRegister and therefore LWWMap relies on synchronized clocks and should only be used when the choice of value is not important for concurrent updates occurring within the clock skew. Read more in the below section about LWWRegister.
-Flags and Registers
+
+## Flags and Registers
 
 Flag is a data type for a boolean value that is initialized to false and can be switched to true. Thereafter it cannot be changed. true wins over false in merge.
 
@@ -569,7 +579,8 @@ Java
 For first-write-wins semantics you can use the LWWRegister#reverseClock instead of the LWWRegister#defaultClock.
 
 The defaultClock is using max value of System.currentTimeMillis() and currentTimestamp + 1. This means that the timestamp is increased for changes on the same node that occurs within the same millisecond. It also means that it is safe to use the LWWRegister without synchronized clocks when there is only one active writer, e.g. a Cluster Singleton. Such a single writer should then first read current value with ReadMajority (or more) before changing and writing the value with WriteMajority (or more).
-Custom Data Type
+
+## Custom Data Type
 
 You can rather easily implement your own data types. The only requirement is that it implements the merge function of the ReplicatedData trait.
 
@@ -608,7 +619,8 @@ Serialization
 
 The data types must be serializable with an Akka Serializer. It is highly recommended that you implement efficient serialization with Protobuf or similar for your custom data types. The built in data types are marked with ReplicatedDataSerialization and serialized with akka.cluster.ddata.protobuf.ReplicatedDataSerializer.
 
-Serialization of the data types are used in remote messages and also for creating message digests (SHA-1) to detect changes. Therefore it is important that the serialization is efficient and produce the same bytes for the same content. For example sets and maps should be sorted deterministically in the serialization.
+
+### Serialization of the data types are used in remote messages and also for creating message digests (SHA-1) to detect changes. Therefore it is important that the serialization is efficient and produce the same bytes for the same content. For example sets and maps should be sorted deterministically in the serialization.
 
 This is a protobuf representation of the above TwoPhaseSet:
 
@@ -781,7 +793,8 @@ Scala
 
 Java
 
-Durable Storage
+
+## Durable Storage
 
 By default the data is only kept in memory. It is redundant since it is replicated to other nodes in the cluster, but if you stop all nodes the data is lost, unless you have saved it elsewhere.
 
@@ -820,7 +833,8 @@ akka.cluster.distributed-data.lmdb.write-behind-interval = 200 ms
 Note that you should be prepared to receive WriteFailure as reply to an Update of a durable entry if the data could not be stored for some reason. When enabling write-behind-interval such errors will only be logged and UpdateSuccess will still be the reply to the Update.
 
 There is one important caveat when it comes pruning of CRDT Garbage for durable data. If an old data entry that was never pruned is injected and merged with existing data after that the pruning markers have been removed the value will not be correct. The time-to-live of the markers is defined by configuration akka.cluster.distributed-data.durable.remove-pruning-marker-after and is in the magnitude of days. This would be possible if a node with durable data didn’t participate in the pruning (e.g. it was shutdown) and later started after this time. A node with durable data should not be stopped for longer time than this duration and if it is joining again after this duration its data should first be manually removed (from the lmdb directory).
-CRDT Garbage
+
+## CRDT Garbage
 
 One thing that can be problematic with CRDTs is that some data types accumulate history (garbage). For example a GCounter keeps track of one counter per node. If a GCounter has been updated from one node it will associate the identifier of that node forever. That can become a problem for long running systems with many cluster nodes being added and removed. To solve this problem the Replicator performs pruning of data associated with nodes that have been removed from the cluster. Data types that need pruning have to implement the RemovedNodePruning trait. See the API documentation of the Replicator for details.
 

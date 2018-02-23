@@ -97,7 +97,8 @@ Scala
 
 Java
 
-Topic Groups
+
+## Topic Groups
 
 Actors may also be subscribed to a named topic with a group id. If subscribing with a group id, each message published to a topic with the sendOneMessageToEachGroup flag set to true is delivered via the supplied RoutingLogic (default random) to one actor within each subscribing group.
 

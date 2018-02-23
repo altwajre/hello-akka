@@ -168,7 +168,8 @@ The state of the coordinator and the state of Remembering Entities of the shards
 The functionality when using the two modes is the same. If your sharded entities are not using Akka Persistence themselves it is more convenient to use the Distributed Data mode, since then you don’t have to setup and operate a separate data store (e.g. Cassandra) for persistence. Aside from that, there are no major reasons for using one mode over the the other.
 
 It’s important to use the same mode on all nodes in the cluster, i.e. it’s not possible to perform a rolling upgrade to change this setting.
-Distributed Data Mode
+
+## Distributed Data Mode
 
 This mode is enabled with configuration (enabled by default):
 
@@ -181,7 +182,8 @@ The state of Remembering Entities is also durable, i.e. it is stored to disk. Th
 Cluster Sharding is using its own Distributed Data Replicator per node role. In this way you can use a subset of all nodes for some entity types and another subset for other entity types. Each such replicator has a name that contains the node role and therefore the role configuration must be the same on all nodes in the cluster, i.e. you can’t change the roles when performing a rolling upgrade.
 
 The settings for Distributed Data is configured in the the section akka.cluster.sharding.distributed-data. It’s not possible to have different distributed-data settings for different sharding entity types.
-Persistence Mode
+
+## Persistence Mode
 
 This mode is enabled with configuration:
 

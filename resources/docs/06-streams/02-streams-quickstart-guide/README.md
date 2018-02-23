@@ -90,7 +90,51 @@ Scala
 Java
 
 First we use the scan combinator to run a computation over the whole stream: starting with the number 1 (BigInt(1)) we multiple by each of the incoming numbers, one after the other; the scan operation emits the initial value and then every calculation result. This yields the series of factorial numbers which we stash away as a Source for later reuse—it is important to keep in mind that nothing is actually computed yet, this is just a description of what we want to have computed once we run the stream. Then we convert the resulting series of numbers into a stream of ByteString objects describing lines in a text file. This stream is then run by attaching a file as the receiver of the data. In the terminology of Akka Streams this is called a Sink. IOResult is a type that IO operations return in Akka Streams in order to tell you how many bytes or elements were consumed and whether the stream terminated normally or exceptionally.
-Here is another example that you can edit and run in the browser:
+
+### Here is another example that you can edit and run in the browser:
+```scala
+import akka.NotUsed
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl._
+
+final case class Author(handle: String)
+
+final case class Hashtag(name: String)
+
+final case class Tweet(author: Author, timestamp: Long, body: String) {
+  def hashtags: Set[Hashtag] = body.split(" ").collect {
+    case t if t.startsWith("#") ⇒ Hashtag(t.replaceAll("[^#\\w]", ""))
+  }.toSet
+}
+
+val akkaTag = Hashtag("#akka")
+
+val tweets: Source[Tweet, NotUsed] = Source(
+  Tweet(Author("rolandkuhn"), System.currentTimeMillis, "#akka rocks!") ::
+    Tweet(Author("patriknw"), System.currentTimeMillis, "#akka !") ::
+    Tweet(Author("bantonsson"), System.currentTimeMillis, "#akka !") ::
+    Tweet(Author("drewhk"), System.currentTimeMillis, "#akka !") ::
+    Tweet(Author("ktosopl"), System.currentTimeMillis, "#akka on the rocks!") ::
+    Tweet(Author("mmartynas"), System.currentTimeMillis, "wow #akka !") ::
+    Tweet(Author("akkateam"), System.currentTimeMillis, "#akka rocks!") ::
+    Tweet(Author("bananaman"), System.currentTimeMillis, "#bananas rock!") ::
+    Tweet(Author("appleman"), System.currentTimeMillis, "#apples rock!") ::
+    Tweet(Author("drama"), System.currentTimeMillis, "we compared #apples to #oranges!") ::
+    Nil)
+
+  implicit val system = ActorSystem("reactive-tweets")
+  implicit val materializer = ActorMaterializer()
+
+  tweets
+    .map(_.hashtags) // Get all sets of hashtags ...
+    .reduce(_ ++ _) // ... and reduce them to a single set, removing duplicates across all tweets
+    .mapConcat(identity) // Flatten the stream of tweets to a stream of hashtags
+    .map(_.name.toUpperCase) // Convert all hashtags to upper case
+    .runWith(Sink.foreach(println)) // Attach the Flow to a Sink that will finally print the hashtags
+
+    // $FiddleDependency org.akka-js %%% akkajsactorstream % 1.2.5.1
+```
 
 # Reusable Pieces
 

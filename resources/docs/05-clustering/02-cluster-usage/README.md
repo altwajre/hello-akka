@@ -152,7 +152,8 @@ When a member is considered by the failure detector to be unreachable the leader
 It can also be performed programmatically with Cluster(system).down(address).
 
 A pre-packaged solution for the downing problem is provided by Split Brain Resolver, which is part of the Lightbend Reactive Platform. If you don’t use RP, you should anyway carefully read the documentation of the Split Brain Resolver and make sure that the solution you are using handles the concerns described there.
-Auto-downing (DO NOT USE)
+
+## Auto-downing (DO NOT USE)
 
 There is an automatic downing feature that you should not use in production. For testing purpose you can enable it with configuration:
 
@@ -233,7 +234,8 @@ The events to track the life-cycle of members are:
 There are more types of change events, consult the API documentation of classes that extends akka.cluster.ClusterEvent.ClusterDomainEvent for details about the events.
 
 Instead of subscribing to cluster events it can sometimes be convenient to only get the full membership state with Cluster(system).state. Note that this state is not necessarily in sync with the events published to a cluster subscription.
-Worker Dial-in Example
+
+## Worker Dial-in Example
 
 Let’s take a look at an example that illustrates how workers, here named backend, can detect and register to new master nodes, here named frontend.
 
@@ -437,7 +439,8 @@ There are two distinct types of routers.
     Group - router that sends messages to the specified path using actor selection The routees can be shared among routers running on different nodes in the cluster. One example of a use case for this type of router is a service running on some backend nodes in the cluster and used by routers running on front-end nodes in the cluster.
     Pool - router that creates routees as child actors and deploys them on remote nodes. Each router will have its own routee instances. For example, if you start a router on 3 nodes in a 10-node cluster, you will have 30 routees in total if the router is configured to use one instance per node. The routees created by the different routers will not be shared among the routers. One example of a use case for this type of router is a single master that coordinates jobs and delegates the actual work to routees running on other nodes in the cluster.
 
-Router with Group of Routees
+
+## Router with Group of Routees
 
 When using a Group you must start the routee actors on the cluster member nodes. That is not done by the router. The configuration for a group looks like this::
 
@@ -477,7 +480,8 @@ Scala
 Java
 
 See configuration section for further descriptions of the settings.
-Router Example with Group of Routees
+
+## Router Example with Group of Routees
 
 Let’s take a look at how to use a cluster aware router with a group of routees, i.e. router sending to the paths of the routees.
 
@@ -576,7 +580,8 @@ akka.actor.deployment {
 This means that user requests can be sent to StatsService on any node and it will use StatsWorker on all nodes.
 
 The easiest way to run Router Example with Group of Routees example yourself is to download the ready to run Akka Cluster Sample with Scala together with the tutorial. It contains instructions on how to run the Router Example with Group of Routees sample. The source code of this sample can be found in the Akka Samples Repository.
-Router with Pool of Remote Deployed Routees
+
+## Router with Pool of Remote Deployed Routees
 
 When using a Pool with routees created and deployed on the cluster member nodes the configuration for a router looks like this::
 
@@ -612,7 +617,8 @@ Scala
 Java
 
 See configuration section for further descriptions of the settings.
-Router Example with Pool of Remote Deployed Routees
+
+## Router Example with Pool of Remote Deployed Routees
 
 Let’s take a look at how to use a cluster aware router on single master node that creates and deploys workers. To keep track of a single master we use the Cluster Singleton in the cluster-tools module. The ClusterSingletonManager is started on each node:
 
@@ -803,10 +809,12 @@ val thirdAddress = node(third).address
 
 
 # Management
-HTTP
+
+## HTTP
 
 Information and management of the cluster is available with a HTTP API. See documentation of Akka Management.
-JMX
+
+## JMX
 
 Information and management of the cluster is available as JMX MBeans with the root name akka.Cluster. The JMX information can be displayed with an ordinary JMX console such as JConsole or JVisualVM.
 
@@ -820,7 +828,8 @@ From JMX you can:
     tell any node in the cluster to leave
 
 Member nodes are identified by their address, in format akka.://@:.
-Command Line
+
+## Command Line
 Warning
 
 Deprecation warning - The command line script has been deprecated and is scheduled for removal in the next major version. Use the HTTP management API with curl or similar instead.
@@ -856,13 +865,15 @@ To be able to use the script you must enable remote monitoring and management wh
 # Configuration
 
 There are several configuration properties for the cluster. We refer to the reference configuration for more information.
-Cluster Info Logging
+
+## Cluster Info Logging
 
 You can silence the logging of cluster events at info level with configuration property:
 
 akka.cluster.log-info = off
 
-Cluster Dispatcher
+
+## Cluster Dispatcher
 
 Under the hood the cluster extension is implemented with actors and it can be necessary to create a bulkhead for those actors to avoid disturbance from other actors. Especially the heartbeating actors that is used for failure detection can generate false positives if they are not given a chance to run at regular intervals. For this purpose you can define a separate dispatcher to be used for the cluster actors:
 
