@@ -1,15 +1,13 @@
 package aia.structure
 
-import scala.concurrent.duration._
-
 import akka.actor._
-
-import org.scalatest._
 import akka.testkit._
+import org.scalatest._
+
+import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class PipeAndFilterTest
-  extends TestKit(ActorSystem("PipeAndFilterTest"))
+class PipeAndFilterTest extends TestKit(ActorSystem("PipeAndFilterTest"))
   with WordSpecLike
   with BeforeAndAfterAll {
 
@@ -20,14 +18,14 @@ class PipeAndFilterTest
   }
 
   "The pipe and filter" must {
+
     "filter messages in configuration 1" in {
 
       val endProbe = TestProbe()
-      val speedFilterRef = system.actorOf(
-        Props(new SpeedFilter(50, endProbe.ref)))
-      val licenseFilterRef = system.actorOf(
-        Props(new LicenseFilter(speedFilterRef)))
+      val speedFilterRef = system.actorOf(Props(new SpeedFilter(50, endProbe.ref)))
+      val licenseFilterRef = system.actorOf(Props(new LicenseFilter(speedFilterRef)))
       val msg = new Photo("123xyz", 60)
+
       licenseFilterRef ! msg
       endProbe.expectMsg(msg)
 
@@ -36,15 +34,16 @@ class PipeAndFilterTest
 
       licenseFilterRef ! new Photo("123xyz", 49)
       endProbe.expectNoMsg(timeout)
+
     }
+
     "filter messages in configuration 2" in {
 
       val endProbe = TestProbe()
-      val licenseFilterRef = system.actorOf(
-        Props(new LicenseFilter(endProbe.ref)))
-      val speedFilterRef = system.actorOf(
-        Props(new SpeedFilter(50, licenseFilterRef)))
+      val licenseFilterRef = system.actorOf(Props(new LicenseFilter(endProbe.ref)))
+      val speedFilterRef = system.actorOf(Props(new SpeedFilter(50, licenseFilterRef)))
       val msg = new Photo("123xyz", 60)
+
       speedFilterRef ! msg
       endProbe.expectMsg(msg)
 
@@ -53,6 +52,7 @@ class PipeAndFilterTest
 
       speedFilterRef ! new Photo("123xyz", 49)
       endProbe.expectNoMsg(timeout)
+
     }
   }
 }

@@ -1,13 +1,14 @@
 package aia.testdriven
 
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.testkit.TestKit
-import akka.actor.{ Actor, Props, ActorRef, ActorSystem }
-import org.scalatest.{MustMatchers, WordSpecLike }
+import org.scalatest.{MustMatchers, WordSpecLike}
 
 class FilteringActorTest extends TestKit(ActorSystem("testsystem"))
   with WordSpecLike
   with MustMatchers
   with StopSystemAfterAll {
+
   "A Filtering Actor" must {
 
     "filter out particular messages" in {
@@ -56,16 +57,22 @@ class FilteringActorTest extends TestKit(ActorSystem("testsystem"))
   }
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 object FilteringActor {
-  def props(nextActor: ActorRef, bufferSize: Int) =
-    Props(new FilteringActor(nextActor, bufferSize))
+
+  def props(nextActor: ActorRef, bufferSize: Int) = Props(new FilteringActor(nextActor, bufferSize))
+
   case class Event(id: Long)
+
 }
 
-class FilteringActor(nextActor: ActorRef,
-                     bufferSize: Int) extends Actor {
+class FilteringActor(nextActor: ActorRef, bufferSize: Int) extends Actor {
+
   import FilteringActor._
+
   var lastMessages = Vector[Event]()
+
   def receive = {
     case msg: Event =>
       if (!lastMessages.contains(msg)) {

@@ -1,7 +1,6 @@
 package aia.testdriven
 
-
-import akka.actor.{ActorLogging, Actor}
+import akka.actor.{Actor, ActorLogging}
 
 case class Greeting(message: String)
 

@@ -1,13 +1,14 @@
 package aia.testdriven
 
-import org.scalatest.WordSpecLike
-import org.scalatest.MustMatchers
-import akka.testkit.{ TestActorRef, TestKit }
 import akka.actor._
+import akka.testkit.{TestActorRef, TestKit}
+import org.scalatest.{MustMatchers, WordSpecLike}
+
+// Single-threaded =====================================================================================================
 
 package silentactor02 {
 
-class SilentActorTest extends TestKit(ActorSystem("testsystem"))
+  class SilentActorTest extends TestKit(ActorSystem("testsystem"))
     with WordSpecLike
     with MustMatchers
     with StopSystemAfterAll {
@@ -27,22 +28,27 @@ class SilentActorTest extends TestKit(ActorSystem("testsystem"))
 
 
   object SilentActor {
+
     case class SilentMessage(data: String)
-    case class GetState(receiver: ActorRef)
+
   }
 
   class SilentActor extends Actor {
+
     import SilentActor._
+
     var internalState = Vector[String]()
 
     def receive = {
-      case SilentMessage(data) =>
-        internalState = internalState :+ data
+      case SilentMessage(data) => internalState = internalState :+ data
     }
 
     def state = internalState
   }
+
 }
+
+// Multi-threaded ======================================================================================================
 
 package silentactor03 {
 
@@ -68,19 +74,22 @@ package silentactor03 {
   }
 
 
-
   object SilentActor {
+
     case class SilentMessage(data: String)
+
     case class GetState(receiver: ActorRef)
+
   }
 
   class SilentActor extends Actor {
+
     import SilentActor._
+
     var internalState = Vector[String]()
 
     def receive = {
-      case SilentMessage(data) =>
-        internalState = internalState :+ data
+      case SilentMessage(data) => internalState = internalState :+ data
       case GetState(receiver) => receiver ! internalState
     }
   }

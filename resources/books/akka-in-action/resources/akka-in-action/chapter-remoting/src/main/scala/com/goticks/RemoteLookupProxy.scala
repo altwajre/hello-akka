@@ -1,13 +1,10 @@
 package com.goticks
 
-import akka.actor._
-import akka.actor.ActorIdentity
-import akka.actor.Identify
+import akka.actor.{ActorIdentity, Identify, _}
 
 import scala.concurrent.duration._
 
-class RemoteLookupProxy(path: String)
-  extends Actor with ActorLogging {
+class RemoteLookupProxy(path: String) extends Actor with ActorLogging {
 
   context.setReceiveTimeout(3 seconds)
   sendIdentifyRequest()
@@ -20,6 +17,7 @@ class RemoteLookupProxy(path: String)
   def receive = identify
 
   def identify: Receive = {
+
     case ActorIdentity(`path`, Some(actor)) =>
       context.setReceiveTimeout(Duration.Undefined)
       log.info("switching to active state")
@@ -34,9 +32,11 @@ class RemoteLookupProxy(path: String)
 
     case msg: Any =>
       log.error(s"Ignoring message $msg, remote actor is not ready yet.")
+
   }
 
   def active(actor: ActorRef): Receive = {
+
     case Terminated(actorRef) =>
       log.info(s"Actor $actorRef terminated.")
       log.info("switching to identify state")
@@ -45,5 +45,6 @@ class RemoteLookupProxy(path: String)
       sendIdentifyRequest()
 
     case msg: Any => actor forward msg
+
   }
 }

@@ -43,7 +43,7 @@ with STMultiNodeSpec with ImplicitSender {
         val actorRef = expectMsgPF() {
           case ActorIdentity(`path`, Some(ref)) => ref
         }
-        
+
         import BoxOffice._
 
         actorRef ! CreateEvent("RHCP", 20000)
