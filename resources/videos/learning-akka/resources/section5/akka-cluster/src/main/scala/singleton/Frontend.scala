@@ -1,10 +1,12 @@
 package com.packt.akka.cluster.singleton
 
+import akka.actor.{Actor, ActorLogging, Props}
+import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
+
 import scala.concurrent.duration._
-import akka.cluster.singleton.{ ClusterSingletonProxy, ClusterSingletonProxySettings}
-import akka.actor.{ Actor, Props, ActorLogging, ActorRef }
 
 class Frontend extends Actor with ActorLogging {
+
   import Frontend._
   import context.dispatcher
 
@@ -23,7 +25,9 @@ class Frontend extends Actor with ActorLogging {
 }
 
 object Frontend {
+
   case object Tick
 
   def props = Props(new Frontend())
+
 }

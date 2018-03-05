@@ -1,9 +1,7 @@
 package com.packt.akka
 
-import scala.util
-
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
-import Worker._
+import akka.actor.{Actor, ActorRef, Props}
+import com.packt.akka.Worker._
 
 class RouterPool extends Actor {
 
@@ -11,7 +9,7 @@ class RouterPool extends Actor {
 
   override def preStart() = {
     routees = List.fill(5)(
-    context.actorOf(Props[Worker])
+      context.actorOf(Props[Worker])
     )
   }
 
@@ -29,4 +27,5 @@ class RouterGroup(routees: List[String]) extends Actor {
       println(s"I'm a Router Group and I receive Work Message....")
       context.actorSelection(routees(util.Random.nextInt(routees.size))) forward msg
   }
+
 }

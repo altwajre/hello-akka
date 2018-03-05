@@ -1,10 +1,9 @@
 package com.packt.akka
 
 import akka.actor.ActorSystem
-import scala.concurrent.Future
-import akka.stream.ActorMaterializer
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
+import akka.stream.ActorMaterializer
 
 object HighLevel extends App {
 
@@ -14,20 +13,20 @@ object HighLevel extends App {
 
   implicit val ec = system.dispatcher
 
- /*
-    path(RESOURCE_PATH) {
-      method[get|put|post ...] {
-        complete {
-          // return your response is case you accept this request.
-        }
-        reject {
-          // return your response is case you reject this request.
-        }
-      }
-    }
-  */
+  /*
+     path(RESOURCE_PATH) {
+       method[get|put|post ...] {
+         complete {
+           // return your response is case you accept this request.
+         }
+         reject {
+           // return your response is case you reject this request.
+         }
+       }
+     }
+   */
   val route =
-    path(""){
+    path("") {
       get {
         complete("Hello Akka HTTP Server Side API - High Level")
       }

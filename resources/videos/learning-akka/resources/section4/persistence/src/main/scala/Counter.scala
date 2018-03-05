@@ -1,25 +1,10 @@
 package com.packt.akka
 
+import akka.actor.ActorLogging
 import akka.persistence._
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props, ActorLogging }
-
-object Counter{
-  sealed trait Operation {
-    val count: Int
-  }
-
-  case class Increment(override val count: Int) extends Operation
-  case class Decrement(override val count: Int) extends Operation
-
-  case class Cmd(op: Operation)
-  case class Evt(op: Operation)
-
-  case class State(count: Int)
-
-}
-
 
 class Counter extends PersistentActor with ActorLogging {
+
   import Counter._
 
   println("Starting ........................")
@@ -27,7 +12,7 @@ class Counter extends PersistentActor with ActorLogging {
   // Persistent Identifier
   override def persistenceId = "counter-example"
 
-  var state: State = State(count= 0)
+  var state: State = State(count = 0)
 
   def updateState(evt: Evt): Unit = evt match {
     case Evt(Increment(count)) =>
@@ -53,7 +38,7 @@ class Counter extends PersistentActor with ActorLogging {
 
   // Persistent receive on normal mood
   val receiveCommand: Receive = {
-    case cmd @ Cmd(op) =>
+    case cmd@Cmd(op) =>
       println(s"Counter receive ${cmd}")
       persist(Evt(op)) { evt =>
         updateState(evt)
@@ -70,12 +55,30 @@ class Counter extends PersistentActor with ActorLogging {
   }
 
   def takeSnapshot = {
-    if(state.count % 5 == 0){
+    if (state.count % 5 == 0) {
       saveSnapshot(state)
     }
   }
 
-//  override def recovery = Recovery.none
+  //  override def recovery = Recovery.none
+
+}
+
+object Counter {
+
+  sealed trait Operation {
+    val count: Int
+  }
+
+  case class Increment(override val count: Int) extends Operation
+
+  case class Decrement(override val count: Int) extends Operation
+
+  case class Cmd(op: Operation)
+
+  case class Evt(op: Operation)
+
+  case class State(count: Int)
 
 }
 

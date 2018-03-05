@@ -1,12 +1,15 @@
 package com.packt.akka
 
-import akka.actor.{ ActorRef, ActorSystem, Props, Actor }
-import scala.concurrent.duration._
-import akka.actor.OneForOneStrategy
 import akka.actor.SupervisorStrategy._
+import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy, Props}
 
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 class Aphrodite extends Actor {
+
   import Aphrodite._
 
   override def preStart() = {
@@ -18,7 +21,7 @@ class Aphrodite extends Actor {
     super.preRestart(reason, message)
   }
 
-   override def postRestart(reason: Throwable) = {
+  override def postRestart(reason: Throwable) = {
     println("Aphrodite postRestart hook...")
     super.postRestart(reason)
   }
@@ -28,35 +31,42 @@ class Aphrodite extends Actor {
   }
 
   def receive = {
-    case "Resume" => 
+    case "Resume" =>
       throw ResumeException
-    case "Stop" => 
+    case "Stop" =>
       throw StopException
-    case "Restart" => 
+    case "Restart" =>
       throw RestartException
-    case _ => 
+    case _ =>
       throw new Exception
   }
-} 
-
-object Aphrodite {
-  case object ResumeException extends Exception
-  case object StopException extends Exception
-  case object RestartException extends Exception
 }
 
+object Aphrodite {
+
+  case object ResumeException extends Exception
+
+  case object StopException extends Exception
+
+  case object RestartException extends Exception
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 class Hera extends Actor {
+
   import Aphrodite._
 
   var childRef: ActorRef = _
 
   override val supervisorStrategy =
-  OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 second) {
-    case ResumeException      => Resume
-    case RestartException     => Restart
-    case StopException        => Stop
-    case _: Exception            => Escalate
-  }
+    OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 second) {
+      case ResumeException => Resume
+      case RestartException => Restart
+      case StopException => Stop
+      case _: Exception => Escalate
+    }
 
   override def preStart() = {
     // Create Aphrodite Actor
@@ -65,35 +75,36 @@ class Hera extends Actor {
   }
 
   def receive = {
-    case msg => 
+    case msg =>
       println(s"Hera received ${msg}")
       childRef ! msg
       Thread.sleep(100)
   }
-} 
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 object Supervision extends App {
 
   // Create the 'supervision' actor system
   val system = ActorSystem("supervision")
 
-  // Create Hera Actor 
+  // Create Hera Actor
   val hera = system.actorOf(Props[Hera], "hera")
 
-  // hera ! "Resume"
-  // Thread.sleep(1000)
-  // println()
+//  hera ! "Resume"
+//  Thread.sleep(1000)
+//  println()
 
-  // hera ! "Restart"
-  // Thread.sleep(1000)
-  // println()
+//  hera ! "Restart"
+//  Thread.sleep(1000)
+//  println()
 
-  hera ! "Stop"
-  Thread.sleep(1000)
-  println()
+    hera ! "Stop"
+    Thread.sleep(1000)
+    println()
 
-  system.shutdown()
-
-
+  system.terminate()
 
 }

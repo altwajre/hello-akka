@@ -1,7 +1,6 @@
 package com.packt.akka
 
-import akka.actor.{ ActorRef, ActorSystem, Props, Actor, Terminated }
-
+import akka.actor.{Actor, ActorRef, ActorSystem, Props, Terminated}
 
 class Ares(athena: ActorRef) extends Actor {
 
@@ -14,7 +13,8 @@ class Ares(athena: ActorRef) extends Actor {
   }
 
   def receive = {
-    case Terminated => 
+    case Terminated(_) =>
+      println(s"Ares received Terminated")
       context.stop(self)
   }
 }
@@ -22,7 +22,7 @@ class Ares(athena: ActorRef) extends Actor {
 class Athena extends Actor {
 
   def receive = {
-    case msg => 
+    case msg =>
       println(s"Athena received ${msg}")
       context.stop(self)
   }
@@ -40,7 +40,8 @@ object Monitoring extends App {
 
   athena ! "Hi"
 
-  system.shutdown()
+  Thread.sleep(500)
 
+  system.terminate()
 
 }

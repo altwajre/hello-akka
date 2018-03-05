@@ -1,18 +1,19 @@
 package com.packt.akka
 
-import scala.util.{Try, Success, Failure}
 import akka.actor.ActorSystem
-import scala.concurrent.Future
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
+
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 object HostLevel extends App {
+
   import JsonProtocol._
 
   implicit val system = ActorSystem()
@@ -25,8 +26,8 @@ object HostLevel extends App {
 
   val responseFuture: Future[(Try[HttpResponse], Int)] =
     Source.single(HttpRequest(uri = "/?format=json") -> 4)
-    .via(poolClientFlow)
-    .runWith(Sink.head)
+      .via(poolClientFlow)
+      .runWith(Sink.head)
 
   responseFuture map {
     case (Success(res), _) =>
@@ -48,7 +49,7 @@ object HostLevel extends App {
   }
 
   def shutdown() = {
-    Http().shutdownAllConnectionPools().onComplete{ _ =>
+    Http().shutdownAllConnectionPools().onComplete { _ =>
       system.shutdown()
       system.awaitTermination()
     }

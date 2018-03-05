@@ -1,18 +1,14 @@
 package com.packt.akka.cluster.sharding
 
-import scala.concurrent.duration._
-import com.typesafe.config.ConfigFactory
-import akka.actor.ActorIdentity
-import akka.actor.ActorPath
-import akka.actor.ActorSystem
-import akka.actor.Identify
-import akka.actor.Props
-import akka.cluster.sharding.{ClusterShardingSettings, ClusterSharding}
-import akka.pattern.ask
-import akka.persistence.journal.leveldb.SharedLeveldbJournal
-import akka.persistence.journal.leveldb.SharedLeveldbStore
-import akka.util.Timeout
+import akka.actor.{ActorIdentity, ActorPath, ActorSystem, Identify, Props}
 import akka.cluster.Cluster
+import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
+import akka.pattern.ask
+import akka.persistence.journal.leveldb.{SharedLeveldbJournal, SharedLeveldbStore}
+import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
+
+import scala.concurrent.duration._
 
 object ShardingApp extends App {
 
@@ -37,7 +33,7 @@ object ShardingApp extends App {
         extractEntityId = Counter.idExtractor,
         extractShardId = Counter.shardResolver)
 
-      if (port != "2551" && port != "2552"){
+      if (port != "2551" && port != "2552") {
         Cluster(system) registerOnMemberUp {
           system.actorOf(Props[Frontend], "frontend")
         }

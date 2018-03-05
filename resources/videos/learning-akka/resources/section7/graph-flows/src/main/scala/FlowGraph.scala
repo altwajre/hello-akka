@@ -4,9 +4,6 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 
-import scala.collection.immutable
-import scala.util.Random
-
 object GraphFlow extends App {
   implicit val actorSystem = ActorSystem()
   implicit val flowMaterializer = ActorMaterializer()
@@ -27,8 +24,10 @@ object GraphFlow extends App {
     val broadCast = builder.add(Broadcast[Int](2))
     val merge = builder.add(Merge[Int](2))
 
+    // @formatter:off
     in ~> f1 ~> broadCast ~> f2 ~> merge ~> f3 ~> out
                 broadCast ~> f4 ~> merge
+    // @formatter:on
 
   }
 

@@ -1,17 +1,18 @@
 package com.packt.akka
 
 import akka.actor.ActorSystem
-import scala.concurrent.Future
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
+
+import scala.concurrent.Future
 
 object ConnectionLevel extends App {
+
   import JsonProtocol._
 
   implicit val system = ActorSystem()
@@ -19,13 +20,13 @@ object ConnectionLevel extends App {
 
   implicit val ec = system.dispatcher
 
-  val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]]=
+  val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] =
     Http().outgoingConnection("api.ipify.org")
 
   val responseFuture =
     Source.single(HttpRequest(uri = "/?format=json"))
-    .via(connectionFlow)
-    .runWith(Sink.head)
+      .via(connectionFlow)
+      .runWith(Sink.head)
 
   responseFuture map { res =>
     res.status match {
@@ -43,7 +44,7 @@ object ConnectionLevel extends App {
   }
 
   def shutdown() = {
-    Http().shutdownAllConnectionPools().onComplete{ _ =>
+    Http().shutdownAllConnectionPools().onComplete { _ =>
       system.shutdown()
       system.awaitTermination()
     }

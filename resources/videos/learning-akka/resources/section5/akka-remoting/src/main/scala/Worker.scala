@@ -1,8 +1,9 @@
 package com.packt.akka
 
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
+import akka.actor.Actor
 
 class Worker extends Actor {
+
   import Worker._
 
   def receive = {
@@ -12,5 +13,7 @@ class Worker extends Actor {
 }
 
 object Worker {
-  case class Work(message: String) 
+
+  case class Work(message: String)
+
 }

@@ -1,18 +1,20 @@
-import akka.actor.{ ActorSystem, Props }
-import akka.testkit.{ TestKit, TestActorRef, TestProbe, ImplicitSender }
-import org.scalatest.matchers.MustMatchers
-import org.scalatest.{ FlatSpecLike, BeforeAndAfterAll }
+import akka.actor.ActorSystem
+import akka.pattern.pipe
 import akka.stream.scaladsl._
+import akka.stream.{ActorMaterializer, OverflowStrategy}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import org.scalatest.matchers.MustMatchers
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike}
+
 import scala.concurrent._
 import scala.concurrent.duration._
-import akka.stream.{ ActorMaterializer, OverflowStrategy}
-import akka.pattern.pipe
 
 class StreamActorSpec extends TestKit(ActorSystem("test-system"))
-                  with ImplicitSender
-                  with FlatSpecLike
-                  with BeforeAndAfterAll
-                  with MustMatchers {
+  with ImplicitSender
+  with FlatSpecLike
+  with BeforeAndAfterAll
+  with MustMatchers {
+
   import system.dispatcher
 
   override def afterAll {

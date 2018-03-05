@@ -1,20 +1,20 @@
 package com.packt.akka
 
-import org.scalatest.MustMatchers
-import akka.actor.{ ActorSystem, Props }
-import akka.testkit.{ TestKit, TestActorRef, TestProbe, ImplicitSender }
-import org.scalatest.{ FlatSpecLike, BeforeAndAfterAll }
+import akka.actor.{ActorSystem, Props}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, MustMatchers}
+
 import scala.concurrent.duration._
 
 class CounterSpec extends TestKit(ActorSystem("test-system"))
-                  with FlatSpecLike
-                  with ImplicitSender
-                  with BeforeAndAfterAll
-                  with MustMatchers {
+  with FlatSpecLike
+  with ImplicitSender
+  with BeforeAndAfterAll
+  with MustMatchers {
+
   override def afterAll = {
     TestKit.shutdownActorSystem(system)
   }
-
 
   "Counter Actor" should "handle GetCount message with using TestProbe" in {
     val sender = TestProbe()

@@ -1,7 +1,6 @@
 package com.packt.akka
 
-import akka.actor.{ ActorRef, ActorSystem, Props, Actor, PoisonPill}
-
+import akka.actor.{ActorSystem, Props}
 
 object Watch extends App {
 
@@ -11,7 +10,8 @@ object Watch extends App {
 
   val watcher = system.actorOf(Props[Watcher], "watcher")
 
-	Thread.sleep(1000)
+  Thread.sleep(1000)
 
-	system.terminate()
+  system.terminate()
+
 }

@@ -1,38 +1,40 @@
 package com.packt.akka.cluster.sharding
 
-import akka.persistence._
-import scala.concurrent.duration._
+import akka.actor.{ActorLogging, Props}
 import akka.cluster.sharding.ShardRegion
-import akka.actor.{ Actor, ActorRef, Props, ActorLogging }
- 
+import akka.persistence._
+
+import scala.concurrent.duration._
+
 class Counter extends PersistentActor with ActorLogging {
+
   import Counter._
- 
+
   context.setReceiveTimeout(120.seconds)
- 
+
   override def persistenceId: String = self.path.parent.name + "-" + self.path.name
- 
+
   var count = 0
- 
+
   def updateState(event: CounterChanged): Unit =
     count += event.delta
- 
+
   override def receiveRecover: Receive = {
     case evt: CounterChanged ⇒ updateState(evt)
   }
- 
+
   override def receiveCommand: Receive = {
-    case Increment => 
+    case Increment =>
       log.info(s"Counter with path: ${self} recevied Increment Command")
       persist(CounterChanged(+1))(updateState)
-    case Decrement => 
+    case Decrement =>
       log.info(s"Counter with path: ${self} recevied Decrement Command")
       persist(CounterChanged(-1))(updateState)
-    case Get => 
+    case Get =>
       log.info(s"Counter with path: ${self} recevied Get Command")
       log.info(s"Count = ${count}")
       sender() ! count
-    case Stop => 
+    case Stop =>
       context.stop(self)
   }
 }
@@ -58,7 +60,7 @@ object Counter {
   val idExtractor: ShardRegion.ExtractEntityId = {
     case CounterMessage(id, msg) => (id.toString, msg)
   }
- 
+
   // shard resolver
   val shardResolver: ShardRegion.ExtractShardId = {
     case CounterMessage(id, msg) => (id % 12).toString

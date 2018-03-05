@@ -1,16 +1,15 @@
 package com.packt.akka
 
+import akka.actor.ActorSystem
+import com.typesafe.config.ConfigFactory
 import twitter4j._
 import twitter4j.auth.AccessToken
 import twitter4j.conf.ConfigurationBuilder
-import com.typesafe.config.ConfigFactory
+
 import scala.collection.JavaConverters._
-import java.util.List
-import akka.actor.ActorSystem
 
 object TwitterConfiguration {
   val config = ConfigFactory.load.getConfig("Twitter")
-
   val apiKey = config.getString("apiKey")
   val apiSecret = config.getString("apiSecret")
   val accessToken = config.getString("accessToken")
@@ -20,9 +19,9 @@ object TwitterConfiguration {
 object TwitterClient {
 
   def getInstance: Twitter = {
-    
+
     val cb = new ConfigurationBuilder()
-    cb.setDebugEnabled(true)
+      .setDebugEnabled(true)
       .setOAuthConsumerKey(TwitterConfiguration.apiKey)
       .setOAuthConsumerSecret(TwitterConfiguration.apiSecret)
       .setOAuthAccessToken(TwitterConfiguration.accessToken)
@@ -32,7 +31,7 @@ object TwitterClient {
     tf.getInstance()
   }
 
-  def retrieveTweets(term: String) = {
+  def retrieveTweets(term: String): Iterator[Status] = {
     val query = new Query(term)
     query.setCount(100)
     getInstance.search(query).getTweets.asScala.iterator
@@ -40,8 +39,9 @@ object TwitterClient {
 }
 
 class TwitterStreamClient(val actorSystem: ActorSystem) {
+
   val factory = new TwitterStreamFactory(new ConfigurationBuilder().build())
-  val twitterStream = factory.getInstance()
+  val twitterStream: TwitterStream = factory.getInstance()
 
   def init = {
     twitterStream.setOAuthConsumer(TwitterConfiguration.apiKey, TwitterConfiguration.apiSecret)
@@ -51,6 +51,7 @@ class TwitterStreamClient(val actorSystem: ActorSystem) {
   }
 
   def statusListener = new StatusListener() {
+
     def onStatus(s: Status) {
       actorSystem.eventStream.publish(Tweet(Author(s.getUser.getScreenName), s.getText))
     }
@@ -66,6 +67,7 @@ class TwitterStreamClient(val actorSystem: ActorSystem) {
     def onScrubGeo(arg0: Long, arg1: Long) {}
 
     def onStallWarning(warning: StallWarning) {}
+
   }
 
   def stop = {

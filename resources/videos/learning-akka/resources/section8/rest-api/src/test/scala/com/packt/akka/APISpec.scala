@@ -1,37 +1,31 @@
 package com.packt.akka
 
-import org.scalatest.{ FlatSpec, BeforeAndAfterAll } 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server._
-import org.scalatest.matchers.MustMatchers
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import MediaTypes._
-import Directives._
-import spray.json._
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import com.packt.akka.db.{Created, TweetManager}
 import com.packt.akka.models._
-import com.packt.akka.db.{ Created, Deleted }
-import com.packt.akka.db.TweetManager
-import scala.concurrent.duration._
-import scala.concurrent.Await
+import org.scalatest.matchers.MustMatchers
+import org.scalatest.{BeforeAndAfterAll, FlatSpec}
 import reactivemongo.bson.BSONObjectID
 
-class ApiSpec extends FlatSpec 
-              with MustMatchers 
-              with ScalatestRouteTest 
-              with BeforeAndAfterAll
-              with RestApi {
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
-  import TweetProtocol._
-  import TweetEntity._
+class ApiSpec extends FlatSpec
+  with MustMatchers
+  with ScalatestRouteTest
+  with BeforeAndAfterAll
+  with RestApi {
+
   import TweetEntityProtocol.EntityFormat
+  import TweetProtocol._
 
   override implicit val ec = system.dispatcher
 
   override def afterAll {
     TweetManager.collection.drop()
-  } 
+  }
 
   "The Server" should "return Ok response when get all tweets" in {
     val tweet = Tweet("akka", "Hello World")
@@ -74,7 +68,6 @@ class ApiSpec extends FlatSpec
     }
 
   }
-
 
 
 }

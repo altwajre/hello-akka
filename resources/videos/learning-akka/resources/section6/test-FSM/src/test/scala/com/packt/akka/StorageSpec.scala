@@ -1,15 +1,16 @@
 package com.packt.akka
 
-import akka.actor.{ ActorSystem, Props }
-import akka.testkit.{ TestKit, TestFSMRef, TestProbe, ImplicitSender }
+import akka.actor.ActorSystem
+import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
 import org.scalatest.matchers.MustMatchers
-import org.scalatest.{ FlatSpecLike, BeforeAndAfterAll }
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike}
 
-class UserStorageSpec extends TestKit(ActorSystem("test-system")) 
-                      with ImplicitSender
-                      with FlatSpecLike
-                      with BeforeAndAfterAll 
-                      with MustMatchers {
+class UserStorageSpec extends TestKit(ActorSystem("test-system"))
+  with ImplicitSender
+  with FlatSpecLike
+  with BeforeAndAfterAll
+  with MustMatchers {
+
   import UserStorageFSM._
 
   override def afterAll {

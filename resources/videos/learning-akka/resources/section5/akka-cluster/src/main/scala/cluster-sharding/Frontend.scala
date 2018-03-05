@@ -1,12 +1,14 @@
 package com.packt.akka.cluster.sharding
 
-import scala.util.Random
-import scala.concurrent.duration._
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.cluster.sharding.ClusterSharding
-import akka.actor.{ Actor, ActorRef, Props, ActorLogging, ActorSystem }
+
+import scala.concurrent.duration._
+import scala.util.Random
 
 
 class Frontend extends Actor with ActorLogging {
+
   import Frontend._
   import context.dispatcher
 
@@ -38,10 +40,12 @@ class Frontend extends Actor with ActorLogging {
 }
 
 object Frontend {
+
   sealed trait Op
   case object Inc extends Op
   case object Dec extends Op
   case object Get extends Op
 
   case class Tick(op: Op)
+
 }

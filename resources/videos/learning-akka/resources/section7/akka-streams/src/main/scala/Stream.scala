@@ -2,12 +2,12 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 
-import scala.collection.immutable
-import scala.util.Random
-
 object Stream extends App {
+
   implicit val actorSystem = ActorSystem()
+
   import actorSystem.dispatcher
+
   implicit val flowMaterializer = ActorMaterializer()
 
   // Source
@@ -24,4 +24,5 @@ object Stream extends App {
       actorSystem.shutdown()
       actorSystem.awaitTermination()
   }
+
 }

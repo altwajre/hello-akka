@@ -1,7 +1,7 @@
 package com.packt.akka.cluster.singleton
 
+import akka.actor.{ActorLogging, ActorRef}
 import akka.persistence._
-import akka.actor.{ Actor, Props, ActorLogging, ActorRef }
 
 object Master {
 
@@ -16,11 +16,12 @@ object Master {
   case class UpdateWorks(works: List[Work]) extends Event
 
   case class State(workers: Set[ActorRef], works: List[Work])
-
   case object NoWork
+
 }
 
 class Master extends PersistentActor with ActorLogging {
+
   import Master._
 
   var workers: Set[ActorRef] = Set.empty
@@ -29,21 +30,21 @@ class Master extends PersistentActor with ActorLogging {
   override def persistenceId: String = self.path.parent.name + "-" + self.path.name
 
   def updateState(evt: Event): Unit = evt match {
-    case AddWorker(w) => 
+    case AddWorker(w) =>
       workers = workers + w
 
-    case AddWork(w) => 
+    case AddWork(w) =>
       works = works :+ w
 
     case UpdateWorks(ws) =>
-      works = ws 
+      works = ws
 
   }
 
   val receiveRecover: Receive = {
     case evt: Event =>
       updateState(evt)
-    case SnapshotOffer(_, snapshot: State) => 
+    case SnapshotOffer(_, snapshot: State) =>
       workers = snapshot.workers
       works = snapshot.works
   }
@@ -57,7 +58,7 @@ class Master extends PersistentActor with ActorLogging {
     case RequestWork if works.isEmpty =>
       sender() ! NoWork
 
-    case RequestWork(requester) if workers.contains(requester) && ! works.isEmpty =>
+    case RequestWork(requester) if workers.contains(requester) && !works.isEmpty =>
       sender() ! works.head
       persist(UpdateWorks(works.tail)) { evt =>
         updateState(evt)

@@ -1,14 +1,8 @@
 package com.packt.akka
 
-import akka.remote.testkit.MultiNodeSpec
-import akka.testkit.ImplicitSender
-import akka.actor.{ Props, Actor }
-import MultiNodeSampleConfig._
-
-
 class MultiNodeSample extends MultiNodeSpec(MultiNodeSampleConfig)
-                      with BasicMultiNodeSpec
-                      with ImplicitSender {
+  with BasicMultiNodeSpec
+  with ImplicitSender {
 
   // initial Participants
 
@@ -19,13 +13,13 @@ class MultiNodeSample extends MultiNodeSpec(MultiNodeSampleConfig)
   }
 
   it should "send to and receive from a remote node" in {
-    runOn(node2){
+    runOn(node2) {
       system.actorOf(Props[Worker], name = "worker")
 
       enterBarrier("deployed")
     }
 
-    runOn(node1){
+    runOn(node1) {
       enterBarrier("deployed")
 
       val worker = system.actorSelection(node(node2) / "user" / "worker")
@@ -41,4 +35,5 @@ class MultiNodeSample extends MultiNodeSpec(MultiNodeSampleConfig)
 }
 
 class MultiNodeSampleMultiJvmNode1 extends MultiNodeSample
+
 class MultiNodeSampleMultiJvmNode2 extends MultiNodeSample

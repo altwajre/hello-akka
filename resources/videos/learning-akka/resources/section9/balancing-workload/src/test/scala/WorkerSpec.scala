@@ -1,13 +1,14 @@
 package com.packt.akka
 
-import akka.actor.{ActorSystem, ActorPath, ActorRef, Props}
-import akka.testkit.{TestKit, ImplicitSender}
-import scala.concurrent.{Future, Await}
-import scala.concurrent.duration._
+import akka.actor.{ActorPath, ActorRef, ActorSystem, Props}
+import akka.pattern.{ask, pipe}
+import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
-import akka.pattern.{pipe, ask}
-import org.scalatest.{WordSpecLike, BeforeAndAfterAll}
 import org.scalatest.matchers.MustMatchers
+import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
+
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class TestWorker(masterLocation: ActorPath) extends Worker(masterLocation) {
   // We'll use the current dispatcher for the execution context.
@@ -31,14 +32,15 @@ class BadTestWorker(masterLocation: ActorPath) extends Worker(masterLocation) {
 }
 
 class WorkerSpec extends TestKit(ActorSystem("WorkerSpec"))
-       with ImplicitSender
-       with WordSpecLike
-       with BeforeAndAfterAll
-       with MustMatchers {
+  with ImplicitSender
+  with WordSpecLike
+  with BeforeAndAfterAll
+  with MustMatchers {
 
   implicit val ec = system.dispatcher
 
   implicit val askTimeout = Timeout(1 second)
+
   override def afterAll() {
     system.shutdown()
   }
@@ -52,6 +54,7 @@ class WorkerSpec extends TestKit(ActorSystem("WorkerSpec"))
       "akka://%s/user/%s".format(system.name, name)))))
 
   "Worker" should {
+
     "work" in {
       // Spin up the master
       val m = system.actorOf(Props[Master], "master")
@@ -68,6 +71,7 @@ class WorkerSpec extends TestKit(ActorSystem("WorkerSpec"))
       // We should get it all back
       expectMsgAllOf("Hithere", "Guys", "So", "What's", "Up?")
     }
+
     "still work if one dies" in { //{2
       // Spin up the master
       val m = system.actorOf(Props[Master], "master2")
@@ -83,6 +87,7 @@ class WorkerSpec extends TestKit(ActorSystem("WorkerSpec"))
       // We should get it all back
       expectMsgAllOf("Hithere", "Guys", "So", "What's", "Up?")
     } //}2
+
     "work with Futures" in { //{2
       // Spin up the master
       val m = system.actorOf(Props[Master], "master3")
@@ -91,8 +96,9 @@ class WorkerSpec extends TestKit(ActorSystem("WorkerSpec"))
       val w2 = worker("master3")
       val w3 = worker("master3")
       val fs = Future.sequence(List("Hithere", "Guys", "So", "What's", "Up?").map { s => m ? s })
-      Await.result(fs, 1 second) must be (List("Hithere", "Guys", "So", "What's", "Up?"))
+      Await.result(fs, 1 second) must be(List("Hithere", "Guys", "So", "What's", "Up?"))
       // We should get it all back
     } //}2
+
   }
 }

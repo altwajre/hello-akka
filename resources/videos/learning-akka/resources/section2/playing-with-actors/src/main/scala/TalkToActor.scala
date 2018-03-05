@@ -1,80 +1,105 @@
 package com.packt.akka
 
-import akka.actor.{ ActorRef, ActorSystem, Props, Actor }
-import scala.concurrent.duration._
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.pattern.ask
 import akka.util.Timeout
+import com.packt.akka.Checker._
+import com.packt.akka.Recorder._
+import com.packt.akka.Storage._
+
+import scala.concurrent.duration._
+import scala.language.postfixOps
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 case class User(username: String, email: String)
 
-object Recorder {
-  case class NewUser(user: User)
+// ---------------------------------------------------------------------------------------------------------------------
 
-  def props(checker: ActorRef, storage: ActorRef) = 
-    Props(new Recorder(checker, storage))
+class Checker extends Actor {
+
+  val blackList = List(
+    User("Adam", "adam@mail.com")
+  )
+
+  def receive = {
+    case CheckUser(user) if blackList.contains(user) =>
+      println(s"Checker: $user in the blacklist")
+      sender() ! BlackUser(user)
+    case CheckUser(user) =>
+      println(s"Checker: $user not in the blacklist")
+      sender() ! WhiteUser(user)
+  }
 }
 
 object Checker {
-  case class CheckUser(user: User)
 
-  case class WhiteUser(user: User)
+  // Checker Messages
+  sealed trait CheckerMsg
+  case class CheckUser(user: User) extends CheckerMsg
 
-  case class BlackUser(user: User)
+  //Checker Responses
+  sealed trait CheckerResponse
+  case class BlackUser(user: User) extends CheckerResponse
+  case class WhiteUser(user: User) extends CheckerResponse
+
 }
 
-object Storage {
-  case class AddUser(user: User)
-}
+// ---------------------------------------------------------------------------------------------------------------------
 
 class Storage extends Actor {
-  import Storage._
 
   var users = List.empty[User]
 
   def receive = {
     case AddUser(user) =>
-      println(s"Storage: ${user} stored")
+      println(s"Storage: $user added")
       users = user :: users
   }
 }
 
-class Checker extends Actor {
-  import Checker._
+object Storage {
 
-  val blackList = List(
-      User("Adam", "adam@mail.com")
-    )
+  sealed trait StorageMsg
 
-  def receive = {
-    case CheckUser(user) => 
-      if(blackList.contains(user)){
-        println(s"Checker: ${user} is in blackList.")
-        sender ! BlackUser(user)
-      } else {
-        println(s"Checker: ${user} isn't in blackList.")
-        sender ! WhiteUser(user)
-      }
-  }
+  // Storage Messages
+  case class AddUser(user: User) extends StorageMsg
+
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 class Recorder(checker: ActorRef, storage: ActorRef) extends Actor {
-  import Recorder._
+
   import scala.concurrent.ExecutionContext.Implicits.global
 
   implicit val timeout = Timeout(5 seconds)
 
   def receive = {
     case NewUser(user) =>
-      println(s"Recorder receives NewUser for ${user}")
-      checker ? Checker.CheckUser(user) map {
-        case Checker.WhiteUser(user) =>
-          storage ! Storage.AddUser(user)
-        case Checker.BlackUser(user) =>
-          println(s"Recorder: ${user} in in black user.") 
+      checker ? CheckUser(user) map {
+        case WhiteUser(user) =>
+          storage ! AddUser(user)
+        case BlackUser(user) =>
+          println(s"Recorder: $user in the blacklist")
       }
   }
+
 }
 
+object Recorder {
+
+  sealed trait RecorderMsg
+
+  // Recorder Messages
+  case class NewUser(user: User) extends RecorderMsg
+
+  def props(checker: ActorRef, storage: ActorRef) =
+    Props(new Recorder(checker, storage))
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 object TalkToActor extends App {
 
@@ -90,10 +115,12 @@ object TalkToActor extends App {
   // Create the 'recorder' actor
   val recorder = system.actorOf(Recorder.props(checker, storage), "recorder")
 
-  //send NewUser Message to Recorder
+  // send NewUser Message to Recorder
   recorder ! Recorder.NewUser(User("Jon", "jon@packt.com"))
 
-  //shutdown system
-  system.shutdown()
+  Thread.sleep(100)
+
+  // shutdown system
+  system.terminate()
 
 }

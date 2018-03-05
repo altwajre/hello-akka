@@ -1,10 +1,10 @@
 package com.packt.akka
 
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
-
+import akka.actor.{ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 
 object MembersService extends App {
+
   val config = ConfigFactory.load.getConfig("MembersService")
 
   val system = ActorSystem("MembersService", config)
@@ -24,6 +24,7 @@ object MemberServiceLookup extends App {
   val worker = system.actorSelection("akka.tcp://MembersService@127.0.0.1:2552/user/remote-worker")
 
   worker ! Worker.Work("Hi Remote Actor")
+
 }
 
 object MembersServiceRemoteCreation extends App {

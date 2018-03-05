@@ -4,17 +4,18 @@ import java.io.File
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.stream.io.Implicits._
 import akka.stream.scaladsl._
 import akka.util.ByteString
 
-import scala.concurrent.forkjoin.ThreadLocalRandom
-import scala.util.{ Failure, Success }
-
-import akka.stream.io.Implicits._
+import scala.util.{Failure, Success}
 
 object WriteStream extends App {
+
   implicit val actorSystem = ActorSystem()
+
   import actorSystem.dispatcher
+
   implicit val flowMaterializer = ActorMaterializer()
 
   // Source
@@ -36,10 +37,12 @@ object WriteStream extends App {
     (file, console) =>
       import FlowGraph.Implicits._
 
-    val broadCast = builder.add(Broadcast[Int](2))
+      val broadCast = builder.add(Broadcast[Int](2))
 
-    source ~> broadCast ~> file
-              broadCast ~> console
+      // @formatter:off
+      source ~> broadCast ~> file
+                broadCast ~> console
+      // @formatter:on
 
   }.run()
 
@@ -57,4 +60,5 @@ object WriteStream extends App {
     else if (n == 2) true
     else !(2 to (n - 1)).exists(x => n % x == 0)
   }
+
 }

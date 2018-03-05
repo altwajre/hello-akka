@@ -1,17 +1,19 @@
 package com.packt.akka.cluster.singleton
 
-import scala.concurrent.duration._
-import akka.actor.{ Actor, Props, ActorLogging, ActorRef }
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.cluster.singleton.{ClusterSingletonProxy, ClusterSingletonProxySettings}
 
+import scala.concurrent.duration._
+
 class Worker extends Actor with ActorLogging {
+
   import Master._
   import context.dispatcher
 
   val masterProxy = context.actorOf(ClusterSingletonProxy.props(
     singletonManagerPath = "/user/master",
     settings = ClusterSingletonProxySettings(context.system).withRole(None)
-  ), name= "masterProxy")
+  ), name = "masterProxy")
 
   context.system.scheduler.schedule(0.second, 30.second, masterProxy, RegisterWorker(self))
   context.system.scheduler.schedule(3.second, 3.second, masterProxy, RequestWork(self))
@@ -23,6 +25,6 @@ class Worker extends Actor with ActorLogging {
 }
 
 object Worker {
- 
- def props = Props(new Worker()) 
+
+  def props = Props(new Worker())
 }
