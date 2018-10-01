@@ -76,5 +76,4 @@ object Master {
 
   case object NoWork
 
-
 }
